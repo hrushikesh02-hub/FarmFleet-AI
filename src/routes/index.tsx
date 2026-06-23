@@ -1,0 +1,2174 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
+import {
+  Search,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  ChevronDown,
+  ArrowRight,
+  ArrowUpRight,
+  MapPin,
+  Star,
+  ChevronRight,
+  Menu,
+  X,
+  Leaf,
+  Settings,
+  BarChart3,
+  Bell,
+  Shield,
+  Zap,
+  Globe,
+} from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "FarmFleet — India's Smart Farm Equipment Rental Platform" },
+      {
+        name: "description",
+        content:
+          "Rent verified farm equipment instantly. Tractors, harvesters and machinery — booked in minutes across India.",
+      },
+    ],
+  }),
+  component: Landing,
+});
+
+/* ─── i18n ─── */
+const TRANSLATIONS = {
+  en: {
+    nav: {
+      howItWorks: "How It Works",
+      equipment: "Equipment Types",
+      forOwners: "For Owners",
+      reviews: "Reviews",
+      faq: "FAQ",
+      owner: "Continue as Owner",
+      renter: "Continue as Renter",
+    },
+    hero: {
+      badge: "India's Smart Farm Equipment Rental Platform",
+      headline1: "Rent. Share.",
+      headline2: "Grow.",
+      sub: "Access verified tractors, harvesters, and farm machinery when you need it — booked in minutes, delivered to your field.",
+      ownerCard: "Continue as Equipment Owner",
+      ownerSub: "List your equipment and manage bookings",
+      renterCard: "Continue as Renter",
+      renterSub: "Find and book equipment near you",
+    },
+    howItWorks: {
+      label: "Simple Process",
+      title: "From search to field in three steps",
+      steps: [
+        {
+          n: "01",
+          title: "Search by Location",
+          desc: "Browse verified equipment near your farm. Filter by type, availability, and rental period.",
+        },
+        {
+          n: "02",
+          title: "Pick Your Dates",
+          desc: "Select rental period and see instant pricing — transparent, with no hidden charges.",
+        },
+        {
+          n: "03",
+          title: "Book & Confirm",
+          desc: "Secure checkout. Owner confirms within minutes. Equipment arrives ready to work.",
+        },
+      ],
+    },
+    browse: {
+      label: "Browse by Type",
+      title: "What do you need?",
+      sub: "Discover the right equipment for your crop and season.",
+    },
+    forOwners: {
+      label: "For Equipment Owners",
+      title: "Your equipment. Working for you.",
+      sub: "List your machinery on FarmFleet and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
+      features: [
+        "Manage all your equipment listings",
+        "Accept or decline booking requests",
+        "Set custom availability calendars",
+        "Track active and upcoming rentals",
+        "Monitor booking history",
+      ],
+      cta: "Start listing for free",
+    },
+    reviews: {
+      label: "Trusted by Farmers",
+      title: "What farmers are saying",
+    },
+    faq: {
+      label: "FAQ",
+      title: "Common questions",
+    },
+    footer: {
+      tagline: "Making farm machinery accessible to every Indian farmer.",
+      platform: "Platform",
+      resources: "Resources",
+      company: "Company",
+      legal: "Legal",
+      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
+    },
+  },
+  hi: {
+    nav: {
+      howItWorks: "यह कैसे काम करता है",
+      equipment: "उपकरण प्रकार",
+      forOwners: "मालिकों के लिए",
+      reviews: "समीक्षाएं",
+      faq: "सामान्य प्रश्न",
+      owner: "मालिक के रूप में जारी रखें",
+      renter: "किरायेदार के रूप में जारी रखें",
+    },
+    hero: {
+      badge: "भारत का स्मार्ट कृषि उपकरण किराया प्लेटफॉर्म",
+      headline1: "किराए पर लें. साझा करें.",
+      headline2: "उगाएं.",
+      sub: "जब आपको ज़रूरत हो तब सत्यापित ट्रैक्टर, हार्वेस्टर और कृषि मशीनरी तक पहुंचें — मिनटों में बुक करें।",
+      ownerCard: "उपकरण मालिक के रूप में जारी रखें",
+      ownerSub: "अपने उपकरण सूचीबद्ध करें और बुकिंग प्रबंधित करें",
+      renterCard: "किरायेदार के रूप में जारी रखें",
+      renterSub: "अपने पास उपकरण खोजें और बुक करें",
+    },
+    howItWorks: {
+      label: "सरल प्रक्रिया",
+      title: "तीन चरणों में खोज से खेत तक",
+      steps: [
+        {
+          n: "01",
+          title: "स्थान से खोजें",
+          desc: "अपने खेत के पास सत्यापित उपकरण ब्राउज़ करें। प्रकार, उपलब्धता और किराये की अवधि के आधार पर फ़िल्टर करें।",
+        },
+        {
+          n: "02",
+          title: "तिथियां चुनें",
+          desc: "किराये की अवधि चुनें और तत्काल मूल्य निर्धारण देखें — पारदर्शी, कोई छुपे शुल्क नहीं।",
+        },
+        {
+          n: "03",
+          title: "बुक करें और पुष्टि करें",
+          desc: "सुरक्षित चेकआउट। मालिक मिनटों में पुष्टि करता है। उपकरण काम के लिए तैयार पहुंचता है।",
+        },
+      ],
+    },
+    browse: {
+      label: "प्रकार से ब्राउज़ करें",
+      title: "आपको क्या चाहिए?",
+      sub: "अपनी फसल और मौसम के लिए सही उपकरण खोजें।",
+    },
+    forOwners: {
+      label: "उपकरण मालिकों के लिए",
+      title: "आपका उपकरण। आपके लिए काम कर रहा है।",
+      sub: "FarmFleet पर अपनी मशीनरी सूचीबद्ध करें और अपने क्षेत्र के सत्यापित किसानों से किराये के अनुरोध स्वीकार करें।",
+      features: [
+        "सभी उपकरण सूचियां प्रबंधित करें",
+        "बुकिंग अनुरोध स्वीकार या अस्वीकार करें",
+        "कस्टम उपलब्धता कैलेंडर सेट करें",
+        "सक्रिय और आगामी किराये ट्रैक करें",
+        "बुकिंग इतिहास मॉनिटर करें",
+      ],
+      cta: "मुफ़्त में लिस्टिंग शुरू करें",
+    },
+    reviews: {
+      label: "किसानों द्वारा विश्वसनीय",
+      title: "किसान क्या कह रहे हैं",
+    },
+    faq: {
+      label: "सामान्य प्रश्न",
+      title: "सामान्य प्रश्न",
+    },
+    footer: {
+      tagline: "हर भारतीय किसान के लिए कृषि मशीनरी सुलभ बनाना।",
+      platform: "प्लेटफॉर्म",
+      resources: "संसाधन",
+      company: "कंपनी",
+      legal: "कानूनी",
+      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
+    },
+  },
+  mr: {
+    nav: {
+      howItWorks: "हे कसे कार्य करते",
+      equipment: "उपकरण प्रकार",
+      forOwners: "मालकांसाठी",
+      reviews: "पुनरावलोकने",
+      faq: "वारंवार विचारले जाणारे प्रश्न",
+      owner: "मालक म्हणून सुरू ठेवा",
+      renter: "भाडेकरू म्हणून सुरू ठेवा",
+    },
+    hero: {
+      badge: "भारताचे स्मार्ट शेती उपकरण भाडे प्लॅटफॉर्म",
+      headline1: "भाड्याने घ्या. सामायिक करा.",
+      headline2: "वाढवा.",
+      sub: "जेव्हा गरज असेल तेव्हा सत्यापित ट्रॅक्टर, हार्वेस्टर आणि शेती यंत्रसामग्री मिळवा — मिनिटांत बुक करा.",
+      ownerCard: "उपकरण मालक म्हणून सुरू ठेवा",
+      ownerSub: "आपली उपकरणे सूचीबद्ध करा आणि बुकिंग व्यवस्थापित करा",
+      renterCard: "भाडेकरू म्हणून सुरू ठेवा",
+      renterSub: "जवळपासची उपकरणे शोधा आणि बुक करा",
+    },
+    howItWorks: {
+      label: "सोपी प्रक्रिया",
+      title: "तीन चरणांमध्ये शोधापासून शेतापर्यंत",
+      steps: [
+        {
+          n: "01",
+          title: "स्थानानुसार शोधा",
+          desc: "आपल्या शेताजवळील सत्यापित उपकरणे ब्राउझ करा. प्रकार, उपलब्धता आणि भाडे कालावधीनुसार फिल्टर करा.",
+        },
+        {
+          n: "02",
+          title: "तारखा निवडा",
+          desc: "भाडे कालावधी निवडा आणि त्वरित किंमत पहा — पारदर्शक, कोणतेही लपलेले शुल्क नाही.",
+        },
+        {
+          n: "03",
+          title: "बुक करा आणि पुष्टी करा",
+          desc: "सुरक्षित चेकआउट. मालक मिनिटांत पुष्टी करतो. उपकरण काम करण्यास तयार येते.",
+        },
+      ],
+    },
+    browse: {
+      label: "प्रकारानुसार ब्राउझ करा",
+      title: "तुम्हाला काय हवे आहे?",
+      sub: "तुमच्या पीक आणि हंगामासाठी योग्य उपकरणे शोधा.",
+    },
+    forOwners: {
+      label: "उपकरण मालकांसाठी",
+      title: "तुमचे उपकरण. तुमच्यासाठी काम करत आहे.",
+      sub: "FarmFleet वर आपली यंत्रसामग्री सूचीबद्ध करा आणि आपल्या क्षेत्रातील सत्यापित शेतकऱ्यांकडून भाडे विनंत्या स्वीकारा.",
+      features: [
+        "सर्व उपकरण यादी व्यवस्थापित करा",
+        "बुकिंग विनंत्या स्वीकारा किंवा नाकारा",
+        "कस्टम उपलब्धता कॅलेंडर सेट करा",
+        "सक्रिय आणि आगामी भाडे ट्रॅक करा",
+        "बुकिंग इतिहास पहा",
+      ],
+      cta: "विनामूल्य सूचीबद्ध करणे सुरू करा",
+    },
+    reviews: {
+      label: "शेतकऱ्यांनी विश्वास ठेवलेला",
+      title: "शेतकरी काय म्हणत आहेत",
+    },
+    faq: {
+      label: "वारंवार विचारले जाणारे प्रश्न",
+      title: "सामान्य प्रश्न",
+    },
+    footer: {
+      tagline: "प्रत्येक भारतीय शेतकऱ्यासाठी शेती यंत्रसामग्री सुलभ करणे.",
+      platform: "प्लॅटफॉर्म",
+      resources: "संसाधने",
+      company: "कंपनी",
+      legal: "कायदेशीर",
+      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
+    },
+  },
+};
+
+type Lang = "en" | "hi" | "mr";
+
+/* ─── CSS Injection ─── */
+function StyleLoader() {
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      :root {
+        --white: #FFFFFF;
+        --off-white: #F8FAF7;
+        --light-green: #EAF7EE;
+        --green-50: #F0FBF2;
+        --green-100: #D6F5DC;
+        --green-200: #AEEAB9;
+        --green-300: #78D68A;
+        --green-400: #4DC166;
+        --green-500: #2D9C3E;
+        --green-600: #248033;
+        --green-700: #1F6B2A;
+        --green-800: #174F1F;
+        --green-900: #123524;
+        --accent: #F4B400;
+        --accent-light: #FEF3C7;
+        --ink: #0D1F10;
+        --ink-700: #2A3D2D;
+        --ink-500: #4A6350;
+        --ink-300: #8AA690;
+        --ink-200: #B8CCB9;
+        --ink-100: #E2EDE3;
+        --radius-sm: 10px;
+        --radius-md: 16px;
+        --radius-lg: 24px;
+        --radius-xl: 32px;
+        --shadow-sm: 0 1px 3px rgba(13,31,16,0.06), 0 1px 2px rgba(13,31,16,0.04);
+        --shadow-md: 0 4px 16px rgba(13,31,16,0.08), 0 2px 6px rgba(13,31,16,0.04);
+        --shadow-lg: 0 12px 40px rgba(13,31,16,0.10), 0 4px 12px rgba(13,31,16,0.06);
+        --shadow-xl: 0 24px 64px rgba(13,31,16,0.12), 0 8px 24px rgba(13,31,16,0.08);
+        --shadow-green: 0 8px 32px rgba(45,156,62,0.18);
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        background: var(--off-white);
+        color: var(--ink);
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      section { padding: 100px 24px; }
+      .sec-inner { max-width: 1200px; margin: 0 auto; }
+      .sec-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--green-600);
+        background: var(--green-50);
+        border: 1px solid var(--green-200);
+        padding: 5px 14px;
+        border-radius: 100px;
+        margin-bottom: 20px;
+      }
+      .sec-title {
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+        margin: 0 0 16px;
+      }
+      .sec-sub {
+        font-size: 17px;
+        color: var(--ink-500);
+        line-height: 1.65;
+        max-width: 520px;
+        margin: 0;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 26px;
+        background: var(--green-600);
+        color: white;
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+        cursor: pointer;
+        text-decoration: none;
+        border: none;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(45,156,62,0.28);
+      }
+      .btn-primary:hover {
+        background: var(--green-700);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(45,156,62,0.36);
+      }
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: transparent;
+        color: var(--green-700);
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1.5px solid var(--green-300);
+        transition: all 0.2s;
+      }
+      .btn-ghost:hover {
+        background: var(--light-green);
+        border-color: var(--green-500);
+      }
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes marquee-rev {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(0); }
+      }
+      .marquee-track {
+        display: flex;
+        gap: 16px;
+        animation: marquee 40s linear infinite;
+        will-change: transform;
+      }
+      .marquee-track-rev {
+        display: flex;
+        gap: 16px;
+        animation: marquee-rev 44s linear infinite;
+        will-change: transform;
+      }
+      .marquee-wrap:hover .marquee-track,
+      .marquee-wrap:hover .marquee-track-rev {
+        animation-play-state: paused;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      @keyframes float2 {
+        0%, 100% { transform: translateY(-6px); }
+        50% { transform: translateY(6px); }
+      }
+      .float { animation: float 4s ease-in-out infinite; }
+      .float2 { animation: float2 5s ease-in-out infinite; }
+      section[id] { scroll-margin-top: 76px; }
+
+      /* ── Desktop nav links ── */
+      .nav-links { display: flex; }
+      .nav-desktop-actions { display: flex; }
+      .mobile-menu-btn { display: none !important; }
+
+      /* ── How It Works grid ── */
+      .hiw-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        position: relative;
+      }
+      .hiw-connector {
+        display: block;
+        position: absolute;
+        top: 52px;
+        left: calc(16.6% + 28px);
+        right: calc(16.6% + 28px);
+        height: 1px;
+        background: linear-gradient(90deg, var(--green-200), var(--green-400), var(--accent));
+        opacity: 0.6;
+      }
+
+      /* ── Browse grid ── */
+      .browse-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+      }
+
+      /* ── For Owners grid ── */
+      .for-owners-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: center;
+      }
+
+      /* ── Hero grid ── */
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        align-items: center;
+      }
+      .hero-visual {
+        display: block;
+        position: relative;
+        height: 520px;
+      }
+
+      /* ── Footer grid ── */
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 2fr repeat(4, 1fr);
+        gap: 48px;
+        margin-bottom: 60px;
+      }
+
+      /* ── Tablet: 768px–1023px ── */
+      @media (max-width: 1023px) {
+        .nav-links { display: none; }
+        .nav-desktop-actions .nav-owner-btn,
+        .nav-desktop-actions .nav-renter-btn { display: none; }
+        .mobile-menu-btn { display: flex !important; }
+
+        .hero-grid {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+        .hero-visual {
+          height: 340px;
+        }
+
+        .hiw-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        .hiw-connector { display: none; }
+
+        .browse-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .for-owners-grid {
+          grid-template-columns: 1fr;
+          gap: 48px;
+        }
+
+        .footer-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 36px;
+        }
+
+        section { padding: 72px 24px; }
+      }
+
+      /* ── Between tablet sizes: show 2 cols for HIW ── */
+      @media (min-width: 768px) and (max-width: 1023px) {
+        .hiw-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* ── Mobile: up to 767px ── */
+      @media (max-width: 767px) {
+        section { padding: 60px 20px; }
+
+        .sec-title { font-size: clamp(1.75rem, 7vw, 2.4rem); }
+        .sec-sub { font-size: 15px; }
+
+        .hiw-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .hiw-connector { display: none; }
+
+        .browse-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+
+        .for-owners-grid {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+
+        .hero-grid {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        .hero-visual {
+          height: 260px;
+        }
+
+        .footer-grid {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+
+        .nav-links { display: none; }
+        .nav-desktop-actions .nav-owner-btn,
+        .nav-desktop-actions .nav-renter-btn { display: none; }
+        .mobile-menu-btn { display: flex !important; }
+      }
+
+      /* ── Very small: single col browse on tiny screens ── */
+      @media (max-width: 400px) {
+        .browse-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .marquee-track, .marquee-track-rev { animation: none; }
+        .float, .float2 { animation: none; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+  return null;
+}
+
+/* ─── DATA ─── */
+const CATEGORIES = [
+  {
+    label: "Tractor",
+    image: "https://images.unsplash.com/photo-1614977645540-7abd88ba8e56?q=80&w=1073&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    label: "Harvester",
+    image: "https://images.unsplash.com/photo-1565647952915-9644fcd446a4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    label: "Seeder",
+    image: "https://images.unsplash.com/photo-1707680946878-d02775437174?q=80&w=1176&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    label: "Rotavator",
+    image: "https://plus.unsplash.com/premium_photo-1664301163726-78773dc77bfd?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    label: "Sprayer",
+    image: "https://images.unsplash.com/photo-1690986375486-460dc48dd499?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+];
+
+const REVIEWS_ROW1 = [
+  {
+    name: "Rajesh Patil",
+    role: "Sugarcane Farmer · Sangamner",
+    text: "Booked a harvester in under ten minutes. Arrived on time, worked flawlessly. FarmFleet has changed how I plan every season.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=11",
+  },
+  {
+    name: "Sunita Deshpande",
+    role: "Equipment Owner · Latur",
+    text: "Listing took five minutes. Within a week I had multiple confirmed bookings. The platform gives me complete control over my schedule.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=44",
+  },
+  {
+    name: "Kiran Kulkarni",
+    role: "Onion Farmer · Nashik",
+    text: "Transparent pricing, verified machines. I compared three listings, picked the best one, and confirmed in minutes. No phone calls needed.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=52",
+  },
+  {
+    name: "Vikram Shinde",
+    role: "Wheat Farmer · Pune",
+    text: "The calendar feature let me plan equipment for the entire season in advance. No last-minute scrambles. Completely stress-free.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=33",
+  },
+  {
+    name: "Anita More",
+    role: "Soybean Farmer · Aurangabad",
+    text: "I was sceptical at first. After my first booking, I told ten other farmers in my village. Every one of them is now on FarmFleet.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=47",
+  },
+];
+
+const REVIEWS_ROW2 = [
+  {
+    name: "Suresh Jadhav",
+    role: "Tractor Owner · Solapur",
+    text: "My tractor used to sit idle for six months. Now it earns during the off-season. The booking dashboard is incredibly easy to use.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=15",
+  },
+  {
+    name: "Priya Kamble",
+    role: "Cotton Farmer · Akola",
+    text: "The support team responded in Marathi. That level of care for regional farmers tells you everything about this platform.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=56",
+  },
+  {
+    name: "Mahesh Bhosale",
+    role: "Rice Farmer · Kolhapur",
+    text: "Equipment condition was exactly as described. Photos, service log, owner ratings — every detail was accurate. I trust FarmFleet.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=22",
+  },
+  {
+    name: "Rekha Nawale",
+    role: "Vegetable Grower · Satara",
+    text: "Searched, compared, booked and received confirmation — all within fifteen minutes. This is how farm services should work.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=60",
+  },
+  {
+    name: "Dilip Gaikwad",
+    role: "Equipment Owner · Nanded",
+    text: "I set my own pricing and availability. FarmFleet handles everything else. It genuinely feels like a professional business partnership.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/80?img=37",
+  },
+];
+
+const FAQS = [
+  {
+    q: "How do I know the equipment is in good condition?",
+    a: "Every piece of equipment on FarmFleet is verified before listing. Each machine has a service log, condition photos, and a verified owner profile with ratings from previous renters.",
+  },
+  {
+    q: "What happens if an owner cancels my confirmed booking?",
+    a: "You receive a full refund immediately, plus a booking credit for your next rental. Our team will also assist you in finding an alternate machine nearby.",
+  },
+  {
+    q: "How does payment work?",
+    a: "Pay securely via UPI, card, or net banking. Funds are held by FarmFleet and released to the owner only after you confirm the equipment arrived in good condition.",
+  },
+  {
+    q: "Can I list my own equipment for rental?",
+    a: "Yes. Listing is free and takes under five minutes. After verification, your equipment goes live. You control pricing, availability, and which requests to accept.",
+  },
+  {
+    q: "Is there a minimum rental period?",
+    a: "Most equipment is available for daily rental. Some owners set a minimum of two or three days. You will see the minimum period clearly on each listing before booking.",
+  },
+];
+
+/* ─── LANGUAGE SWITCHER ─── */
+function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
+  const [open, setOpen] = useState(false);
+  const opts: { code: Lang; label: string }[] = [
+    { code: "en", label: "EN" },
+    { code: "hi", label: "हि" },
+    { code: "mr", label: "म" },
+  ];
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "7px 14px",
+          borderRadius: 100,
+          border: "1.5px solid var(--ink-100)",
+          background: "white",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "var(--ink-700)",
+          cursor: "pointer",
+          transition: "all 0.15s",
+        }}
+      >
+        <Globe size={13} />
+        {opts.find((o) => o.code === lang)?.label}
+        <ChevronDown size={12} style={{ opacity: 0.5 }} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: 0,
+              background: "white",
+              border: "1px solid var(--ink-100)",
+              borderRadius: 12,
+              boxShadow: "var(--shadow-lg)",
+              overflow: "hidden",
+              minWidth: 120,
+              zIndex: 200,
+            }}
+          >
+            {[
+              { code: "en" as Lang, label: "English" },
+              { code: "hi" as Lang, label: "हिन्दी" },
+              { code: "mr" as Lang, label: "मराठी" },
+            ].map((o) => (
+              <button
+                key={o.code}
+                onClick={() => { setLang(o.code); setOpen(false); }}
+                style={{
+                  width: "100%",
+                  padding: "10px 16px",
+                  background: lang === o.code ? "var(--light-green)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontSize: 14,
+                  fontWeight: lang === o.code ? 600 : 400,
+                  color: lang === o.code ? "var(--green-700)" : "var(--ink-700)",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => { if (lang !== o.code) e.currentTarget.style.background = "var(--off-white)"; }}
+                onMouseLeave={(e) => { if (lang !== o.code) e.currentTarget.style.background = "transparent"; }}
+              >
+                {o.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── NAVBAR ─── */
+function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; t: typeof TRANSLATIONS["en"] }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 32);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const scrollTo = (id: string) => {
+    setMobileOpen(false);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const navLinks = [
+    { label: t.nav.howItWorks, id: "how-it-works" },
+    { label: t.nav.equipment, id: "browse" },
+    { label: t.nav.forOwners, id: "for-owners" },
+    { label: t.nav.reviews, id: "reviews" },
+    { label: t.nav.faq, id: "faq" },
+  ];
+
+  return (
+    <>
+      <motion.header
+        initial={{ y: -80 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          padding: "0 24px",
+          background: scrolled ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.80)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: scrolled
+            ? "1px solid rgba(13,31,16,0.07)"
+            : "1px solid transparent",
+          boxShadow: scrolled ? "0 2px 20px rgba(13,31,16,0.06)" : "none",
+          transition: "all 0.35s cubic-bezier(0.22,1,0.36,1)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            height: 72,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
+          {/* Logo */}
+          <div
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 42 42" fill="none">
+              <circle cx="21" cy="21" r="21" fill="#39B54A" />
+              <path d="M21 26V18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M21 18C17 18 15 15.5 15 12.5C18.5 12.5 21 14.5 21 18Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+              <path d="M21 18C25 18 27 15.5 27 12.5C23.5 12.5 21 14.5 21 18Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+              <path d="M16 29H26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <span style={{ fontWeight: 800, fontSize: 26, lineHeight: 1, letterSpacing: "-0.04em", color: "#111827" }}>
+              Farm<span style={{ color: "#39B54A" }}>Fleet</span>
+            </span>
+          </div>
+
+          {/* Desktop Nav Links */}
+          <nav className="nav-links" style={{ alignItems: "center", gap: 4, flex: 1, justifyContent: "center" }}>
+            {navLinks.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                style={{
+                  padding: "7px 14px",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--ink-500)",
+                  background: "none",
+                  border: "none",
+                  borderRadius: 100,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--ink)";
+                  e.currentTarget.style.background = "var(--off-white)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--ink-500)";
+                  e.currentTarget.style.background = "none";
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Right actions */}
+          <div className="nav-desktop-actions" style={{ alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <LangSwitcher lang={lang} setLang={setLang} />
+            <Link
+              to="/login-owner"
+              className="nav-owner-btn"
+              style={{
+                padding: "8px 18px",
+                borderRadius: 100,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--ink-700)",
+                textDecoration: "none",
+                border: "1.5px solid var(--ink-100)",
+                background: "white",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--ink-200)"; e.currentTarget.style.background = "var(--off-white)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--ink-100)"; e.currentTarget.style.background = "white"; }}
+            >
+              {t.nav.owner}
+            </Link>
+            <Link to="/login-renter" className="btn-primary nav-renter-btn" style={{ padding: "8px 18px", fontSize: 13, whiteSpace: "nowrap" }}>
+              {t.nav.renter}
+            </Link>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileOpen(true)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, alignItems: "center", justifyContent: "center" }}
+            >
+              <Menu size={22} color="var(--ink)" />
+            </button>
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 200,
+              background: "rgba(13,31,16,0.4)",
+              backdropFilter: "blur(4px)",
+            }}
+            onClick={() => setMobileOpen(false)}
+          >
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: "80%",
+                maxWidth: 340,
+                background: "white",
+                padding: "28px 24px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                overflowY: "auto",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <span style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)" }}>FarmFleet</span>
+                <button onClick={() => setMobileOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                  <X size={22} color="var(--ink-500)" />
+                </button>
+              </div>
+              {navLinks.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollTo(item.id)}
+                  style={{
+                    padding: "13px 16px",
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: "var(--ink-700)",
+                    background: "none",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.1s",
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+              <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10, paddingTop: 16 }}>
+                <LangSwitcher lang={lang} setLang={setLang} />
+                <Link to="/login-owner" className="btn-ghost" style={{ justifyContent: "center" }}>
+                  {t.nav.owner}
+                </Link>
+                <Link to="/login-renter" className="btn-primary" style={{ justifyContent: "center" }}>
+                  {t.nav.renter}
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/* ─── HERO ─── */
+function Hero({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  return (
+    <section
+      id="hero"
+      style={{
+        minHeight: "100vh",
+        paddingTop: 72,
+        background: "var(--white)",
+        display: "flex",
+        alignItems: "center",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Subtle green grid background */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(rgba(45,156,62,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(45,156,62,0.04) 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent)",
+        }}
+      />
+      {/* Green glow top-right */}
+      <div style={{
+        position: "absolute",
+        top: -120,
+        right: -80,
+        width: 640,
+        height: 640,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(45,156,62,0.08) 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
+      <div className="sec-inner" style={{ position: "relative", padding: "80px 24px 60px", width: "100%", maxWidth: 1200, margin: "0 auto" }}>
+        <div className="hero-grid">
+
+          {/* LEFT */}
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="sec-label"
+              style={{ marginBottom: 28 }}
+            >
+              <Leaf size={11} />
+              {t.hero.badge}
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                fontSize: "clamp(2.8rem, 6vw, 5rem)",
+                fontWeight: 700,
+                lineHeight: 1.0,
+                letterSpacing: "-0.03em",
+                color: "var(--ink)",
+                margin: "0 0 20px",
+              }}
+            >
+              {t.hero.headline1}
+              <br />
+              <span style={{
+                background: "linear-gradient(135deg, var(--green-600) 0%, var(--green-400) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                {t.hero.headline2}
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.28 }}
+              className="sec-sub"
+              style={{ marginBottom: 44 }}
+            >
+              {t.hero.sub}
+            </motion.p>
+
+            {/* CTA Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.36 }}
+              style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 }}
+            >
+              {/* Owner card */}
+              <Link to="/login-owner" style={{ textDecoration: "none" }}>
+                <motion.div
+                  whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(13,31,16,0.13)" }}
+                  whileTap={{ scale: 0.99 }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "20px 24px",
+                    borderRadius: 18,
+                    border: "1.5px solid var(--green-200)",
+                    background: "var(--green-50)",
+                    cursor: "pointer",
+                    transition: "border-color 0.2s",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-400)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-200)"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "var(--green-700)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <Settings size={20} color="white" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
+                        {t.hero.ownerCard}
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--ink-500)", marginTop: 2 }}>
+                        {t.hero.ownerSub}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0 }} />
+                </motion.div>
+              </Link>
+
+              {/* Renter card */}
+              <Link to="/login-renter" style={{ textDecoration: "none" }}>
+                <motion.div
+                  whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(45,156,62,0.18)" }}
+                  whileTap={{ scale: 0.99 }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "20px 24px",
+                    borderRadius: 18,
+                    border: "1.5px solid var(--green-500)",
+                    background: "var(--green-700)",
+                    cursor: "pointer",
+                    boxShadow: "var(--shadow-green)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <Search size={20} color="white" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "white", letterSpacing: "-0.01em" }}>
+                        {t.hero.renterCard}
+                      </div>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>
+                        {t.hero.renterSub}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={18} color="rgba(255,255,255,0.8)" style={{ flexShrink: 0 }} />
+                </motion.div>
+              </Link>
+            </motion.div>
+          </motion.div>
+
+          {/* RIGHT — visual composition */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="hero-visual"
+          >
+            {/* Main image */}
+            <div style={{
+              position: "absolute",
+              top: 40,
+              left: 32,
+              right: 0,
+              bottom: 0,
+              borderRadius: 28,
+              overflow: "hidden",
+              boxShadow: "var(--shadow-xl)",
+            }}>
+              <img
+                src="https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80"
+                alt="Farmer"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to bottom, transparent 40%, rgba(18,53,36,0.4) 100%)",
+              }} />
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── HOW IT WORKS ─── */
+function HowItWorks({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  const icons = [Search, Calendar, CheckCircle2];
+  return (
+    <section id="how-it-works" style={{ background: "var(--off-white)" }}>
+      <div className="sec-inner">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          style={{ textAlign: "center", marginBottom: 64 }}
+        >
+          <div className="sec-label" style={{ margin: "0 auto 20px" }}>
+            {t.howItWorks.label}
+          </div>
+          <h2 className="sec-title">{t.howItWorks.title}</h2>
+        </motion.div>
+
+        <div className="hiw-grid">
+          {/* connector — only visible on desktop via CSS */}
+          <div className="hiw-connector" />
+
+          {t.howItWorks.steps.map((step, i) => {
+            const Icon = icons[i];
+            return (
+              <motion.div
+                key={step.n}
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -6 }}
+                style={{
+                  background: "white",
+                  borderRadius: 24,
+                  padding: "40px 32px",
+                  boxShadow: "var(--shadow-md)",
+                  border: "1px solid var(--ink-100)",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {/* large step number background */}
+                <div style={{
+                  position: "absolute",
+                  top: -12,
+                  right: -8,
+                  fontSize: 100,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color: "var(--green-100)",
+                  letterSpacing: "-0.05em",
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}>
+                  {step.n}
+                </div>
+
+                <div style={{
+                  width: 52, height: 52,
+                  borderRadius: 14,
+                  background: i === 2 ? "var(--green-700)" : "var(--light-green)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 24,
+                  boxShadow: i === 2 ? "var(--shadow-green)" : "none",
+                }}>
+                  <Icon size={22} color={i === 2 ? "white" : "var(--green-600)"} />
+                </div>
+
+                <div style={{
+                  display: "inline-block",
+                  background: "var(--green-50)",
+                  color: "var(--green-700)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  padding: "3px 10px",
+                  borderRadius: 100,
+                  marginBottom: 12,
+                  border: "1px solid var(--green-200)",
+                }}>
+                  STEP {step.n}
+                </div>
+
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)", marginBottom: 10, letterSpacing: "-0.015em" }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: 15, color: "var(--ink-500)", lineHeight: 1.65, margin: 0 }}>
+                  {step.desc}
+                </p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── BROWSE BY TYPE ─── */
+function Browse({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  return (
+    <section id="browse" style={{ background: "white" }}>
+      <div className="sec-inner">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{ textAlign: "center", marginBottom: 56 }}
+        >
+          <div className="sec-label" style={{ margin: "0 auto 20px" }}>
+            {t.browse.label}
+          </div>
+          <h2 className="sec-title">{t.browse.title}</h2>
+          <p className="sec-sub" style={{ margin: "0 auto" }}>{t.browse.sub}</p>
+        </motion.div>
+
+        <div className="browse-grid">
+          {CATEGORIES.map((cat, i) => (
+            <motion.div
+              key={cat.label}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07, duration: 0.5 }}
+            >
+              <Link
+  to="/login-renter"
+  style={{
+    textDecoration: "none",
+  }}
+>
+                <motion.div
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                  style={{
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    boxShadow: "var(--shadow-md)",
+                    cursor: "pointer",
+                    position: "relative",
+                    aspectRatio: "3/4",
+                  }}
+                >
+                  <img
+                    src={cat.image}
+                    alt={cat.label}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      transition: "transform 0.5s ease",
+                      display: "block",
+                    }}
+                  />
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to top, rgba(18,53,36,0.85) 0%, rgba(18,53,36,0.1) 55%, transparent 100%)",
+                  }} />
+                  <div style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    padding: "16px 16px",
+                  }}>
+                    <div style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "white",
+                      letterSpacing: "-0.01em",
+                    }}>
+                      {cat.label}
+                    </div>
+                    <div style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 11,
+                      color: "var(--green-300)",
+                      fontWeight: 600,
+                      marginTop: 4,
+                    }}>
+                      Browse <ArrowRight size={10} />
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── FOR OWNERS ─── */
+function ForOwners({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  const [activeTab, setActiveTab] = useState(0);
+  const tabs = ["Listings", "Requests", "Calendar"];
+
+  const mockListings = [
+    { name: "Mahindra 575 DI", type: "Tractor", status: "Active", requests: 3 },
+    { name: "Fieldking Rotavator", type: "Rotavator", status: "Active", requests: 1 },
+    { name: "Precision Seeder", type: "Seeder", status: "Inactive", requests: 0 },
+  ];
+
+  return (
+    <section id="for-owners" style={{ background: "var(--off-white)" }}>
+      <div className="sec-inner">
+        <div className="for-owners-grid">
+
+          {/* LEFT — Dashboard mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div style={{
+              background: "white",
+              borderRadius: 24,
+              border: "1px solid var(--ink-100)",
+              boxShadow: "var(--shadow-xl)",
+              overflow: "hidden",
+            }}>
+              {/* Title bar */}
+              <div style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--ink-100)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["#FF5F57", "#FEBC2E", "#28C840"].map((c) => (
+                    <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+                  ))}
+                </div>
+                <div style={{
+                  flex: 1,
+                  background: "var(--off-white)",
+                  borderRadius: 6,
+                  height: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  color: "var(--ink-300)",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                }}>
+                  farmfleet.in/owner/dashboard
+                </div>
+              </div>
+
+              {/* Dashboard content */}
+              <div style={{ padding: 20 }}>
+                {/* Tab bar */}
+                <div style={{
+                  display: "flex",
+                  gap: 4,
+                  marginBottom: 20,
+                  background: "var(--off-white)",
+                  borderRadius: 10,
+                  padding: 4,
+                }}>
+                  {tabs.map((tab, i) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(i)}
+                      style={{
+                        flex: 1,
+                        padding: "7px 12px",
+                        borderRadius: 7,
+                        border: "none",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        background: activeTab === i ? "white" : "transparent",
+                        color: activeTab === i ? "var(--ink)" : "var(--ink-300)",
+                        boxShadow: activeTab === i ? "var(--shadow-sm)" : "none",
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Listings */}
+                {activeTab === 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {mockListings.map((item, i) => (
+                      <motion.div
+                        key={item.name}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          border: "1px solid var(--ink-100)",
+                          background: "var(--off-white)",
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
+                          <div style={{ fontSize: 11, color: "var(--ink-300)" }}>{item.type}</div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          {item.requests > 0 && (
+                            <div style={{
+                              padding: "3px 8px",
+                              borderRadius: 100,
+                              background: "var(--accent-light)",
+                              color: "#92400e",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                            }}>
+                              {item.requests} req
+                            </div>
+                          )}
+                          <div style={{
+                            padding: "3px 9px",
+                            borderRadius: 100,
+                            background: item.status === "Active" ? "var(--green-50)" : "var(--off-white)",
+                            color: item.status === "Active" ? "var(--green-700)" : "var(--ink-300)",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            border: `1px solid ${item.status === "Active" ? "var(--green-200)" : "var(--ink-100)"}`,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {item.status}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                    <div style={{
+                      padding: "11px 14px",
+                      borderRadius: 12,
+                      border: "1.5px dashed var(--green-200)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--green-600)",
+                      cursor: "pointer",
+                    }}>
+                      + Add new equipment
+                    </div>
+                  </div>
+                )}
+                {activeTab === 1 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {[
+                      { farmer: "Rajesh P.", equip: "Mahindra 575", dates: "Dec 12–14", status: "Pending" },
+                      { farmer: "Sunita D.", equip: "Rotavator", dates: "Dec 18–20", status: "Confirmed" },
+                    ].map((req, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        style={{
+                          padding: "14px 16px",
+                          borderRadius: 12,
+                          border: "1px solid var(--ink-100)",
+                          background: "var(--off-white)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, gap: 8 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{req.farmer}</div>
+                          <div style={{
+                            padding: "2px 8px",
+                            borderRadius: 100,
+                            background: req.status === "Confirmed" ? "var(--green-50)" : "var(--accent-light)",
+                            color: req.status === "Confirmed" ? "var(--green-700)" : "#92400e",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}>
+                            {req.status}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--ink-500)" }}>{req.equip} · {req.dates}</div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+                {activeTab === 2 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                    {["M","T","W","T","F","S","S"].map((d, idx) => (
+                      <div key={idx} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--ink-300)", paddingBottom: 4 }}>{d}</div>
+                    ))}
+                    {Array.from({ length: 28 }, (_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          aspectRatio: "1",
+                          borderRadius: 6,
+                          background: [3,4,10,11,17].includes(i) ? "var(--green-600)" : [6,7,13,14,20,21,27].includes(i) ? "var(--off-white)" : "var(--green-50)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: [3,4,10,11,17].includes(i) ? "white" : "var(--ink-500)",
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* RIGHT */}
+          <motion.div
+            initial={{ opacity: 0, x: 32 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="sec-label">{t.forOwners.label}</div>
+            <h2 className="sec-title">{t.forOwners.title}</h2>
+            <p className="sec-sub" style={{ marginBottom: 36 }}>{t.forOwners.sub}</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 40 }}>
+              {t.forOwners.features.map((feat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + i * 0.07 }}
+                  style={{ display: "flex", alignItems: "center", gap: 12 }}
+                >
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "var(--green-50)",
+                    border: "1.5px solid var(--green-300)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <CheckCircle2 size={12} color="var(--green-600)" />
+                  </div>
+                  <span style={{ fontSize: 15, color: "var(--ink-700)", fontWeight: 500 }}>{feat}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            <Link to="/login-owner" className="btn-primary" style={{ gap: 10 }}>
+              {t.forOwners.cta} <ArrowRight size={15} />
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── REVIEWS ─── */
+interface Review {
+  id: string;
+  name: string;
+  avatar?: string;
+  equipment: string;
+  rating: number;
+  text: string;
+  date: string;
+}
+
+function AvatarFallback({ name }: { name: string }) {
+  const initial = name?.trim()?.[0]?.toUpperCase() ?? "?";
+  return (
+    <div
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: "50%",
+        background: "var(--green-600)",
+        color: "white",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 14,
+        fontWeight: 700,
+        flexShrink: 0,
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
+
+function Reviews({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/reviews/public")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        const list: Review[] = Array.isArray(data) ? data : (data?.reviews ?? []);
+        setReviews(list);
+      })
+      .catch(() => setReviews([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const half = Math.ceil(reviews.length / 2);
+  const row1 = reviews.slice(0, half);
+  const row2 = reviews.slice(half);
+  const rows = [
+    [...row1, ...row1],
+    [...row2, ...row2],
+  ];
+
+  return (
+    <section
+      id="reviews"
+      style={{ background: "white", overflow: "hidden", paddingLeft: 0, paddingRight: 0 }}
+    >
+      <div style={{ textAlign: "center", marginBottom: 56, padding: "0 24px" }}>
+        <div className="sec-label" style={{ margin: "0 auto 20px" }}>
+          {t.reviews.label}
+        </div>
+        <h2 className="sec-title">{t.reviews.title}</h2>
+      </div>
+
+      {loading && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 10,
+            padding: "48px 24px",
+            color: "var(--ink-300)",
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{ animation: "spin 0.9s linear infinite" }}
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          <span style={{ fontSize: 14 }}>Loading reviews…</span>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
+      {!loading && reviews.length === 0 && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "56px 24px",
+            color: "var(--ink-300)",
+            fontSize: 15,
+          }}
+        >
+          No reviews available yet.
+        </div>
+      )}
+
+      {!loading && reviews.length > 0 && (
+        <div
+          className="marquee-wrap"
+          style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
+          {rows.map((row, ri) =>
+            row.length === 0 ? null : (
+              <div key={ri} style={{ overflow: "hidden" }}>
+                <div className={ri === 0 ? "marquee-track" : "marquee-track-rev"}>
+                  {row.map((review, i) => (
+                    <div
+                      key={`${review.id}-${i}`}
+                      style={{
+                        flexShrink: 0,
+                        width: 300,
+                        background: ri === 0 ? "var(--off-white)" : "white",
+                        borderRadius: 20,
+                        padding: "24px 24px",
+                        border: "1px solid var(--ink-100)",
+                        boxShadow: "var(--shadow-sm)",
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 3, marginBottom: 12 }}>
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            size={13}
+                            style={{
+                              fill: s <= review.rating ? "var(--accent)" : "var(--ink-200)",
+                              color: s <= review.rating ? "var(--accent)" : "var(--ink-200)",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      <p
+                        style={{
+                          fontSize: 14,
+                          color: "var(--ink-700)",
+                          lineHeight: 1.65,
+                          margin: "0 0 16px",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        "{review.text}"
+                      </p>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {review.avatar ? (
+                          <img
+                            src={review.avatar}
+                            alt={review.name}
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: "50%",
+                              background: "var(--green-600)",
+                              color: "white",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 14,
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {review.name?.trim()?.[0]?.toUpperCase() ?? "?"}
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
+                            {review.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: "var(--ink-300)" }}>
+                            {review.equipment}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ─── FAQ ─── */
+function FAQ({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section id="faq" style={{ background: "var(--off-white)" }}>
+      <div className="sec-inner" style={{ maxWidth: 780 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{ textAlign: "center", marginBottom: 56 }}
+        >
+          <div className="sec-label" style={{ margin: "0 auto 20px" }}>{t.faq.label}</div>
+          <h2 className="sec-title">{t.faq.title}</h2>
+        </motion.div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {FAQS.map((faq, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07 }}
+              style={{
+                borderRadius: 16,
+                border: `1px solid ${open === i ? "var(--green-300)" : "var(--ink-100)"}`,
+                background: "white",
+                boxShadow: open === i ? "var(--shadow-md)" : "var(--shadow-sm)",
+                overflow: "hidden",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+              }}
+            >
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "20px 24px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  gap: 16,
+                  lineHeight: 1.4,
+                }}
+              >
+                {faq.q}
+                <motion.div
+                  animate={{ rotate: open === i ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ flexShrink: 0, color: "var(--green-600)" }}
+                >
+                  <ChevronDown size={18} />
+                </motion.div>
+              </button>
+
+              <AnimatePresence>
+                {open === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <p style={{
+                      padding: "16px 24px 22px",
+                      fontSize: 14,
+                      color: "var(--ink-500)",
+                      lineHeight: 1.7,
+                      margin: 0,
+                      borderTop: "1px solid var(--green-100)",
+                    }}>
+                      {faq.a}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── FOOTER ─── */
+function Footer({ t }: { t: typeof TRANSLATIONS["en"] }) {
+  const cols = [
+    {
+      title: t.footer.platform,
+      links: ["Search Equipment", "How It Works", "List Equipment", "Pricing"],
+    },
+    {
+      title: t.footer.resources,
+      links: ["Help Center", "Farmer Guide", "Owner Guide", "Blog"],
+    },
+    {
+      title: t.footer.company,
+      links: ["About", "Careers", "Press", "Contact"],
+    },
+    {
+      title: t.footer.legal,
+      links: ["Privacy Policy", "Terms of Service", "Cookie Policy", "Refund Policy"],
+    },
+  ];
+
+  return (
+    <footer style={{
+      background: "var(--green-900)",
+      color: "rgba(255,255,255,0.55)",
+      padding: "72px 24px 36px",
+      borderTop: "1px solid rgba(255,255,255,0.06)",
+    }}>
+      <div className="sec-inner" style={{ padding: 0 }}>
+        <div className="footer-grid">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="9" fill="rgba(255,255,255,0.1)"/>
+                <path d="M7 20C7 20 9.5 14 16 14C22.5 14 25 20 25 20" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M12 20C12 17 14 14 16 14C18 14 20 17 20 20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16 14V10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="16" cy="9" r="1.5" fill="#F4B400"/>
+              </svg>
+              <span style={{ fontWeight: 700, fontSize: 18, color: "white", letterSpacing: "-0.02em" }}>FarmFleet</span>
+            </div>
+            <p style={{ fontSize: 14, lineHeight: 1.7, maxWidth: 260, marginBottom: 24 }}>
+              {t.footer.tagline}
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              {["X", "in", "fb"].map((s) => (
+                <div key={s} style={{
+                  width: 34, height: 34,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 700,
+                  color: "rgba(255,255,255,0.4)",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}>
+                  {s}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {cols.map((col) => (
+            <div key={col.title}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)",
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18,
+              }}>
+                {col.title}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {col.links.map((l) => (
+                  <a
+                    key={l}
+                    href="#"
+                    style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textDecoration: "none", transition: "color 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+                  >
+                    {l}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          paddingTop: 24,
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          fontSize: 12,
+          color: "rgba(255,255,255,0.3)",
+        }}>
+          <div>{t.footer.copyright} All rights reserved.</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green-400)" }} />
+            All systems operational
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ─── ROOT ─── */
+function Landing() {
+  const [lang, setLang] = useState<Lang>("en");
+  const t = TRANSLATIONS[lang];
+
+  return (
+    <>
+      <StyleLoader />
+      <div style={{ minHeight: "100vh", background: "var(--off-white)", overflowX: "hidden" }}>
+        <Navbar lang={lang} setLang={setLang} t={t} />
+        <Hero t={t} />
+        <HowItWorks t={t} />
+        <Browse t={t} />
+        <ForOwners t={t} />
+        <Reviews t={t} />
+        <FAQ t={t} />
+        <Footer t={t} />
+      </div>
+    </>
+  );
+}
