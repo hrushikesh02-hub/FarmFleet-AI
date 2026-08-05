@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 const otpGenerator = require("otp-generator");
 
-const sendEmail = require("../config/mail");
+const { sendEmail } = require("../config/mail");
 
 /* ==========================
    SEND OTP

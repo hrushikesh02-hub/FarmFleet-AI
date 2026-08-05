@@ -14,19 +14,34 @@ import { Route as OwnerSetupRouteImport } from './routes/owner-setup'
 import { Route as NotFoundRouteImport } from './routes/not-found'
 import { Route as LoginRenterRouteImport } from './routes/login-renter'
 import { Route as LoginOwnerRouteImport } from './routes/login-owner'
+import { Route as LoginLabourRouteImport } from './routes/login-labour'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RenterSearchRouteImport } from './routes/renter.search'
 import { Route as RenterProfileRouteImport } from './routes/renter.profile'
+import { Route as RenterLaboursRouteImport } from './routes/renter.labours'
 import { Route as RenterDashboardRouteImport } from './routes/renter.dashboard'
 import { Route as RenterBookingsRouteImport } from './routes/renter.bookings'
+import { Route as RenterAiRouteImport } from './routes/renter.ai'
 import { Route as OwnerReviewRouteImport } from './routes/owner.review'
 import { Route as OwnerProfileRouteImport } from './routes/owner.profile'
 import { Route as OwnerEquipmentRouteImport } from './routes/owner.equipment'
 import { Route as OwnerEarningsRouteImport } from './routes/owner.earnings'
 import { Route as OwnerDashboardRouteImport } from './routes/owner.dashboard'
 import { Route as OwnerBookingsRouteImport } from './routes/owner.bookings'
+import { Route as LabourReviewsRouteImport } from './routes/labour.reviews'
+import { Route as LabourRequestsRouteImport } from './routes/labour.requests'
+import { Route as LabourProfileRouteImport } from './routes/labour.profile'
+import { Route as LabourEarningsRouteImport } from './routes/labour.earnings'
+import { Route as LabourDashboardRouteImport } from './routes/labour.dashboard'
+import { Route as RenterLaboursIndexRouteImport } from './routes/renter.labours.index'
+import { Route as RenterAiIndexRouteImport } from './routes/renter.ai.index'
+import { Route as RenterLaboursIdRouteImport } from './routes/renter.labours.$id'
 import { Route as RenterEquipmentIdRouteImport } from './routes/renter.equipment.$id'
 import { Route as RenterBookingIdRouteImport } from './routes/renter.booking.$id'
+import { Route as RenterAiProcessingRouteImport } from './routes/renter.ai.processing'
+import { Route as RenterAiGenerateRouteImport } from './routes/renter.ai.generate'
+import { Route as RenterLaboursIdHireRouteImport } from './routes/renter.labours.$id.hire'
+import { Route as RenterAiReportIdRouteImport } from './routes/renter.ai.report.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -53,6 +68,11 @@ const LoginOwnerRoute = LoginOwnerRouteImport.update({
   path: '/login-owner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginLabourRoute = LoginLabourRouteImport.update({
+  id: '/login-labour',
+  path: '/login-labour',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -68,6 +88,11 @@ const RenterProfileRoute = RenterProfileRouteImport.update({
   path: '/renter/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RenterLaboursRoute = RenterLaboursRouteImport.update({
+  id: '/renter/labours',
+  path: '/renter/labours',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RenterDashboardRoute = RenterDashboardRouteImport.update({
   id: '/renter/dashboard',
   path: '/renter/dashboard',
@@ -76,6 +101,11 @@ const RenterDashboardRoute = RenterDashboardRouteImport.update({
 const RenterBookingsRoute = RenterBookingsRouteImport.update({
   id: '/renter/bookings',
   path: '/renter/bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RenterAiRoute = RenterAiRouteImport.update({
+  id: '/renter/ai',
+  path: '/renter/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerReviewRoute = OwnerReviewRouteImport.update({
@@ -108,6 +138,46 @@ const OwnerBookingsRoute = OwnerBookingsRouteImport.update({
   path: '/owner/bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabourReviewsRoute = LabourReviewsRouteImport.update({
+  id: '/labour/reviews',
+  path: '/labour/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabourRequestsRoute = LabourRequestsRouteImport.update({
+  id: '/labour/requests',
+  path: '/labour/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabourProfileRoute = LabourProfileRouteImport.update({
+  id: '/labour/profile',
+  path: '/labour/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabourEarningsRoute = LabourEarningsRouteImport.update({
+  id: '/labour/earnings',
+  path: '/labour/earnings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabourDashboardRoute = LabourDashboardRouteImport.update({
+  id: '/labour/dashboard',
+  path: '/labour/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RenterLaboursIndexRoute = RenterLaboursIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RenterLaboursRoute,
+} as any)
+const RenterAiIndexRoute = RenterAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RenterAiRoute,
+} as any)
+const RenterLaboursIdRoute = RenterLaboursIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => RenterLaboursRoute,
+} as any)
 const RenterEquipmentIdRoute = RenterEquipmentIdRouteImport.update({
   id: '/renter/equipment/$id',
   path: '/renter/equipment/$id',
@@ -118,34 +188,75 @@ const RenterBookingIdRoute = RenterBookingIdRouteImport.update({
   path: '/renter/booking/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RenterAiProcessingRoute = RenterAiProcessingRouteImport.update({
+  id: '/processing',
+  path: '/processing',
+  getParentRoute: () => RenterAiRoute,
+} as any)
+const RenterAiGenerateRoute = RenterAiGenerateRouteImport.update({
+  id: '/generate',
+  path: '/generate',
+  getParentRoute: () => RenterAiRoute,
+} as any)
+const RenterLaboursIdHireRoute = RenterLaboursIdHireRouteImport.update({
+  id: '/hire',
+  path: '/hire',
+  getParentRoute: () => RenterLaboursIdRoute,
+} as any)
+const RenterAiReportIdRoute = RenterAiReportIdRouteImport.update({
+  id: '/report/$id',
+  path: '/report/$id',
+  getParentRoute: () => RenterAiRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
   '/owner-setup': typeof OwnerSetupRoute
   '/register': typeof RegisterRoute
+  '/labour/dashboard': typeof LabourDashboardRoute
+  '/labour/earnings': typeof LabourEarningsRoute
+  '/labour/profile': typeof LabourProfileRoute
+  '/labour/requests': typeof LabourRequestsRoute
+  '/labour/reviews': typeof LabourReviewsRoute
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/dashboard': typeof OwnerDashboardRoute
   '/owner/earnings': typeof OwnerEarningsRoute
   '/owner/equipment': typeof OwnerEquipmentRoute
   '/owner/profile': typeof OwnerProfileRoute
   '/owner/review': typeof OwnerReviewRoute
+  '/renter/ai': typeof RenterAiRouteWithChildren
   '/renter/bookings': typeof RenterBookingsRoute
   '/renter/dashboard': typeof RenterDashboardRoute
+  '/renter/labours': typeof RenterLaboursRouteWithChildren
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/generate': typeof RenterAiGenerateRoute
+  '/renter/ai/processing': typeof RenterAiProcessingRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
+  '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
+  '/renter/ai/': typeof RenterAiIndexRoute
+  '/renter/labours/': typeof RenterLaboursIndexRoute
+  '/renter/ai/report/$id': typeof RenterAiReportIdRoute
+  '/renter/labours/$id/hire': typeof RenterLaboursIdHireRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
   '/owner-setup': typeof OwnerSetupRoute
   '/register': typeof RegisterRoute
+  '/labour/dashboard': typeof LabourDashboardRoute
+  '/labour/earnings': typeof LabourEarningsRoute
+  '/labour/profile': typeof LabourProfileRoute
+  '/labour/requests': typeof LabourRequestsRoute
+  '/labour/reviews': typeof LabourReviewsRoute
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/dashboard': typeof OwnerDashboardRoute
   '/owner/earnings': typeof OwnerEarningsRoute
@@ -156,59 +267,102 @@ export interface FileRoutesByTo {
   '/renter/dashboard': typeof RenterDashboardRoute
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/generate': typeof RenterAiGenerateRoute
+  '/renter/ai/processing': typeof RenterAiProcessingRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
+  '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
+  '/renter/ai': typeof RenterAiIndexRoute
+  '/renter/labours': typeof RenterLaboursIndexRoute
+  '/renter/ai/report/$id': typeof RenterAiReportIdRoute
+  '/renter/labours/$id/hire': typeof RenterLaboursIdHireRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
   '/owner-setup': typeof OwnerSetupRoute
   '/register': typeof RegisterRoute
+  '/labour/dashboard': typeof LabourDashboardRoute
+  '/labour/earnings': typeof LabourEarningsRoute
+  '/labour/profile': typeof LabourProfileRoute
+  '/labour/requests': typeof LabourRequestsRoute
+  '/labour/reviews': typeof LabourReviewsRoute
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/dashboard': typeof OwnerDashboardRoute
   '/owner/earnings': typeof OwnerEarningsRoute
   '/owner/equipment': typeof OwnerEquipmentRoute
   '/owner/profile': typeof OwnerProfileRoute
   '/owner/review': typeof OwnerReviewRoute
+  '/renter/ai': typeof RenterAiRouteWithChildren
   '/renter/bookings': typeof RenterBookingsRoute
   '/renter/dashboard': typeof RenterDashboardRoute
+  '/renter/labours': typeof RenterLaboursRouteWithChildren
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/generate': typeof RenterAiGenerateRoute
+  '/renter/ai/processing': typeof RenterAiProcessingRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
+  '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
+  '/renter/ai/': typeof RenterAiIndexRoute
+  '/renter/labours/': typeof RenterLaboursIndexRoute
+  '/renter/ai/report/$id': typeof RenterAiReportIdRoute
+  '/renter/labours/$id/hire': typeof RenterLaboursIdHireRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
     | '/owner-setup'
     | '/register'
+    | '/labour/dashboard'
+    | '/labour/earnings'
+    | '/labour/profile'
+    | '/labour/requests'
+    | '/labour/reviews'
     | '/owner/bookings'
     | '/owner/dashboard'
     | '/owner/earnings'
     | '/owner/equipment'
     | '/owner/profile'
     | '/owner/review'
+    | '/renter/ai'
     | '/renter/bookings'
     | '/renter/dashboard'
+    | '/renter/labours'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/generate'
+    | '/renter/ai/processing'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
+    | '/renter/labours/$id'
+    | '/renter/ai/'
+    | '/renter/labours/'
+    | '/renter/ai/report/$id'
+    | '/renter/labours/$id/hire'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
     | '/owner-setup'
     | '/register'
+    | '/labour/dashboard'
+    | '/labour/earnings'
+    | '/labour/profile'
+    | '/labour/requests'
+    | '/labour/reviews'
     | '/owner/bookings'
     | '/owner/dashboard'
     | '/owner/earnings'
@@ -219,45 +373,75 @@ export interface FileRouteTypes {
     | '/renter/dashboard'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/generate'
+    | '/renter/ai/processing'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
+    | '/renter/labours/$id'
+    | '/renter/ai'
+    | '/renter/labours'
+    | '/renter/ai/report/$id'
+    | '/renter/labours/$id/hire'
   id:
     | '__root__'
     | '/'
+    | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
     | '/owner-setup'
     | '/register'
+    | '/labour/dashboard'
+    | '/labour/earnings'
+    | '/labour/profile'
+    | '/labour/requests'
+    | '/labour/reviews'
     | '/owner/bookings'
     | '/owner/dashboard'
     | '/owner/earnings'
     | '/owner/equipment'
     | '/owner/profile'
     | '/owner/review'
+    | '/renter/ai'
     | '/renter/bookings'
     | '/renter/dashboard'
+    | '/renter/labours'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/generate'
+    | '/renter/ai/processing'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
+    | '/renter/labours/$id'
+    | '/renter/ai/'
+    | '/renter/labours/'
+    | '/renter/ai/report/$id'
+    | '/renter/labours/$id/hire'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginLabourRoute: typeof LoginLabourRoute
   LoginOwnerRoute: typeof LoginOwnerRoute
   LoginRenterRoute: typeof LoginRenterRoute
   NotFoundRoute: typeof NotFoundRoute
   OwnerSetupRoute: typeof OwnerSetupRoute
   RegisterRoute: typeof RegisterRoute
+  LabourDashboardRoute: typeof LabourDashboardRoute
+  LabourEarningsRoute: typeof LabourEarningsRoute
+  LabourProfileRoute: typeof LabourProfileRoute
+  LabourRequestsRoute: typeof LabourRequestsRoute
+  LabourReviewsRoute: typeof LabourReviewsRoute
   OwnerBookingsRoute: typeof OwnerBookingsRoute
   OwnerDashboardRoute: typeof OwnerDashboardRoute
   OwnerEarningsRoute: typeof OwnerEarningsRoute
   OwnerEquipmentRoute: typeof OwnerEquipmentRoute
   OwnerProfileRoute: typeof OwnerProfileRoute
   OwnerReviewRoute: typeof OwnerReviewRoute
+  RenterAiRoute: typeof RenterAiRouteWithChildren
   RenterBookingsRoute: typeof RenterBookingsRoute
   RenterDashboardRoute: typeof RenterDashboardRoute
+  RenterLaboursRoute: typeof RenterLaboursRouteWithChildren
   RenterProfileRoute: typeof RenterProfileRoute
   RenterSearchRoute: typeof RenterSearchRoute
   RenterBookingIdRoute: typeof RenterBookingIdRoute
@@ -301,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginOwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login-labour': {
+      id: '/login-labour'
+      path: '/login-labour'
+      fullPath: '/login-labour'
+      preLoaderRoute: typeof LoginLabourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -322,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RenterProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/renter/labours': {
+      id: '/renter/labours'
+      path: '/renter/labours'
+      fullPath: '/renter/labours'
+      preLoaderRoute: typeof RenterLaboursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/renter/dashboard': {
       id: '/renter/dashboard'
       path: '/renter/dashboard'
@@ -334,6 +532,13 @@ declare module '@tanstack/react-router' {
       path: '/renter/bookings'
       fullPath: '/renter/bookings'
       preLoaderRoute: typeof RenterBookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/renter/ai': {
+      id: '/renter/ai'
+      path: '/renter/ai'
+      fullPath: '/renter/ai'
+      preLoaderRoute: typeof RenterAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner/review': {
@@ -378,6 +583,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerBookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/labour/reviews': {
+      id: '/labour/reviews'
+      path: '/labour/reviews'
+      fullPath: '/labour/reviews'
+      preLoaderRoute: typeof LabourReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/labour/requests': {
+      id: '/labour/requests'
+      path: '/labour/requests'
+      fullPath: '/labour/requests'
+      preLoaderRoute: typeof LabourRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/labour/profile': {
+      id: '/labour/profile'
+      path: '/labour/profile'
+      fullPath: '/labour/profile'
+      preLoaderRoute: typeof LabourProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/labour/earnings': {
+      id: '/labour/earnings'
+      path: '/labour/earnings'
+      fullPath: '/labour/earnings'
+      preLoaderRoute: typeof LabourEarningsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/labour/dashboard': {
+      id: '/labour/dashboard'
+      path: '/labour/dashboard'
+      fullPath: '/labour/dashboard'
+      preLoaderRoute: typeof LabourDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/renter/labours/': {
+      id: '/renter/labours/'
+      path: '/'
+      fullPath: '/renter/labours/'
+      preLoaderRoute: typeof RenterLaboursIndexRouteImport
+      parentRoute: typeof RenterLaboursRoute
+    }
+    '/renter/ai/': {
+      id: '/renter/ai/'
+      path: '/'
+      fullPath: '/renter/ai/'
+      preLoaderRoute: typeof RenterAiIndexRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
+    '/renter/labours/$id': {
+      id: '/renter/labours/$id'
+      path: '/$id'
+      fullPath: '/renter/labours/$id'
+      preLoaderRoute: typeof RenterLaboursIdRouteImport
+      parentRoute: typeof RenterLaboursRoute
+    }
     '/renter/equipment/$id': {
       id: '/renter/equipment/$id'
       path: '/renter/equipment/$id'
@@ -392,24 +653,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RenterBookingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/renter/ai/processing': {
+      id: '/renter/ai/processing'
+      path: '/processing'
+      fullPath: '/renter/ai/processing'
+      preLoaderRoute: typeof RenterAiProcessingRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
+    '/renter/ai/generate': {
+      id: '/renter/ai/generate'
+      path: '/generate'
+      fullPath: '/renter/ai/generate'
+      preLoaderRoute: typeof RenterAiGenerateRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
+    '/renter/labours/$id/hire': {
+      id: '/renter/labours/$id/hire'
+      path: '/hire'
+      fullPath: '/renter/labours/$id/hire'
+      preLoaderRoute: typeof RenterLaboursIdHireRouteImport
+      parentRoute: typeof RenterLaboursIdRoute
+    }
+    '/renter/ai/report/$id': {
+      id: '/renter/ai/report/$id'
+      path: '/report/$id'
+      fullPath: '/renter/ai/report/$id'
+      preLoaderRoute: typeof RenterAiReportIdRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
   }
 }
 
+interface RenterAiRouteChildren {
+  RenterAiGenerateRoute: typeof RenterAiGenerateRoute
+  RenterAiProcessingRoute: typeof RenterAiProcessingRoute
+  RenterAiIndexRoute: typeof RenterAiIndexRoute
+  RenterAiReportIdRoute: typeof RenterAiReportIdRoute
+}
+
+const RenterAiRouteChildren: RenterAiRouteChildren = {
+  RenterAiGenerateRoute: RenterAiGenerateRoute,
+  RenterAiProcessingRoute: RenterAiProcessingRoute,
+  RenterAiIndexRoute: RenterAiIndexRoute,
+  RenterAiReportIdRoute: RenterAiReportIdRoute,
+}
+
+const RenterAiRouteWithChildren = RenterAiRoute._addFileChildren(
+  RenterAiRouteChildren,
+)
+
+interface RenterLaboursIdRouteChildren {
+  RenterLaboursIdHireRoute: typeof RenterLaboursIdHireRoute
+}
+
+const RenterLaboursIdRouteChildren: RenterLaboursIdRouteChildren = {
+  RenterLaboursIdHireRoute: RenterLaboursIdHireRoute,
+}
+
+const RenterLaboursIdRouteWithChildren = RenterLaboursIdRoute._addFileChildren(
+  RenterLaboursIdRouteChildren,
+)
+
+interface RenterLaboursRouteChildren {
+  RenterLaboursIdRoute: typeof RenterLaboursIdRouteWithChildren
+  RenterLaboursIndexRoute: typeof RenterLaboursIndexRoute
+}
+
+const RenterLaboursRouteChildren: RenterLaboursRouteChildren = {
+  RenterLaboursIdRoute: RenterLaboursIdRouteWithChildren,
+  RenterLaboursIndexRoute: RenterLaboursIndexRoute,
+}
+
+const RenterLaboursRouteWithChildren = RenterLaboursRoute._addFileChildren(
+  RenterLaboursRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginLabourRoute: LoginLabourRoute,
   LoginOwnerRoute: LoginOwnerRoute,
   LoginRenterRoute: LoginRenterRoute,
   NotFoundRoute: NotFoundRoute,
   OwnerSetupRoute: OwnerSetupRoute,
   RegisterRoute: RegisterRoute,
+  LabourDashboardRoute: LabourDashboardRoute,
+  LabourEarningsRoute: LabourEarningsRoute,
+  LabourProfileRoute: LabourProfileRoute,
+  LabourRequestsRoute: LabourRequestsRoute,
+  LabourReviewsRoute: LabourReviewsRoute,
   OwnerBookingsRoute: OwnerBookingsRoute,
   OwnerDashboardRoute: OwnerDashboardRoute,
   OwnerEarningsRoute: OwnerEarningsRoute,
   OwnerEquipmentRoute: OwnerEquipmentRoute,
   OwnerProfileRoute: OwnerProfileRoute,
   OwnerReviewRoute: OwnerReviewRoute,
+  RenterAiRoute: RenterAiRouteWithChildren,
   RenterBookingsRoute: RenterBookingsRoute,
   RenterDashboardRoute: RenterDashboardRoute,
+  RenterLaboursRoute: RenterLaboursRouteWithChildren,
   RenterProfileRoute: RenterProfileRoute,
   RenterSearchRoute: RenterSearchRoute,
   RenterBookingIdRoute: RenterBookingIdRoute,

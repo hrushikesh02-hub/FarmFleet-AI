@@ -1,5 +1,5 @@
-const Owner = require("../models/Owner");
-const OwnerOTP = require("../models/OwnerOTP");
+const Labour = require("../models/Labour");
+const LabourOTP = require("../models/LabourOTP");
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -23,33 +23,26 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
-    const existingOwner =
-      await Owner.findOne({
-        email,
-      });
-
-    if (existingOwner) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Email already registered",
-      });
-    }
-
-    const otp = otpGenerator.generate(
-      6,
-      {
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
-      }
-    );
-
-    await OwnerOTP.deleteMany({
+    const existingLabour = await Labour.findOne({
       email,
     });
 
-    await OwnerOTP.create({
+    if (existingLabour) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    const otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+
+    await LabourOTP.deleteMany({ email });
+
+    await LabourOTP.create({
       email,
       otp,
       expiresAt: new Date(
@@ -62,42 +55,38 @@ exports.sendOTP = async (req, res) => {
 
       to: email,
 
-      subject:
-        "FarmFleet Email Verification",
+      subject: "FarmFleet Labour Email Verification",
 
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>🚜 FarmFleet Email Verification</h2>
+      <div style="font-family: Arial, sans-serif; padding:20px;">
+        <h2>👷 FarmFleet Labour Verification</h2>
 
-          <p>
-            Your verification code is:
-          </p>
+        <p>Your verification code is:</p>
 
-          <h1 style="color: #16a34a;">
-            ${otp}
-          </h1>
+        <h1 style="color:#16a34a;">
+          ${otp}
+        </h1>
 
-          <p>
-            This OTP is valid for
-            <strong>5 minutes</strong>.
-          </p>
+        <p>
+          This OTP is valid for
+          <strong>5 minutes</strong>.
+        </p>
 
-          <p>
-            If you did not request this,
-            please ignore this email.
-          </p>
-        </div>
+        <p>
+          If you didn't request this,
+          please ignore this email.
+        </p>
+      </div>
       `,
     });
 
     return res.status(200).json({
       success: true,
-      message:
-        "OTP sent successfully",
+      message: "OTP sent successfully",
     });
   } catch (error) {
     console.error(
-      "Send OTP Error:",
+      "Labour Send OTP Error:",
       error
     );
 
@@ -109,13 +98,10 @@ exports.sendOTP = async (req, res) => {
 };
 
 /* ==========================
-   VERIFY OTP + REGISTER OWNER
+   VERIFY OTP + REGISTER LABOUR
 ========================== */
 
-exports.verifyOTP = async (
-  req,
-  res
-) => {
+exports.verifyOTP = async (req, res) => {
   try {
     const {
       fullName,
@@ -124,6 +110,9 @@ exports.verifyOTP = async (
       village,
       district,
       state,
+      primarySkill,
+      experience,
+      dailyCharges,
       password,
       otp,
     } = req.body;
@@ -135,89 +124,86 @@ exports.verifyOTP = async (
       !village ||
       !district ||
       !state ||
+      !primarySkill ||
+      !experience ||
+      dailyCharges === undefined ||
       !password ||
       !otp
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "All fields are required",
+        message: "All fields are required",
       });
     }
 
     const otpRecord =
-      await OwnerOTP.findOne({
+      await LabourOTP.findOne({
         email,
       });
 
     if (!otpRecord) {
       return res.status(400).json({
         success: false,
-        message:
-          "OTP not found",
+        message: "OTP not found",
       });
     }
 
     if (
-      otpRecord.expiresAt <
-      new Date()
+      otpRecord.expiresAt < new Date()
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "OTP has expired",
+        message: "OTP has expired",
       });
     }
 
     if (otpRecord.otp !== otp) {
       return res.status(400).json({
         success: false,
-        message:
-          "Invalid OTP",
+        message: "Invalid OTP",
       });
     }
 
-    const existingOwner =
-      await Owner.findOne({
+    const existingLabour =
+      await Labour.findOne({
         $or: [
           { email },
           { mobile },
         ],
       });
 
-    if (existingOwner) {
+    if (existingLabour) {
       return res.status(400).json({
         success: false,
         message:
-          "Owner already exists",
+          "Labour already exists",
       });
     }
 
     const hashedPassword =
-      await bcrypt.hash(
-        password,
-        10
-      );
+      await bcrypt.hash(password, 10);
 
-    const owner =
-      await Owner.create({
+    const labour =
+      await Labour.create({
         fullName,
         mobile,
         email,
         village,
         district,
         state,
-        password:
-          hashedPassword,
+        primarySkill,
+        experience,
+        dailyCharges,
+        password: hashedPassword,
       });
 
-    await OwnerOTP.deleteMany({
+    await LabourOTP.deleteMany({
       email,
     });
 
     const token = jwt.sign(
       {
-        ownerId: owner._id,
+        labourId: labour._id,
       },
       process.env.JWT_SECRET,
       {
@@ -229,29 +215,38 @@ exports.verifyOTP = async (
       success: true,
 
       message:
-        "Owner registered successfully",
+        "Labour registered successfully",
 
       token,
 
-      owner: {
-        id: owner._id,
+      labour: {
+        id: labour._id,
         fullName:
-          owner.fullName,
-        email: owner.email,
+          labour.fullName,
+        email: labour.email,
         mobile:
-          owner.mobile,
+          labour.mobile,
         village:
-          owner.village,
+          labour.village,
         district:
-          owner.district,
-        state: owner.state,
+          labour.district,
+        state:
+          labour.state,
+        primarySkill:
+          labour.primarySkill,
+        experience:
+          labour.experience,
+        dailyCharges:
+          labour.dailyCharges,
+        availability:
+          labour.availability,
         profileImage:
-          owner.profileImage,
+          labour.profileImage,
       },
     });
   } catch (error) {
     console.error(
-      "Verify OTP Error:",
+      "Labour Verify OTP Error:",
       error
     );
 

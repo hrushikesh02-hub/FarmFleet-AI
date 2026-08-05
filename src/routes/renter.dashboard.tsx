@@ -9,8 +9,10 @@ import {
   RefreshCw,
   MapPin,
   User,
+  Users,
   ChevronRight,
   Tractor,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
@@ -223,18 +225,31 @@ function QuickAction({
   icon: Icon,
   label,
   description,
+  featured = false,
 }: {
   to: string;
   icon: React.ElementType;
   label: string;
   description: string;
+  featured?: boolean;
 }) {
   return (
     <Link
       to={to}
-      className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-200"
+      className={`group relative flex items-center gap-4 rounded-2xl border ${
+        featured ? "border-primary/30" : "border-border"
+      } bg-card p-5 shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-200`}
     >
-      <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-200">
+      {featured && (
+        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold tracking-wide">
+          AI Powered
+        </span>
+      )}
+      <div
+        className={`h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200 ${
+          featured ? "shadow-md" : "shadow-sm"
+        }`}
+      >
         <Icon className="h-5 w-5 text-primary-foreground" />
       </div>
       <div className="flex-1 min-w-0">
@@ -332,13 +347,26 @@ function RenterDashboard() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.35 }}
-          className="grid sm:grid-cols-2 gap-3"
+          className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3"
         >
+          <QuickAction
+            to="/renter/ai"
+            icon={Sparkles}
+            label="AI Crop Planner"
+            description="Generate AI-powered crop itineraries, farming schedules, weather insights and personalized cultivation plans."
+            featured
+          />
           <QuickAction
             to="/renter/search"
             icon={Search}
             label={t("renter.findEquipment")}
             description="Search available machinery near you"
+          />
+          <QuickAction
+            to="/renter/labours"
+            icon={Users}
+            label={t("renter.findLabour")}
+            description="Browse verified farm labour near you"
           />
           <QuickAction
             to="/renter/bookings"

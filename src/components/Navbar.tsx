@@ -40,6 +40,14 @@ const RENTER_LINKS: NavLink[] = [
   { to: "/renter/profile", labelKey: "nav.profile", icon: User },
 ];
 
+const LABOUR_LINKS: NavLink[] = [
+  { to: "/labour/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/labour/requests", labelKey: "nav.requests", icon: ClipboardList },
+  { to: "/labour/reviews", labelKey: "nav.review", icon: Star },
+  { to: "/labour/earnings", labelKey: "nav.earnings", icon: IndianRupee },
+  { to: "/labour/profile", labelKey: "nav.profile", icon: User },
+];
+
 export function Navbar() {
   const { t } = useTranslation();
   const pathname = useRouterState({
@@ -51,13 +59,16 @@ export function Navbar() {
   const isOwner = pathname.startsWith("/owner");
   const isRenter =
     pathname.startsWith("/renter") || pathname === "/availability";
+  const isLabour = pathname.startsWith("/labour");
 
-  const isApp = isOwner || isRenter;
+  const isApp = isOwner || isRenter || isLabour;
 
   const links = isOwner
     ? OWNER_LINKS
     : isRenter
     ? RENTER_LINKS
+    : isLabour
+    ? LABOUR_LINKS
     : [];
 
   return (

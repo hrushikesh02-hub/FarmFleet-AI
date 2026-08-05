@@ -5,17 +5,46 @@ const cors = require("cors");
 
 const connectDB = require("./config/db");
 
+/* ==========================
+   FARMER ROUTES
+========================== */
+
 const farmerRoutes = require("./routes/farmerRoutes");
 const farmerOTPRoutes = require("./routes/farmerOTPRoutes");
 
+/* ==========================
+   OWNER ROUTES
+========================== */
+
 const ownerRoutes = require("./routes/ownerRoutes");
 const ownerOTPRoutes = require("./routes/ownerOTPRoutes");
+
+/* ==========================
+   LABOUR ROUTES
+========================== */
+
+const labourRoutes = require("./routes/labourRoutes");
+const labourRequestRoutes = require("./routes/labourRequestRoutes");
+const labourReviewRoutes = require("./routes/labourReviewRoutes");
+const labourEarningsRoutes = require("./routes/labourEarningsRoutes");
+
+/* ==========================
+   COMMON ROUTES
+========================== */
 
 const equipmentRoutes = require("./routes/equipmentRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const earningsRoutes = require("./routes/earningsRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+
+/* ==========================
+   AI ROUTES
+========================== */
+
+const aiRoutes = require("./routes/aiRoutes");
+const weatherRoutes = require("./routes/weatherRoutes");
+const pdfRoutes = require("./routes/pdfRoutes");
 
 const app = express();
 
@@ -40,62 +69,67 @@ app.use(
 );
 
 /* ==========================
-   ROUTES
+   FARMER ROUTES
 ========================== */
 
-// Farmer Routes
-app.use(
-  "/api/farmer",
-  farmerRoutes
-);
+app.use("/api/farmer", farmerRoutes);
+app.use("/api/farmer", farmerOTPRoutes);
 
-// Farmer OTP Routes
-app.use(
-  "/api/farmer",
-  farmerOTPRoutes
-);
+/* ==========================
+   OWNER ROUTES
+========================== */
 
-// Owner Routes
-app.use(
-  "/api/owner",
-  ownerRoutes
-);
+app.use("/api/owner", ownerRoutes);
+app.use("/api/owner", ownerOTPRoutes);
+app.use("/api/owner/dashboard", dashboardRoutes);
 
-// Owner OTP Routes
-app.use(
-  "/api/owner",
-  ownerOTPRoutes
-);
+/* ==========================
+   LABOUR ROUTES
+========================== */
 
-// Dashboard Routes
-app.use(
-  "/api/owner/dashboard",
-  dashboardRoutes
-);
+app.use("/api/labour", labourRoutes);
 
-// Equipment Routes
-app.use(
-  "/api/equipment",
-  equipmentRoutes
-);
+// Labour Request Routes
+// Frontend uses: /api/labour-request/*
+app.use("/api/labour-request", labourRequestRoutes);
 
-// Booking Routes
-app.use(
-  "/api/booking",
-  bookingRoutes
-);
+// Labour Reviews
+app.use("/api/labour/reviews", labourReviewRoutes);
 
-// Earnings Routes
-app.use(
-  "/api/earnings",
-  earningsRoutes
-);
+// Labour Earnings
+app.use("/api/labour/earnings", labourEarningsRoutes);
 
-// Reviews Routes
-app.use(
-  "/api/reviews",
-  reviewRoutes
-);
+/* ==========================
+   EQUIPMENT ROUTES
+========================== */
+
+app.use("/api/equipment", equipmentRoutes);
+
+/* ==========================
+   BOOKING ROUTES
+========================== */
+
+app.use("/api/booking", bookingRoutes);
+
+/* ==========================
+   OWNER EARNINGS
+========================== */
+
+app.use("/api/earnings", earningsRoutes);
+
+/* ==========================
+   OWNER REVIEWS
+========================== */
+
+app.use("/api/reviews", reviewRoutes);
+
+/* ==========================
+   AI ROUTES
+========================== */
+
+app.use("/api/ai", aiRoutes);
+app.use("/api/weather", weatherRoutes);
+app.use("/api/pdf", pdfRoutes);
 
 /* ==========================
    TEST ROUTE
@@ -126,7 +160,5 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(
-    `🚀 Server running on port ${PORT}`
-  );
+  console.log(`🚀 Server running on port ${PORT}`);
 });

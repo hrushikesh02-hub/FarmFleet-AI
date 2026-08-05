@@ -28,6 +28,7 @@ import {
   Shield,
   Zap,
   Globe,
+  HardHat,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -45,239 +46,88 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-/* ─── i18n ─── */
-const TRANSLATIONS = {
-  en: {
-    nav: {
-      howItWorks: "How It Works",
-      equipment: "Equipment Types",
-      forOwners: "For Owners",
-      reviews: "Reviews",
-      faq: "FAQ",
-      owner: "Continue as Owner",
-      renter: "Continue as Renter",
-    },
-    hero: {
-      badge: "India's Smart Farm Equipment Rental Platform",
-      headline1: "Rent. Share.",
-      headline2: "Grow.",
-      sub: "Access verified tractors, harvesters, and farm machinery when you need it — booked in minutes, delivered to your field.",
-      ownerCard: "Continue as Equipment Owner",
-      ownerSub: "List your equipment and manage bookings",
-      renterCard: "Continue as Renter",
-      renterSub: "Find and book equipment near you",
-    },
-    howItWorks: {
-      label: "Simple Process",
-      title: "From search to field in three steps",
-      steps: [
-        {
-          n: "01",
-          title: "Search by Location",
-          desc: "Browse verified equipment near your farm. Filter by type, availability, and rental period.",
-        },
-        {
-          n: "02",
-          title: "Pick Your Dates",
-          desc: "Select rental period and see instant pricing — transparent, with no hidden charges.",
-        },
-        {
-          n: "03",
-          title: "Book & Confirm",
-          desc: "Secure checkout. Owner confirms within minutes. Equipment arrives ready to work.",
-        },
-      ],
-    },
-    browse: {
-      label: "Browse by Type",
-      title: "What do you need?",
-      sub: "Discover the right equipment for your crop and season.",
-    },
-    forOwners: {
-      label: "For Equipment Owners",
-      title: "Your equipment. Working for you.",
-      sub: "List your machinery on FarmFleet and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
-      features: [
-        "Manage all your equipment listings",
-        "Accept or decline booking requests",
-        "Set custom availability calendars",
-        "Track active and upcoming rentals",
-        "Monitor booking history",
-      ],
-      cta: "Start listing for free",
-    },
-    reviews: {
-      label: "Trusted by Farmers",
-      title: "What farmers are saying",
-    },
-    faq: {
-      label: "FAQ",
-      title: "Common questions",
-    },
-    footer: {
-      tagline: "Making farm machinery accessible to every Indian farmer.",
-      platform: "Platform",
-      resources: "Resources",
-      company: "Company",
-      legal: "Legal",
-      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
-    },
+/* ─── CONTENT (translation object removed — English only) ─── */
+const CONTENT = {
+  nav: {
+    howItWorks: "How It Works",
+    equipment: "Equipment Types",
+    forOwners: "For Owners",
+    reviews: "Reviews",
+    faq: "FAQ",
+    owner: "Continue as Owner",
+    renter: "Continue as Renter",
+    labour: "Continue as Labour",
   },
-  hi: {
-    nav: {
-      howItWorks: "यह कैसे काम करता है",
-      equipment: "उपकरण प्रकार",
-      forOwners: "मालिकों के लिए",
-      reviews: "समीक्षाएं",
-      faq: "सामान्य प्रश्न",
-      owner: "मालिक के रूप में जारी रखें",
-      renter: "किरायेदार के रूप में जारी रखें",
-    },
-    hero: {
-      badge: "भारत का स्मार्ट कृषि उपकरण किराया प्लेटफॉर्म",
-      headline1: "किराए पर लें. साझा करें.",
-      headline2: "उगाएं.",
-      sub: "जब आपको ज़रूरत हो तब सत्यापित ट्रैक्टर, हार्वेस्टर और कृषि मशीनरी तक पहुंचें — मिनटों में बुक करें।",
-      ownerCard: "उपकरण मालिक के रूप में जारी रखें",
-      ownerSub: "अपने उपकरण सूचीबद्ध करें और बुकिंग प्रबंधित करें",
-      renterCard: "किरायेदार के रूप में जारी रखें",
-      renterSub: "अपने पास उपकरण खोजें और बुक करें",
-    },
-    howItWorks: {
-      label: "सरल प्रक्रिया",
-      title: "तीन चरणों में खोज से खेत तक",
-      steps: [
-        {
-          n: "01",
-          title: "स्थान से खोजें",
-          desc: "अपने खेत के पास सत्यापित उपकरण ब्राउज़ करें। प्रकार, उपलब्धता और किराये की अवधि के आधार पर फ़िल्टर करें।",
-        },
-        {
-          n: "02",
-          title: "तिथियां चुनें",
-          desc: "किराये की अवधि चुनें और तत्काल मूल्य निर्धारण देखें — पारदर्शी, कोई छुपे शुल्क नहीं।",
-        },
-        {
-          n: "03",
-          title: "बुक करें और पुष्टि करें",
-          desc: "सुरक्षित चेकआउट। मालिक मिनटों में पुष्टि करता है। उपकरण काम के लिए तैयार पहुंचता है।",
-        },
-      ],
-    },
-    browse: {
-      label: "प्रकार से ब्राउज़ करें",
-      title: "आपको क्या चाहिए?",
-      sub: "अपनी फसल और मौसम के लिए सही उपकरण खोजें।",
-    },
-    forOwners: {
-      label: "उपकरण मालिकों के लिए",
-      title: "आपका उपकरण। आपके लिए काम कर रहा है।",
-      sub: "FarmFleet पर अपनी मशीनरी सूचीबद्ध करें और अपने क्षेत्र के सत्यापित किसानों से किराये के अनुरोध स्वीकार करें।",
-      features: [
-        "सभी उपकरण सूचियां प्रबंधित करें",
-        "बुकिंग अनुरोध स्वीकार या अस्वीकार करें",
-        "कस्टम उपलब्धता कैलेंडर सेट करें",
-        "सक्रिय और आगामी किराये ट्रैक करें",
-        "बुकिंग इतिहास मॉनिटर करें",
-      ],
-      cta: "मुफ़्त में लिस्टिंग शुरू करें",
-    },
-    reviews: {
-      label: "किसानों द्वारा विश्वसनीय",
-      title: "किसान क्या कह रहे हैं",
-    },
-    faq: {
-      label: "सामान्य प्रश्न",
-      title: "सामान्य प्रश्न",
-    },
-    footer: {
-      tagline: "हर भारतीय किसान के लिए कृषि मशीनरी सुलभ बनाना।",
-      platform: "प्लेटफॉर्म",
-      resources: "संसाधन",
-      company: "कंपनी",
-      legal: "कानूनी",
-      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
-    },
+  hero: {
+    badge: "India's Smart Farm Equipment Rental Platform",
+    headline1: "Rent. Share.",
+    headline2: "Grow.",
+    sub: "Access verified tractors, harvesters, and farm machinery when you need it — booked in minutes, delivered to your field.",
+    ownerCard: "Continue as Equipment Owner",
+    ownerSub: "List your equipment and manage bookings",
+    renterCard: "Continue as Renter",
+    renterSub: "Find and book equipment near you",
+    labourCard: "Continue as Labour",
+    labourSub: "Accept farm work and equipment operation requests.",
   },
-  mr: {
-    nav: {
-      howItWorks: "हे कसे कार्य करते",
-      equipment: "उपकरण प्रकार",
-      forOwners: "मालकांसाठी",
-      reviews: "पुनरावलोकने",
-      faq: "वारंवार विचारले जाणारे प्रश्न",
-      owner: "मालक म्हणून सुरू ठेवा",
-      renter: "भाडेकरू म्हणून सुरू ठेवा",
-    },
-    hero: {
-      badge: "भारताचे स्मार्ट शेती उपकरण भाडे प्लॅटफॉर्म",
-      headline1: "भाड्याने घ्या. सामायिक करा.",
-      headline2: "वाढवा.",
-      sub: "जेव्हा गरज असेल तेव्हा सत्यापित ट्रॅक्टर, हार्वेस्टर आणि शेती यंत्रसामग्री मिळवा — मिनिटांत बुक करा.",
-      ownerCard: "उपकरण मालक म्हणून सुरू ठेवा",
-      ownerSub: "आपली उपकरणे सूचीबद्ध करा आणि बुकिंग व्यवस्थापित करा",
-      renterCard: "भाडेकरू म्हणून सुरू ठेवा",
-      renterSub: "जवळपासची उपकरणे शोधा आणि बुक करा",
-    },
-    howItWorks: {
-      label: "सोपी प्रक्रिया",
-      title: "तीन चरणांमध्ये शोधापासून शेतापर्यंत",
-      steps: [
-        {
-          n: "01",
-          title: "स्थानानुसार शोधा",
-          desc: "आपल्या शेताजवळील सत्यापित उपकरणे ब्राउझ करा. प्रकार, उपलब्धता आणि भाडे कालावधीनुसार फिल्टर करा.",
-        },
-        {
-          n: "02",
-          title: "तारखा निवडा",
-          desc: "भाडे कालावधी निवडा आणि त्वरित किंमत पहा — पारदर्शक, कोणतेही लपलेले शुल्क नाही.",
-        },
-        {
-          n: "03",
-          title: "बुक करा आणि पुष्टी करा",
-          desc: "सुरक्षित चेकआउट. मालक मिनिटांत पुष्टी करतो. उपकरण काम करण्यास तयार येते.",
-        },
-      ],
-    },
-    browse: {
-      label: "प्रकारानुसार ब्राउझ करा",
-      title: "तुम्हाला काय हवे आहे?",
-      sub: "तुमच्या पीक आणि हंगामासाठी योग्य उपकरणे शोधा.",
-    },
-    forOwners: {
-      label: "उपकरण मालकांसाठी",
-      title: "तुमचे उपकरण. तुमच्यासाठी काम करत आहे.",
-      sub: "FarmFleet वर आपली यंत्रसामग्री सूचीबद्ध करा आणि आपल्या क्षेत्रातील सत्यापित शेतकऱ्यांकडून भाडे विनंत्या स्वीकारा.",
-      features: [
-        "सर्व उपकरण यादी व्यवस्थापित करा",
-        "बुकिंग विनंत्या स्वीकारा किंवा नाकारा",
-        "कस्टम उपलब्धता कॅलेंडर सेट करा",
-        "सक्रिय आणि आगामी भाडे ट्रॅक करा",
-        "बुकिंग इतिहास पहा",
-      ],
-      cta: "विनामूल्य सूचीबद्ध करणे सुरू करा",
-    },
-    reviews: {
-      label: "शेतकऱ्यांनी विश्वास ठेवलेला",
-      title: "शेतकरी काय म्हणत आहेत",
-    },
-    faq: {
-      label: "वारंवार विचारले जाणारे प्रश्न",
-      title: "सामान्य प्रश्न",
-    },
-    footer: {
-      tagline: "प्रत्येक भारतीय शेतकऱ्यासाठी शेती यंत्रसामग्री सुलभ करणे.",
-      platform: "प्लॅटफॉर्म",
-      resources: "संसाधने",
-      company: "कंपनी",
-      legal: "कायदेशीर",
-      copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
-    },
+  howItWorks: {
+    label: "Simple Process",
+    title: "From search to field in three steps",
+    steps: [
+      {
+        n: "01",
+        title: "Search by Location",
+        desc: "Browse verified equipment near your farm. Filter by type, availability, and rental period.",
+      },
+      {
+        n: "02",
+        title: "Pick Your Dates",
+        desc: "Select rental period and see instant pricing — transparent, with no hidden charges.",
+      },
+      {
+        n: "03",
+        title: "Book & Confirm",
+        desc: "Secure checkout. Owner confirms within minutes. Equipment arrives ready to work.",
+      },
+    ],
+  },
+  browse: {
+    label: "Browse by Type",
+    title: "What do you need?",
+    sub: "Discover the right equipment for your crop and season.",
+  },
+  forOwners: {
+    label: "For Equipment Owners",
+    title: "Your equipment. Working for you.",
+    sub: "List your machinery on FarmFleet and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
+    features: [
+      "Manage all your equipment listings",
+      "Accept or decline booking requests",
+      "Set custom availability calendars",
+      "Track active and upcoming rentals",
+      "Monitor booking history",
+    ],
+    cta: "Start listing for free",
+  },
+  reviews: {
+    label: "Trusted by Farmers",
+    title: "What farmers are saying",
+  },
+  faq: {
+    label: "FAQ",
+    title: "Common questions",
+  },
+  footer: {
+    tagline: "Making farm machinery accessible to every Indian farmer.",
+    platform: "Platform",
+    resources: "Resources",
+    company: "Company",
+    legal: "Legal",
+    copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
   },
 };
 
-type Lang = "en" | "hi" | "mr";
+type Content = typeof CONTENT;
 
 /* ─── CSS Injection ─── */
 function StyleLoader() {
@@ -497,7 +347,8 @@ function StyleLoader() {
       @media (max-width: 1023px) {
         .nav-links { display: none; }
         .nav-desktop-actions .nav-owner-btn,
-        .nav-desktop-actions .nav-renter-btn { display: none; }
+        .nav-desktop-actions .nav-renter-btn,
+        .nav-desktop-actions .nav-labour-btn { display: none; }
         .mobile-menu-btn { display: flex !important; }
 
         .hero-grid {
@@ -577,7 +428,8 @@ function StyleLoader() {
 
         .nav-links { display: none; }
         .nav-desktop-actions .nav-owner-btn,
-        .nav-desktop-actions .nav-renter-btn { display: none; }
+        .nav-desktop-actions .nav-renter-btn,
+        .nav-desktop-actions .nav-labour-btn { display: none; }
         .mobile-menu-btn { display: flex !important; }
       }
 
@@ -722,10 +574,11 @@ const FAQS = [
   },
 ];
 
-/* ─── LANGUAGE SWITCHER ─── */
-function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
+/* ─── LANGUAGE SWITCHER (dummy UI only — no translation logic) ─── */
+function LangSwitcher() {
   const [open, setOpen] = useState(false);
-  const opts: { code: Lang; label: string }[] = [
+  const [selected, setSelected] = useState<"en" | "hi" | "mr">("en");
+  const opts: { code: "en" | "hi" | "mr"; label: string }[] = [
     { code: "en", label: "EN" },
     { code: "hi", label: "हि" },
     { code: "mr", label: "म" },
@@ -750,7 +603,7 @@ function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => voi
         }}
       >
         <Globe size={13} />
-        {opts.find((o) => o.code === lang)?.label}
+        {opts.find((o) => o.code === selected)?.label}
         <ChevronDown size={12} style={{ opacity: 0.5 }} />
       </button>
       <AnimatePresence>
@@ -774,27 +627,27 @@ function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => voi
             }}
           >
             {[
-              { code: "en" as Lang, label: "English" },
-              { code: "hi" as Lang, label: "हिन्दी" },
-              { code: "mr" as Lang, label: "मराठी" },
+              { code: "en" as const, label: "English" },
+              { code: "hi" as const, label: "हिन्दी" },
+              { code: "mr" as const, label: "मराठी" },
             ].map((o) => (
               <button
                 key={o.code}
-                onClick={() => { setLang(o.code); setOpen(false); }}
+                onClick={() => { setSelected(o.code); setOpen(false); }}
                 style={{
                   width: "100%",
                   padding: "10px 16px",
-                  background: lang === o.code ? "var(--light-green)" : "transparent",
+                  background: selected === o.code ? "var(--light-green)" : "transparent",
                   border: "none",
                   cursor: "pointer",
                   textAlign: "left",
                   fontSize: 14,
-                  fontWeight: lang === o.code ? 600 : 400,
-                  color: lang === o.code ? "var(--green-700)" : "var(--ink-700)",
+                  fontWeight: selected === o.code ? 600 : 400,
+                  color: selected === o.code ? "var(--green-700)" : "var(--ink-700)",
                   transition: "background 0.1s",
                 }}
-                onMouseEnter={(e) => { if (lang !== o.code) e.currentTarget.style.background = "var(--off-white)"; }}
-                onMouseLeave={(e) => { if (lang !== o.code) e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={(e) => { if (selected !== o.code) e.currentTarget.style.background = "var(--off-white)"; }}
+                onMouseLeave={(e) => { if (selected !== o.code) e.currentTarget.style.background = "transparent"; }}
               >
                 {o.label}
               </button>
@@ -807,9 +660,12 @@ function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => voi
 }
 
 /* ─── NAVBAR ─── */
-function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; t: typeof TRANSLATIONS["en"] }) {
+function Navbar({ t }: { t: Content }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [mobileRoleOpen, setMobileRoleOpen] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 32);
@@ -817,10 +673,26 @@ function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; 
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setRoleMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
   const scrollTo = (id: string) => {
     setMobileOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const roleOptions = [
+    { label: t.nav.owner, path: "/login-owner" },
+    { label: t.nav.renter, path: "/login-renter" },
+    { label: t.nav.labour, path: "/login-labour" },
+  ];
 
   const navLinks = [
     { label: t.nav.howItWorks, id: "how-it-works" },
@@ -921,30 +793,75 @@ function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; 
 
           {/* Right actions */}
           <div className="nav-desktop-actions" style={{ alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <LangSwitcher lang={lang} setLang={setLang} />
-            <Link
-              to="/login-owner"
-              className="nav-owner-btn"
-              style={{
-                padding: "8px 18px",
-                borderRadius: 100,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--ink-700)",
-                textDecoration: "none",
-                border: "1.5px solid var(--ink-100)",
-                background: "white",
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--ink-200)"; e.currentTarget.style.background = "var(--off-white)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--ink-100)"; e.currentTarget.style.background = "white"; }}
-            >
-              {t.nav.owner}
-            </Link>
-            <Link to="/login-renter" className="btn-primary nav-renter-btn" style={{ padding: "8px 18px", fontSize: 13, whiteSpace: "nowrap" }}>
-              {t.nav.renter}
-            </Link>
+            <LangSwitcher />
+            <div ref={roleMenuRef} className="nav-role-menu" style={{ position: "relative" }}>
+              <button
+                className="btn-primary nav-role-btn"
+                onClick={() => setRoleMenuOpen((o) => !o)}
+                style={{
+                  padding: "8px 18px",
+                  fontSize: 13,
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                Continue As
+                <ChevronDown
+                  size={15}
+                  style={{
+                    transform: roleMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)",
+                  }}
+                />
+              </button>
+              <AnimatePresence>
+                {roleMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 10px)",
+                      right: 0,
+                      minWidth: 200,
+                      background: "white",
+                      borderRadius: 14,
+                      border: "1px solid var(--ink-100)",
+                      boxShadow: "0 12px 32px rgba(13,31,16,0.12)",
+                      padding: 6,
+                      zIndex: 150,
+                    }}
+                  >
+                    {roleOptions.map((opt) => (
+                      <Link
+                        key={opt.path}
+                        to={opt.path}
+                        onClick={() => setRoleMenuOpen(false)}
+                        style={{
+                          display: "block",
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "var(--ink-700)",
+                          textDecoration: "none",
+                          transition: "background 0.15s",
+                          whiteSpace: "nowrap",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--off-white)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                      >
+                        {opt.label}
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               className="mobile-menu-btn"
               onClick={() => setMobileOpen(true)}
@@ -1020,13 +937,58 @@ function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; 
                 </button>
               ))}
               <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10, paddingTop: 16 }}>
-                <LangSwitcher lang={lang} setLang={setLang} />
-                <Link to="/login-owner" className="btn-ghost" style={{ justifyContent: "center" }}>
-                  {t.nav.owner}
-                </Link>
-                <Link to="/login-renter" className="btn-primary" style={{ justifyContent: "center" }}>
-                  {t.nav.renter}
-                </Link>
+                <LangSwitcher />
+                <button
+                  className="btn-primary"
+                  onClick={() => setMobileRoleOpen((o) => !o)}
+                  style={{
+                    justifyContent: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    width: "100%",
+                  }}
+                >
+                  Continue As
+                  <ChevronDown
+                    size={15}
+                    style={{
+                      transform: mobileRoleOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)",
+                    }}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {mobileRoleOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      style={{
+                        overflow: "hidden",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      {roleOptions.map((opt) => (
+                        <Link
+                          key={opt.path}
+                          to={opt.path}
+                          className="btn-ghost"
+                          onClick={() => {
+                            setMobileRoleOpen(false);
+                            setMobileOpen(false);
+                          }}
+                          style={{ justifyContent: "center" }}
+                        >
+                          {opt.label}
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </motion.div>
@@ -1037,7 +999,7 @@ function Navbar({ lang, setLang, t }: { lang: Lang; setLang: (l: Lang) => void; 
 }
 
 /* ─── HERO ─── */
-function Hero({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function Hero({ t }: { t: Content }) {
   return (
     <section
       id="hero"
@@ -1226,6 +1188,52 @@ function Hero({ t }: { t: typeof TRANSLATIONS["en"] }) {
                   <ArrowUpRight size={18} color="rgba(255,255,255,0.8)" style={{ flexShrink: 0 }} />
                 </motion.div>
               </Link>
+
+              {/* Labour card */}
+              <Link to="/login-labour" style={{ textDecoration: "none" }}>
+                <motion.div
+                  whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(13,31,16,0.13)" }}
+                  whileTap={{ scale: 0.99 }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "20px 24px",
+                    borderRadius: 18,
+                    border: "1.5px solid var(--green-200)",
+                    background: "var(--green-50)",
+                    cursor: "pointer",
+                    transition: "border-color 0.2s",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-400)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-200)"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "var(--accent)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <HardHat size={20} color="white" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
+                        {t.hero.labourCard}
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--ink-500)", marginTop: 2 }}>
+                        {t.hero.labourSub}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0 }} />
+                </motion.div>
+              </Link>
             </motion.div>
           </motion.div>
 
@@ -1267,7 +1275,7 @@ function Hero({ t }: { t: typeof TRANSLATIONS["en"] }) {
 }
 
 /* ─── HOW IT WORKS ─── */
-function HowItWorks({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function HowItWorks({ t }: { t: Content }) {
   const icons = [Search, Calendar, CheckCircle2];
   return (
     <section id="how-it-works" style={{ background: "var(--off-white)" }}>
@@ -1366,7 +1374,7 @@ function HowItWorks({ t }: { t: typeof TRANSLATIONS["en"] }) {
 }
 
 /* ─── BROWSE BY TYPE ─── */
-function Browse({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function Browse({ t }: { t: Content }) {
   return (
     <section id="browse" style={{ background: "white" }}>
       <div className="sec-inner">
@@ -1464,7 +1472,7 @@ function Browse({ t }: { t: typeof TRANSLATIONS["en"] }) {
 }
 
 /* ─── FOR OWNERS ─── */
-function ForOwners({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function ForOwners({ t }: { t: Content }) {
   const [activeTab, setActiveTab] = useState(0);
   const tabs = ["Listings", "Requests", "Calendar"];
 
@@ -1772,7 +1780,7 @@ function AvatarFallback({ name }: { name: string }) {
   );
 }
 
-function Reviews({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function Reviews({ t }: { t: Content }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -1949,7 +1957,7 @@ function Reviews({ t }: { t: typeof TRANSLATIONS["en"] }) {
 }
 
 /* ─── FAQ ─── */
-function FAQ({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function FAQ({ t }: { t: Content }) {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
@@ -2042,7 +2050,7 @@ function FAQ({ t }: { t: typeof TRANSLATIONS["en"] }) {
 }
 
 /* ─── FOOTER ─── */
-function Footer({ t }: { t: typeof TRANSLATIONS["en"] }) {
+function Footer({ t }: { t: Content }) {
   const cols = [
     {
       title: t.footer.platform,
@@ -2153,14 +2161,13 @@ function Footer({ t }: { t: typeof TRANSLATIONS["en"] }) {
 
 /* ─── ROOT ─── */
 function Landing() {
-  const [lang, setLang] = useState<Lang>("en");
-  const t = TRANSLATIONS[lang];
+  const t = CONTENT;
 
   return (
     <>
       <StyleLoader />
       <div style={{ minHeight: "100vh", background: "var(--off-white)", overflowX: "hidden" }}>
-        <Navbar lang={lang} setLang={setLang} t={t} />
+        <Navbar t={t} />
         <Hero t={t} />
         <HowItWorks t={t} />
         <Browse t={t} />

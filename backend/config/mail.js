@@ -1,5 +1,9 @@
 const nodemailer = require("nodemailer");
 
+/* ==========================
+   NODEMAILER TRANSPORTER
+========================== */
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -7,6 +11,10 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+/* ==========================
+   SEND EMAIL FUNCTION
+========================== */
 
 const sendEmail = async ({
   to,
@@ -22,14 +30,27 @@ const sendEmail = async ({
     });
 
     console.log(
-      `✅ Email sent to ${to}`
+      `✅ Email sent successfully to ${to}`
     );
+
+    return {
+      success: true,
+    };
   } catch (error) {
     console.error(
       "❌ Email Error:",
       error
     );
+
+    throw error;
   }
 };
 
-module.exports = sendEmail;
+/* ==========================
+   EXPORTS
+========================== */
+
+module.exports = {
+  transporter,
+  sendEmail,
+};
