@@ -1,4 +1,5 @@
 const CropItinerary = require("../models/CropItinerary");
+const WeatherAlert = require("../models/WeatherAlert");
 
 const {
   getCurrentWeather,
@@ -13,10 +14,14 @@ const {
   optimizeSchedule,
 } = require("../services/weather/scheduleOptimizer");
 
-/* =====================================================
-   Get Current Weather
+const {
+  monitorSingleItinerary,
+} = require("../services/weather/weatherMonitor");
+
+/* ===========================================================
+   GET CURRENT WEATHER
    GET /api/weather/current?city=Ahmednagar
-===================================================== */
+=========================================================== */
 
 exports.getCurrentWeather = async (req, res) => {
   try {
@@ -25,7 +30,7 @@ exports.getCurrentWeather = async (req, res) => {
     if (!city) {
       return res.status(400).json({
         success: false,
-        message: "City query parameter is required.",
+        message: "City is required.",
       });
     }
 
@@ -36,9 +41,6 @@ exports.getCurrentWeather = async (req, res) => {
       weather,
     });
   } catch (error) {
-    console.error("\n====================================");
-    console.error("❌ Current Weather Error");
-    console.error("====================================");
     console.error(error);
 
     return res.status(500).json({
@@ -48,10 +50,10 @@ exports.getCurrentWeather = async (req, res) => {
   }
 };
 
-/* =====================================================
-   Complete Weather Report
+/* ===========================================================
+   GET COMPLETE WEATHER REPORT
    GET /api/weather/report?city=Ahmednagar
-===================================================== */
+=========================================================== */
 
 exports.getWeatherReport = async (req, res) => {
   try {
@@ -60,20 +62,18 @@ exports.getWeatherReport = async (req, res) => {
     if (!city) {
       return res.status(400).json({
         success: false,
-        message: "City query parameter is required.",
+        message: "City is required.",
       });
     }
 
-    const report = await getCompleteWeatherReport(city);
+    const report =
+      await getCompleteWeatherReport(city);
 
     return res.status(200).json({
       success: true,
       report,
     });
   } catch (error) {
-    console.error("\n====================================");
-    console.error("❌ Weather Report Error");
-    console.error("====================================");
     console.error(error);
 
     return res.status(500).json({
@@ -83,189 +83,217 @@ exports.getWeatherReport = async (req, res) => {
   }
 };
 
-/* =====================================================
-   Check Weather & Optimize Itinerary
+/* ===========================================================
+   CHECK WEATHER FOR ONE ITINERARY
    POST /api/weather/check/:id
-===================================================== */
+=========================================================== */
 
-exports.checkWeatherForItinerary = async (req, res) => {
-  try {
-    const { id } = req.params;
+exports.checkWeatherForItinerary =
+  async (req, res) => {
+    try {
+      const itinerary = await CropItinerary.findById(req.params.id)
+    .populate("farmer", "fullName email");
 
-    const itinerary = await CropItinerary.findById(id);
+      if (!itinerary) {
+        return res.status(404).json({
+          success: false,
+          message: "Itinerary not found.",
+        });
+      }
 
-    if (!itinerary) {
-      return res.status(404).json({
+      if (
+        itinerary.farmer._id.toString() !==
+        req.farmer._id.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      if (
+        !itinerary.timeline ||
+        itinerary.timeline.length === 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Timeline not available.",
+        });
+      }
+
+      const hasDates =
+        itinerary.timeline.every(
+          (item) => item.currentDate
+        );
+
+      if (!hasDates) {
+        itinerary.timeline =
+          generateSchedule(
+            itinerary.timeline,
+            new Date()
+          );
+
+        await itinerary.save();
+      }
+
+      const updated =
+        await monitorSingleItinerary(
+          itinerary
+        );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Weather analysed successfully.",
+        itinerary: updated,
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
         success: false,
-        message: "Crop itinerary not found.",
+        message: error.message,
       });
     }
+  };
 
-    const city = itinerary.location?.district;
-
-    if (!city) {
-      return res.status(400).json({
-        success: false,
-        message: "District not found in itinerary.",
-      });
-    }
-
-    const weatherReport =
-      await getCompleteWeatherReport(city);
-
-    // Generate dates if missing
-    const hasDates = itinerary.timeline.every(
-      (item) => item.currentDate
-    );
-
-    if (!hasDates) {
-      itinerary.timeline = generateSchedule(
-        itinerary.timeline,
-        new Date()
-      );
-    }
-
-    // Optimize using weather
-    const optimized = optimizeSchedule(
-      itinerary.toObject(),
-      weatherReport
-    );
-
-    itinerary.timeline = optimized.timeline;
-    itinerary.lastWeatherCheck = new Date();
-
-    // Save latest weather snapshot
-    itinerary.weather = weatherReport.currentWeather;
-
-    await itinerary.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Weather analysis completed successfully.",
-      weather: weatherReport.currentWeather,
-      itinerary,
-    });
-  } catch (error) {
-    console.error("\n====================================");
-    console.error("❌ Weather Optimization Error");
-    console.error("====================================");
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/* =====================================================
-   Refresh Weather
-   GET /api/weather/current/:id
-===================================================== */
-
-exports.refreshWeather = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const itinerary = await CropItinerary.findById(id);
-
-    if (!itinerary) {
-      return res.status(404).json({
-        success: false,
-        message: "Crop itinerary not found.",
-      });
-    }
-
-    const city = itinerary.location?.district;
-
-    if (!city) {
-      return res.status(400).json({
-        success: false,
-        message: "District not found in itinerary.",
-      });
-    }
-
-    const weather =
-      await getCompleteWeatherReport(city);
-
-    itinerary.weather = weather.currentWeather;
-    itinerary.lastWeatherCheck = new Date();
-
-    await itinerary.save();
-
-    return res.status(200).json({
-      success: true,
-      weather,
-    });
-  } catch (error) {
-    console.error("\n====================================");
-    console.error("❌ Refresh Weather Error");
-    console.error("====================================");
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/* =====================================================
-   Update Weather Optimized Schedule
+/* ===========================================================
+   FORCE UPDATE WEATHER SCHEDULE
    POST /api/weather/update/:id
-===================================================== */
+=========================================================== */
 
-exports.updateWeatherSchedule = async (req, res) => {
-  try {
-    const { id } = req.params;
+exports.updateWeatherSchedule =
+  async (req, res) => {
+    try {
+      const itinerary =
+        await CropItinerary.findById(req.params.id);
 
-    const itinerary = await CropItinerary.findById(id);
+      if (!itinerary) {
+        return res.status(404).json({
+          success: false,
+          message: "Itinerary not found.",
+        });
+      }
 
-    if (!itinerary) {
-      return res.status(404).json({
+      const weather =
+        await getCompleteWeatherReport(
+          itinerary.location.district
+        );
+
+      const optimized =
+        optimizeSchedule(
+          itinerary,
+          weather
+        );
+
+      itinerary.timeline =
+        optimized.timeline;
+
+      itinerary.weather =
+        weather.currentWeather;
+
+      itinerary.lastWeatherCheck =
+        new Date();
+
+      await itinerary.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Schedule updated successfully.",
+        itinerary,
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
         success: false,
-        message: "Crop itinerary not found.",
+        message: error.message,
       });
     }
+  };
 
-    const city = itinerary.location?.district;
+/* ===========================================================
+   GET MY WEATHER ALERTS
+   GET /api/weather/alerts
+=========================================================== */
 
-    if (!city) {
-      return res.status(400).json({
+exports.getMyAlerts =
+  async (req, res) => {
+    try {
+      const alerts =
+        await WeatherAlert.find({
+          farmer: req.farmer._id,
+        })
+          .sort({
+            createdAt: -1,
+          })
+          .populate(
+            "itinerary",
+            "crop location"
+          );
+
+      return res.status(200).json({
+        success: true,
+        count: alerts.length,
+        alerts,
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
         success: false,
-        message: "District not found in itinerary.",
+        message: error.message,
       });
     }
+  };
 
-    const weather =
-      await getCompleteWeatherReport(city);
+/* ===========================================================
+   MARK ALERT AS READ
+   POST /api/weather/alerts/:id/read
+=========================================================== */
 
-    const optimized = optimizeSchedule(
-      itinerary.toObject(),
-      weather
-    );
+exports.markAlertAsRead =
+  async (req, res) => {
+    try {
+      const alert =
+        await WeatherAlert.findById(
+          req.params.id
+        );
 
-    itinerary.timeline = optimized.timeline;
-    itinerary.weather = weather.currentWeather;
-    itinerary.lastWeatherCheck = new Date();
+      if (!alert) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Alert not found.",
+        });
+      }
 
-    await itinerary.save();
+      if (
+        alert.farmer.toString() !==
+        req.farmer._id.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
 
-    return res.status(200).json({
-      success: true,
-      message: "Weather schedule updated successfully.",
-      weather: weather.currentWeather,
-      itinerary,
-    });
-  } catch (error) {
-    console.error("\n====================================");
-    console.error("❌ Update Schedule Error");
-    console.error("====================================");
-    console.error(error);
+      alert.isRead = true;
 
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+      await alert.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Alert marked as read.",
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };

@@ -11,8 +11,6 @@ import {
   CloudRain,
   Download,
   Printer,
-  Share2,
-  Sparkles,
   CheckCircle2,
   Droplets,
   AlertTriangle,
@@ -24,10 +22,15 @@ import {
   Search,
   Leaf,
   ShieldAlert,
-  ChevronDown,
   CalendarDays,
   FileText,
-  Info,
+  Thermometer,
+  Wind,
+  Clock,
+  Tractor,
+  Sun,
+  ArrowDown,
+  Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/renter/ai/report/$id")({
@@ -35,30 +38,18 @@ export const Route = createFileRoute("/renter/ai/report/$id")({
   component: AIReportPage,
 });
 
-/* ============================================================================
- * CONFIG — backend URL is read from the environment, never hardcoded here.
- * ==========================================================================
- */
+// ─── Config ──────────────────────────────────────────────────────────────────
 
 const API_BASE_URL =
-  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ??
-  "http://localhost:5000";
+  (import.meta as unknown as { env?: Record<string, string> }).env
+    ?.VITE_API_BASE_URL ?? "http://localhost:5000";
 
-/* ============================================================================
- * TYPES — mirrors the MongoDB CropItinerary shape returned by the backend
- * itinerary API. Where the backend is known to expose the same value in
- * more than one place (see services/pdf/pdfService.js — e.g.
- * `aiSummary.cropDuration` vs. top-level `cropDuration`, or `weather` vs.
- * `lastWeatherCheck`), both are typed and read defensively. No field is
- * ever invented — only real, already-documented field names are read.
- * ==========================================================================
- */
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Location {
   state?: string;
   district?: string;
 }
-
 interface TimelineEntry {
   week?: number | string;
   title?: string;
@@ -70,31 +61,26 @@ interface TimelineEntry {
   equipment?: string | string[];
   labour?: string | string[];
 }
-
 interface FertilizerEntry {
   stage?: string;
   fertilizer?: string;
   quantity?: string;
   time?: string;
 }
-
 interface IrrigationEntry {
   stage?: string;
   frequency?: string;
   waterRequirement?: string;
 }
-
 interface PestEntry {
   problem?: string;
   solution?: string;
 }
-
 interface EquipmentEntry {
   name?: string;
   purpose?: string;
   estimatedRent?: string;
 }
-
 interface LabourEntry {
   activity?: string;
   workers?: number | string;
@@ -102,13 +88,6 @@ interface LabourEntry {
   days?: number | string;
   estimatedDays?: number | string;
 }
-
-interface SeedRecommendation {
-  variety?: string;
-  quantity?: string;
-  cost?: string | number;
-}
-
 interface WeatherSnapshot {
   temperature?: number | string;
   humidity?: number | string;
@@ -117,29 +96,16 @@ interface WeatherSnapshot {
   lastUpdated?: string;
   checkedAt?: string;
 }
-
 interface TodayTask {
   activity?: string;
   status?: string;
   recommendation?: string;
   scheduledDate?: string;
 }
-
 interface AiSummary {
   cropDuration?: string;
-  expectedYield?: string;
-  estimatedCost?: string | number;
-  estimatedIncome?: string | number;
-  estimatedProfit?: string | number;
   bestSowingSeason?: string;
 }
-
-interface PdfMeta {
-  generated?: boolean;
-  generatedAt?: string;
-  version?: number;
-}
-
 interface CropItinerary {
   _id: string;
   crop: string;
@@ -152,12 +118,8 @@ interface CropItinerary {
   season?: string;
   bestSeason?: string;
   cropDuration?: string;
-  expectedYield?: string;
-  estimatedTotalCost?: string | number;
-  estimatedIncome?: string | number;
-  estimatedProfit?: string | number;
   aiSummary?: AiSummary;
-  seedRecommendation?: SeedRecommendation;
+  seedRecommendation?: { variety?: string; quantity?: string };
   landPreparation?: string | string[];
   timeline?: TimelineEntry[];
   fertilizerSchedule?: FertilizerEntry[];
@@ -171,16 +133,12 @@ interface CropItinerary {
   weather?: WeatherSnapshot;
   lastWeatherCheck?: WeatherSnapshot | string | null;
   todayTask?: TodayTask;
-  pdf?: PdfMeta;
   createdAt?: string;
-  updatedAt?: string;
 }
-
 interface ItineraryApiResponse {
   success?: boolean;
   itinerary?: CropItinerary;
   data?: CropItinerary;
-  message?: string;
 }
 
 async function fetchItinerary(id: string): Promise<CropItinerary> {
@@ -192,187 +150,114 @@ async function fetchItinerary(id: string): Promise<CropItinerary> {
       },
     }
   );
-  const response = data as ItineraryApiResponse;
-  return (response.itinerary ?? response.data ?? (data as CropItinerary)) as CropItinerary;
+  const r = data as ItineraryApiResponse;
+  return (r.itinerary ?? r.data ?? (data as CropItinerary)) as CropItinerary;
 }
 
-/* ============================================================================
- * SMALL HELPERS
- * ==========================================================================
- */
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function hasValue(value: unknown): boolean {
-  return value !== null && value !== undefined && value !== "";
+function has(v: unknown): boolean {
+  return v !== null && v !== undefined && v !== "";
 }
-
-function safe(value: unknown, fallback = "Not available"): string {
-  return hasValue(value) ? String(value) : fallback;
+function safe(v: unknown, fb = "Not available"): string {
+  return has(v) ? String(v) : fb;
 }
-
-/** Numbers such as labour "Workers" / "Days" read as "Not Available" when
- * the backend returns 0 or null, since 0 is ambiguous for a farmer reading
- * a plan (per spec: 0/null must never render as a bare "0"). */
-function safeCount(value: unknown): string {
-  if (!hasValue(value)) return "Not Available";
-  const num = typeof value === "number" ? value : parseFloat(String(value));
-  if (Number.isFinite(num) && num === 0) return "Not Available";
-  return String(value);
+function safeCount(v: unknown): string {
+  if (!has(v)) return "Not Available";
+  const n = typeof v === "number" ? v : parseFloat(String(v));
+  if (Number.isFinite(n) && n === 0) return "Not Available";
+  return String(v);
 }
-
-/** Consistent "02 August 2026" formatting used across every dated section. */
-function formatDate(value?: string): string | null {
-  if (!value) return null;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  const day = String(parsed.getDate()).padStart(2, "0");
-  const month = parsed.toLocaleDateString("en-IN", { month: "long" });
-  const year = parsed.getFullYear();
-  return `${day} ${month} ${year}`;
+function fmtDate(v?: string): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 }
-
-function formatCurrency(value: unknown): string | null {
-  if (!hasValue(value)) return null;
-  const num = typeof value === "number" ? value : parseFloat(String(value));
-  if (!Number.isFinite(num)) return null;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(num);
+function listVal(v?: string | string[]): string | null {
+  if (!v) return null;
+  if (Array.isArray(v)) return v.filter(Boolean).join(", ") || null;
+  return v || null;
 }
-
-/* ============================================================================
- * FIELD RESOLUTION — reads each value from wherever the backend actually
- * placed it, without renaming or fabricating anything.
- * ==========================================================================
- */
-
-function getWeather(itinerary: CropItinerary): WeatherSnapshot | null {
-  if (itinerary.weather && Object.keys(itinerary.weather).length > 0) return itinerary.weather;
-  if (itinerary.lastWeatherCheck && typeof itinerary.lastWeatherCheck === "object") {
-    return itinerary.lastWeatherCheck as WeatherSnapshot;
-  }
-  return null;
-}
-
-function getWeatherLastUpdated(weather: WeatherSnapshot | null) {
-  if (!weather) return undefined;
-  return weather.lastUpdated ?? weather.checkedAt;
-}
-
-function getCropDuration(itinerary: CropItinerary) {
-  return itinerary.aiSummary?.cropDuration ?? itinerary.cropDuration;
-}
-
-function getExpectedYield(itinerary: CropItinerary) {
-  return itinerary.aiSummary?.expectedYield ?? itinerary.expectedYield;
-}
-
-function getEstimatedCost(itinerary: CropItinerary) {
-  return itinerary.aiSummary?.estimatedCost ?? itinerary.estimatedTotalCost;
-}
-
-function getEstimatedIncome(itinerary: CropItinerary) {
-  return itinerary.aiSummary?.estimatedIncome ?? itinerary.estimatedIncome;
-}
-
-function getEstimatedProfit(itinerary: CropItinerary) {
-  return itinerary.aiSummary?.estimatedProfit ?? itinerary.estimatedProfit;
-}
-
-function getBestSeason(itinerary: CropItinerary) {
-  return itinerary.season ?? itinerary.bestSeason ?? itinerary.aiSummary?.bestSowingSeason;
-}
-
-function getLabourWorkers(entry: LabourEntry) {
-  return entry.workers ?? entry.workersRequired;
-}
-
-function getLabourDays(entry: LabourEntry) {
-  return entry.days ?? entry.estimatedDays;
-}
-
-function getLandPreparationItems(itinerary: CropItinerary): string[] {
-  const value = itinerary.landPreparation;
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === "string" && value.trim()) {
-    return value
-      .split(/\r?\n|•/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-/** Prefers an actual backend date over a week number, and only shows both
- * together when the backend has genuinely provided both — never mixes
- * "Week 1" with an invented date, and never invents a date from a week. */
-function getTimelineWhen(entry: TimelineEntry): string {
-  const date = formatDate(entry.currentDate ?? entry.originalDate ?? entry.scheduledDate);
-  const week = hasValue(entry.week) ? `Week ${entry.week}` : null;
+function getWhen(e: TimelineEntry): string {
+  const date = fmtDate(e.currentDate ?? e.originalDate ?? e.scheduledDate);
+  const week = has(e.week) ? `Week ${e.week}` : null;
   if (date && week) return `${week} · ${date}`;
   if (date) return date;
   if (week) return week;
-  return "Not available";
+  return "";
+}
+function getWeather(it: CropItinerary): WeatherSnapshot | null {
+  if (it.weather && Object.keys(it.weather).length > 0) return it.weather;
+  if (it.lastWeatherCheck && typeof it.lastWeatherCheck === "object")
+    return it.lastWeatherCheck as WeatherSnapshot;
+  return null;
+}
+function getCropDuration(it: CropItinerary) {
+  return it.aiSummary?.cropDuration ?? it.cropDuration;
+}
+function getBestSeason(it: CropItinerary) {
+  return it.season ?? it.bestSeason ?? it.aiSummary?.bestSowingSeason;
+}
+function getLandPrepItems(it: CropItinerary): string[] {
+  const v = it.landPreparation;
+  if (Array.isArray(v)) return v.filter(Boolean);
+  if (typeof v === "string" && v.trim())
+    return v.split(/\r?\n|•/).map(l => l.trim()).filter(Boolean);
+  return [];
+}
+function getLabourWorkers(e: LabourEntry) { return e.workers ?? e.workersRequired; }
+function getLabourDays(e: LabourEntry) { return e.days ?? e.estimatedDays; }
+
+// Stage emojis
+const EMOJIS: [string, string][] = [
+  ["land preparation", "🌱"], ["soil", "🌱"],
+  ["sow", "🌾"], ["plant", "🌾"],
+  ["germination", "🌿"],
+  ["irrigat", "💧"], ["water", "💧"],
+  ["fertili", "🌿"],
+  ["pest", "🛡️"], ["disease", "🛡️"],
+  ["harvest", "🌾"],
+  ["weed", "✂️"], ["prune", "✂️"],
+  ["spray", "💊"],
+];
+function stageEmoji(title?: string): string {
+  if (!title) return "📋";
+  const lower = title.toLowerCase();
+  for (const [k, e] of EMOJIS) if (lower.includes(k)) return e;
+  return "📋";
 }
 
-function listValue(value?: string | string[]): string | null {
-  if (!value) return null;
-  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || null;
-  return value;
-}
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
-function timelineHasEquipmentColumn(timeline: TimelineEntry[]) {
-  return timeline.some((entry) => hasValue(listValue(entry.equipment)));
-}
-
-function timelineHasLabourColumn(timeline: TimelineEntry[]) {
-  return timeline.some((entry) => hasValue(listValue(entry.labour)));
-}
-
-/* ============================================================================
- * TOAST — lightweight, local feedback for async actions.
- * ==========================================================================
- */
-
-function useInlineToast() {
-  const [message, setMessage] = useState<string | null>(null);
+function useToast() {
+  const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => setMessage(null), 2800);
-    return () => clearTimeout(timer);
-  }, [message]);
-  return { message, trigger: (msg: string) => setMessage(msg) };
+    if (!msg) return;
+    const t = setTimeout(() => setMsg(null), 2800);
+    return () => clearTimeout(t);
+  }, [msg]);
+  return { msg, show: (m: string) => setMsg(m) };
 }
-
-function InlineToast({ message }: { message: string | null }) {
-  if (!message) return null;
+function Toast({ msg }: { msg: string | null }) {
+  if (!msg) return null;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 12 }}
-      className="no-print fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold shadow-elevated"
-    >
-      <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
-      {message}
-    </motion.div>
+    <div className="no-print fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold shadow-elevated">
+      <Sparkles className="h-4 w-4 text-primary" />
+      {msg}
+    </div>
   );
 }
 
-/* ============================================================================
- * PRINT STYLES — only the report prints; navbar, footer, buttons, and
- * floating elements are hidden, and tables avoid splitting mid-row.
- * ==========================================================================
- */
+// ─── Print styles ─────────────────────────────────────────────────────────────
 
 function PrintStyles() {
   return (
     <style>{`
       @media print {
         body * { visibility: hidden; }
-        #ai-report-printable, #ai-report-printable * { visibility: visible; }
-        #ai-report-printable { position: absolute; inset: 0; width: 100%; }
+        #farmguide, #farmguide * { visibility: visible; }
+        #farmguide { position: absolute; inset: 0; width: 100%; }
         .no-print { display: none !important; }
         section { break-inside: avoid; }
         table { break-inside: avoid; }
@@ -383,127 +268,10 @@ function PrintStyles() {
   );
 }
 
-/* ============================================================================
- * BREADCRUMB
- * ==========================================================================
- */
+// ─── Shared UI ────────────────────────────────────────────────────────────────
 
-const Breadcrumb = memo(function Breadcrumb({ crop }: { crop: string }) {
-  return (
-    <nav className="no-print flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
-      <Link to="/renter/ai" className="hover:text-primary transition-colors">
-        AI Dashboard
-      </Link>
-      <ChevronRight className="h-3 w-3" />
-      <span className="text-foreground">{crop} Farming Guide</span>
-    </nav>
-  );
-});
-
-/* ============================================================================
- * HEADER — compact: crop, location, generated date, status + actions.
- * ==========================================================================
- */
-
-const ReportHeader = memo(function ReportHeader({
-  itinerary,
-  onDownloadPdf,
-  onPrint,
-  onShare,
-}: {
-  itinerary: CropItinerary;
-  onDownloadPdf: () => void;
-  onPrint: () => void;
-  onShare: () => void;
-}) {
-  const district = safe(itinerary.location?.district, "");
-  const state = safe(itinerary.location?.state, "");
-  const place = [district, state].filter((p) => p && p !== "Not available").join(", ");
-  const generated = formatDate(itinerary.createdAt);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-      className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-card"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0 flex flex-wrap items-center gap-x-5 gap-y-1.5">
-          <div className="flex items-center gap-2">
-            <Sprout className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="text-sm font-semibold text-foreground">{itinerary.crop}</span>
-          </div>
-          {place && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              {place}
-            </div>
-          )}
-          {generated && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5 flex-shrink-0" />
-              Generated {generated}
-            </div>
-          )}
-          {itinerary.status && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-              {itinerary.status}
-            </span>
-          )}
-        </div>
-
-        <div className="no-print flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onDownloadPdf}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-3.5 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition"
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
-          </button>
-          <button
-            type="button"
-            onClick={onPrint}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-muted transition"
-          >
-            <Printer className="h-4 w-4" />
-            Print Report
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-muted transition"
-          >
-            <Share2 className="h-4 w-4" />
-            Share
-          </button>
-          <Link
-            to="/renter/ai/generate"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-muted transition"
-          >
-            <Sparkles className="h-4 w-4" />
-            Generate New Plan
-          </Link>
-          <Link
-            to="/renter/ai"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-muted transition"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to AI Dashboard
-          </Link>
-        </div>
-      </div>
-    </motion.div>
-  );
-});
-
-/* ============================================================================
- * SECTION WRAPPER
- * ==========================================================================
- */
-
-function Section({
+/** Section with icon label */
+function Sec({
   title,
   icon: Icon,
   children,
@@ -514,722 +282,860 @@ function Section({
 }) {
   return (
     <motion.section
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
     >
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
-        <h2 className="font-display text-lg font-bold">{title}</h2>
+        <h2 className="font-display text-xl font-bold">{title}</h2>
       </div>
       {children}
     </motion.section>
   );
 }
 
-function SummaryItem({ label, value }: { label: string; value: string }) {
+/** Responsive simple table */
+function SimpleTable({
+  columns,
+  rows,
+}: {
+  columns: string[];
+  rows: (string | React.ReactNode)[][];
+}) {
+  if (!rows.length) return null;
   return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold text-foreground truncate">{value}</p>
+    <div className="overflow-x-auto rounded-2xl border border-border shadow-card">
+      <table className="w-full min-w-[480px] text-sm border-collapse">
+        <thead>
+          <tr className="bg-gradient-primary text-primary-foreground">
+            {columns.map(c => (
+              <th key={c} className="px-4 py-3 text-left font-semibold whitespace-nowrap">
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-muted/40"}>
+              {row.map((cell, j) => (
+                <td key={j} className="px-4 py-3 align-top">{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-/** Shared scroll wrapper: horizontal scroll on mobile, vertical scroll with
- * a sticky header once a table grows past a comfortable height on desktop. */
-function ScrollableTable({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border shadow-card overflow-auto max-h-[30rem]">
-      <table className="w-full min-w-[560px] text-left text-sm border-collapse">{children}</table>
-    </div>
-  );
-}
-
-function TableHeadRow({ columns }: { columns: string[] }) {
-  return (
-    <thead className="sticky top-0 z-10">
-      <tr className="bg-gradient-primary text-primary-foreground">
-        {columns.map((col) => (
-          <th key={col} className="px-4 py-3 font-semibold whitespace-nowrap">
-            {col}
-          </th>
-        ))}
-      </tr>
-    </thead>
-  );
-}
-
-/* ============================================================================
- * FARM INFORMATION
- * ==========================================================================
- */
-
-const FarmInformationSection = memo(function FarmInformationSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const fields: { label: string; value: string }[] = [
-    { label: "Crop", value: safe(itinerary.crop) },
-    { label: "State", value: safe(itinerary.location?.state) },
-    { label: "District", value: safe(itinerary.location?.district) },
-    { label: "Soil Type", value: safe(itinerary.soilType) },
-    {
-      label: "Land Area",
-      value: hasValue(itinerary.landArea) ? `${itinerary.landArea} Acres` : "Not available",
-    },
-    { label: "Water Source", value: safe(itinerary.waterSource) },
-    { label: "Budget", value: formatCurrency(itinerary.budget) ?? "Not available" },
-    { label: "Crop Duration", value: safe(getCropDuration(itinerary)) },
-    { label: "Best Season", value: safe(getBestSeason(itinerary)) },
-    { label: "Seed Variety", value: safe(itinerary.seedRecommendation?.variety) },
-  ].filter((field) => field.value !== "Not available");
-
-  return (
-    <Section title="Farm Information" icon={Layers}>
-      {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No farm information available.</p>
-      ) : (
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-card grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-5">
-          {fields.map((field) => (
-            <SummaryItem key={field.label} label={field.label} value={field.value} />
-          ))}
-        </div>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * FINANCIAL SUMMARY
- * ==========================================================================
- */
-
-const FinancialSummarySection = memo(function FinancialSummarySection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const cost = formatCurrency(getEstimatedCost(itinerary));
-  const income = formatCurrency(getEstimatedIncome(itinerary));
-  const profit = formatCurrency(getEstimatedProfit(itinerary));
-  const yieldValue = getExpectedYield(itinerary);
-
-  if (!cost && !income && !profit && !hasValue(yieldValue)) return null;
-
-  return (
-    <Section title="Financial Summary" icon={IndianRupee}>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cost && (
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card text-center h-full flex flex-col justify-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estimated Total Cost</p>
-            <p className="mt-2 font-display text-xl font-bold">{cost}</p>
-          </div>
-        )}
-        {income && (
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card text-center h-full flex flex-col justify-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estimated Income</p>
-            <p className="mt-2 font-display text-xl font-bold">{income}</p>
-          </div>
-        )}
-        {profit && (
-          <div className="rounded-2xl border-2 border-primary bg-primary/5 p-5 shadow-card text-center h-full flex flex-col justify-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-primary">Estimated Profit</p>
-            <p className="mt-2 font-display text-xl font-bold text-primary">{profit}</p>
-          </div>
-        )}
-        {hasValue(yieldValue) && (
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card text-center h-full flex flex-col justify-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Expected Yield</p>
-            <p className="mt-2 font-display text-xl font-bold">{safe(yieldValue)}</p>
-          </div>
-        )}
-      </div>
-    </Section>
-  );
-});
-
-/* ============================================================================
- * FARMING CALENDAR — the most important section. A scannable table, not
- * a wall of AI text: Week/Date, Task, Description, and (only when the
- * backend actually provides them per-activity) Equipment and Labour.
- * ==========================================================================
- */
-
-const FarmingCalendarSection = memo(function FarmingCalendarSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const timeline = itinerary.timeline ?? [];
-  const showEquipment = timelineHasEquipmentColumn(timeline);
-  const showLabour = timelineHasLabourColumn(timeline);
-
-  const columns = [
-    "Week / Date",
-    "Task",
-    "Description",
-    ...(showEquipment ? ["Equipment"] : []),
-    ...(showLabour ? ["Labour"] : []),
-  ];
-
-  return (
-    <Section title="Farming Calendar" icon={CalendarDays}>
-      {timeline.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No farming calendar is available for this plan.</p>
-      ) : (
-        <ScrollableTable>
-          <TableHeadRow columns={columns} />
-          <tbody>
-            {timeline.map((entry, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-muted/40"}>
-                <td className="px-4 py-3 font-semibold whitespace-nowrap align-top">{getTimelineWhen(entry)}</td>
-                <td className="px-4 py-3 font-medium align-top">{safe(entry.title, "Untitled Task")}</td>
-                <td className="px-4 py-3 text-muted-foreground align-top">{safe(entry.description, "—")}</td>
-                {showEquipment && (
-                  <td className="px-4 py-3 align-top">{listValue(entry.equipment) ?? "—"}</td>
-                )}
-                {showLabour && <td className="px-4 py-3 align-top">{listValue(entry.labour) ?? "—"}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </ScrollableTable>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * TODAY'S RECOMMENDATION — shown only when the backend returns enough data
- * ==========================================================================
- */
-
-const TodaysRecommendationSection = memo(function TodaysRecommendationSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const task = itinerary.todayTask;
-  if (!task || (!task.activity && !task.recommendation)) return null;
-
-  return (
-    <Section title="Today's Recommendation" icon={Info}>
-      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6 space-y-3">
-        {task.activity && (
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Current Activity
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-foreground">{task.activity}</p>
-          </div>
-        )}
-        {task.recommendation && (
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Recommendation
-            </p>
-            <p className="mt-0.5 text-sm text-foreground">{task.recommendation}</p>
-          </div>
-        )}
-      </div>
-    </Section>
-  );
-});
-
-/* ============================================================================
- * IRRIGATION SCHEDULE
- * ==========================================================================
- */
-
-const IrrigationSection = memo(function IrrigationSection({ itinerary }: { itinerary: CropItinerary }) {
-  const rows = itinerary.irrigationSchedule ?? [];
-
-  return (
-    <Section title="Irrigation Schedule" icon={Droplets}>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No irrigation schedule available.</p>
-      ) : (
-        <ScrollableTable>
-          <TableHeadRow columns={["Stage", "When to Water", "Water Requirement"]} />
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-muted/40"}>
-                <td className="px-4 py-3 font-medium">{safe(row.stage)}</td>
-                <td className="px-4 py-3">{safe(row.frequency)}</td>
-                <td className="px-4 py-3">{safe(row.waterRequirement)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ScrollableTable>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * FERTILIZER SCHEDULE
- * ==========================================================================
- */
-
-const FertilizerSection = memo(function FertilizerSection({ itinerary }: { itinerary: CropItinerary }) {
-  const rows = itinerary.fertilizerSchedule ?? [];
-
-  return (
-    <Section title="Fertilizer Schedule" icon={Sprout}>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No fertilizer schedule available.</p>
-      ) : (
-        <ScrollableTable>
-          <TableHeadRow columns={["Stage", "Fertilizer", "Quantity", "Time"]} />
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-muted/40"}>
-                <td className="px-4 py-3 font-medium">{safe(row.stage)}</td>
-                <td className="px-4 py-3">{safe(row.fertilizer)}</td>
-                <td className="px-4 py-3">{safe(row.quantity)}</td>
-                <td className="px-4 py-3">{safe(row.time)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ScrollableTable>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * EQUIPMENT REQUIREMENT
- * ==========================================================================
- */
-
-const EquipmentSection = memo(function EquipmentSection({ itinerary }: { itinerary: CropItinerary }) {
-  const items = itinerary.equipmentRequired ?? [];
-
-  return (
-    <Section title="Equipment Requirement" icon={Wrench}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No equipment recommendations available.</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-          {items.map((item, i) => (
-            <div key={i} className="flex h-full flex-col rounded-2xl border border-border bg-card p-4 shadow-card">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
-                  <Wrench className="h-4 w-4 text-primary" />
-                </div>
-                <p className="font-display text-sm font-semibold">{safe(item.name, "Equipment")}</p>
-              </div>
-              <p className="text-xs text-muted-foreground flex-1">{safe(item.purpose)}</p>
-              <p className="text-xs font-semibold text-primary mt-1.5">
-                Estimated Rent: {safe(item.estimatedRent)}
-              </p>
-              <Link
-                to="/renter/search"
-                className="no-print mt-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition"
-              >
-                <Search className="h-3.5 w-3.5" />
-                Rent Equipment
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * LABOUR REQUIREMENT
- * ==========================================================================
- */
-
-const LabourSection = memo(function LabourSection({ itinerary }: { itinerary: CropItinerary }) {
-  const rows = itinerary.labourRequirement ?? [];
-
-  return (
-    <Section title="Labour Requirement" icon={Users}>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No labour requirements are available.</p>
-      ) : (
-        <ScrollableTable>
-          <TableHeadRow columns={["Activity", "Workers", "Days Required"]} />
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-muted/40"}>
-                <td className="px-4 py-3 font-medium">{safe(row.activity, "Activity")}</td>
-                <td className="px-4 py-3">{safeCount(getLabourWorkers(row))}</td>
-                <td className="px-4 py-3">{safeCount(getLabourDays(row))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ScrollableTable>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * PEST & DISEASE — expandable cards, problem + solution only.
- * ==========================================================================
- */
-
-const PestManagementSection = memo(function PestManagementSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const items = itinerary.pestAndDiseaseManagement ?? [];
-
-  return (
-    <Section title="Pest & Disease" icon={ShieldAlert}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No pest or disease guidance is available.</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {items.map((item, i) => (
-            <details
-              key={i}
-              className="group rounded-2xl border border-destructive/25 bg-destructive/5 p-4 shadow-card"
-              open={i === 0}
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                  <span className="text-xs font-bold uppercase tracking-wide text-destructive">
-                    {safe(item.problem, "Issue")}
-                  </span>
-                </span>
-                <ChevronDown className="h-4 w-4 text-destructive flex-shrink-0 transition-transform group-open:rotate-180" />
-              </summary>
-              <p className="mt-3 text-sm text-foreground">{safe(item.solution)}</p>
-            </details>
-          ))}
-        </div>
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * CHECKLIST SECTIONS — Weed Management, Land Preparation, Precautions, Tips
- * ==========================================================================
- */
-
+/** Green-tick / warning checklist */
 function Checklist({
   items,
-  icon: Icon,
-  tone,
+  warning,
 }: {
   items: string[];
-  icon: React.ElementType;
-  tone: "primary" | "warning" | "success";
+  warning?: boolean;
 }) {
-  const toneClasses = tone === "warning" ? "text-amber-600" : "text-primary";
-
+  if (!items.length) return null;
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-card space-y-3">
       {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-2.5">
-          <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${toneClasses}`} />
-          <p className="text-sm text-foreground">{item}</p>
+        <div key={i} className="flex items-start gap-3">
+          {warning ? (
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+          )}
+          <p className="text-sm leading-relaxed">{item}</p>
         </div>
       ))}
     </div>
   );
 }
 
-const LandPreparationSection = memo(function LandPreparationSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const items = getLandPreparationItems(itinerary);
+// ─── Loading / Error / Empty ──────────────────────────────────────────────────
+
+function Skeleton() {
   return (
-    <Section title="Land Preparation" icon={Layers}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No land preparation guidance is available.</p>
-      ) : (
-        <Checklist items={items} icon={CheckCircle2} tone="primary" />
-      )}
-    </Section>
-  );
-});
-
-const WeedManagementSection = memo(function WeedManagementSection({
-  itinerary,
-}: {
-  itinerary: CropItinerary;
-}) {
-  const items = itinerary.weedManagement ?? [];
-  return (
-    <Section title="Weed Management" icon={CheckCircle2}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No weed management guidance is available.</p>
-      ) : (
-        <Checklist items={items} icon={CheckCircle2} tone="primary" />
-      )}
-    </Section>
-  );
-});
-
-const PrecautionsSection = memo(function PrecautionsSection({ itinerary }: { itinerary: CropItinerary }) {
-  const items = itinerary.precautions ?? [];
-  return (
-    <Section title="Precautions" icon={AlertTriangle}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No specific precautions were flagged.</p>
-      ) : (
-        <Checklist items={items} icon={AlertTriangle} tone="warning" />
-      )}
-    </Section>
-  );
-});
-
-const TipsSection = memo(function TipsSection({ itinerary }: { itinerary: CropItinerary }) {
-  const items = itinerary.tips ?? [];
-  return (
-    <Section title="AI Tips" icon={Lightbulb}>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No expert tips are available yet.</p>
-      ) : (
-        <Checklist items={items} icon={CheckCircle2} tone="success" />
-      )}
-    </Section>
-  );
-});
-
-/* ============================================================================
- * WEATHER — only real fields are shown; missing individual values are
- * simply omitted rather than padded out with repeated "Not available".
- * ==========================================================================
- */
-
-const WeatherSection = memo(function WeatherSection({ itinerary }: { itinerary: CropItinerary }) {
-  const weather = getWeather(itinerary);
-  const lastUpdated = formatDate(getWeatherLastUpdated(weather));
-
-  const stats = weather
-    ? ([
-        hasValue(weather.temperature) && { label: "Temperature", value: `${weather.temperature}°C` },
-        hasValue(weather.humidity) && { label: "Humidity", value: `${weather.humidity}%` },
-        hasValue(weather.condition) && { label: "Condition", value: String(weather.condition) },
-        hasValue(weather.recommendation) && { label: "AI Recommendation", value: String(weather.recommendation) },
-        lastUpdated && { label: "Last Updated", value: lastUpdated },
-      ].filter(Boolean) as { label: string; value: string }[])
-    : [];
-
-  return (
-    <Section title="Weather" icon={CloudRain}>
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-card">
-        {stats.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-5">
-            {stats.map((stat) => (
-              <SummaryItem key={stat.label} label={stat.label} value={stat.value} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Weather information currently unavailable.</p>
-        )}
-      </div>
-    </Section>
-  );
-});
-
-/* ============================================================================
- * SKELETON (loading state)
- * ==========================================================================
- */
-
-function ReportSkeleton() {
-  return (
-    <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16 py-8 space-y-8 animate-pulse">
-      <div className="h-4 w-56 rounded bg-muted" />
+    <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8 space-y-8 animate-pulse">
       <div className="h-20 rounded-2xl bg-muted" />
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 rounded-2xl bg-muted" />
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[1,2,3,4].map(i=><div key={i} className="h-24 rounded-2xl bg-muted"/>)}
       </div>
-      <div className="h-64 rounded-2xl bg-muted" />
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl bg-muted" />
-        ))}
-      </div>
-      <div className="h-48 rounded-2xl bg-muted" />
+      {[1,2,3,4,5].map(i=>(
+        <div key={i} className="space-y-3">
+          <div className="h-5 w-40 rounded bg-muted" />
+          <div className="h-28 rounded-2xl bg-muted" />
+        </div>
+      ))}
     </div>
   );
 }
 
-/* ============================================================================
- * EMPTY STATE
- * ==========================================================================
- */
-
-function EmptyState() {
+function Empty() {
   return (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
+    <div className="mx-auto max-w-sm px-4 py-24 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-muted">
         <Leaf className="h-10 w-10 text-muted-foreground opacity-40" />
       </div>
-      <h1 className="mt-6 font-display text-xl font-bold">Farming guide not found.</h1>
+      <h1 className="mt-6 font-display text-xl font-bold">Guide not found</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        This report may have been removed, or the link is no longer valid.
+        This report may have been removed or the link is no longer valid.
       </p>
-      <Link
-        to="/renter/ai"
-        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to AI Dashboard
+      <Link to="/renter/ai" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition">
+        <ArrowLeft className="h-4 w-4" /> Back to AI Dashboard
       </Link>
     </div>
   );
 }
 
-/* ============================================================================
- * ERROR STATE — friendly, never exposes the raw backend error.
- * ==========================================================================
- */
-
-function ReportErrorState({ onRetry }: { onRetry: () => void }) {
+function Err({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
+    <div className="mx-auto max-w-sm px-4 py-24 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-destructive/10">
         <AlertTriangle className="h-10 w-10 text-destructive" />
       </div>
-      <h1 className="mt-6 font-display text-xl font-bold">Couldn't load this report</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Something went wrong while fetching your farming guide. Please try again.
-      </p>
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition"
-        >
-          <FileText className="h-4 w-4" />
-          Retry
+      <h1 className="mt-6 font-display text-xl font-bold">Couldn't load this guide</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Something went wrong. Please try again.</p>
+      <div className="mt-6 flex justify-center gap-3 flex-wrap">
+        <button onClick={onRetry} className="inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition">
+          <FileText className="h-4 w-4" /> Retry
         </button>
-        <Link
-          to="/renter/ai"
-          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold hover:bg-muted transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to AI Dashboard
+        <Link to="/renter/ai" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold hover:bg-muted transition">
+          <ArrowLeft className="h-4 w-4" /> Back
         </Link>
       </div>
     </div>
   );
 }
 
-/* ============================================================================
- * MAIN PAGE
- * ==========================================================================
- */
+// ─── HEADER ───────────────────────────────────────────────────────────────────
+
+const Header = memo(function Header({
+  it,
+  onPdf,
+  onPrint,
+  onBack,
+}: {
+  it: CropItinerary;
+  onPdf: () => void;
+  onPrint: () => void;
+  onBack: () => void;
+}) {
+  const district = it.location?.district;
+  const state = it.location?.state;
+  const place = [district, state].filter(Boolean).join(", ");
+  const generated = fmtDate(it.createdAt);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-card"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Identity */}
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+            <Sprout className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold">{it.crop} Farming Guide</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {place && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                  {place}
+                </span>
+              )}
+              {generated && (
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                  Generated {generated}
+                </span>
+              )}
+              {it.status && (
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {it.status}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="no-print flex flex-wrap items-center gap-2">
+          <button
+            onClick={onPdf}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition shadow-sm"
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </button>
+          <button
+            onClick={onPrint}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-muted transition"
+          >
+            <Printer className="h-4 w-4" />
+            Print
+          </button>
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-muted transition"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+// ─── SECTION 1: Farm Information ──────────────────────────────────────────────
+
+const FarmInfo = memo(function FarmInfo({ it }: { it: CropItinerary }) {
+  const fields = [
+    { icon: Sprout, label: "Crop", value: it.crop },
+    { icon: MapPin, label: "State", value: it.location?.state },
+    { icon: MapPin, label: "District", value: it.location?.district },
+    {
+      icon: Layers,
+      label: "Land Area",
+      value: has(it.landArea) ? `${it.landArea} Acres` : undefined,
+    },
+    { icon: Layers, label: "Soil Type", value: it.soilType },
+    { icon: Droplets, label: "Water Source", value: it.waterSource },
+    {
+      icon: IndianRupee,
+      label: "Budget",
+      value: has(it.budget)
+        ? `₹${Number(it.budget).toLocaleString("en-IN")}`
+        : undefined,
+    },
+    { icon: Clock, label: "Crop Duration", value: getCropDuration(it) },
+    { icon: Sun, label: "Best Season", value: getBestSeason(it) },
+    { icon: Leaf, label: "Seed Variety", value: it.seedRecommendation?.variety },
+    { icon: Leaf, label: "Seed Quantity", value: it.seedRecommendation?.quantity },
+  ].filter(f => has(f.value));
+
+  if (!fields.length) return null;
+
+  return (
+    <Sec title="Farm Information" icon={Layers}>
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          {fields.map(({ icon: Icon, label, value }, i) => (
+            <div
+              key={label}
+              className={`flex items-center gap-4 p-5 ${
+                i > 0 && i % 3 === 0 ? "sm:border-t border-border" : ""
+              } ${i >= 3 ? "border-t border-border" : ""}`}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Icon className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold truncate">{value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 2: What Should I Do? (Task Cards) ───────────────────────────────
+
+const TaskCards = memo(function TaskCards({ it }: { it: CropItinerary }) {
+  const timeline = it.timeline ?? [];
+  if (!timeline.length) return null;
+
+  return (
+    <Sec title="What Should I Do?" icon={CheckCircle2}>
+      <div className="space-y-3">
+        {timeline.map((entry, i) => {
+          const when = getWhen(entry);
+          const descLines = entry.description
+            ? entry.description.split(/\.\s+|•|\n/).map(l => l.trim()).filter(Boolean)
+            : [];
+
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-30px" }}
+              transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.2) }}
+              className="rounded-2xl border border-border bg-card shadow-card overflow-hidden"
+            >
+              {/* Card header */}
+              <div className="flex items-center gap-3 bg-primary/5 border-b border-border/60 px-5 py-3">
+                <span className="text-xl">{stageEmoji(entry.title)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-base leading-tight">
+                    {safe(entry.title, "Task")}
+                  </p>
+                  {when && (
+                    <p className="text-xs text-primary font-semibold mt-0.5">{when}</p>
+                  )}
+                </div>
+                {entry.status && (
+                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide rounded-full bg-primary/10 text-primary px-2.5 py-0.5">
+                    {entry.status}
+                  </span>
+                )}
+              </div>
+
+              {/* Card body */}
+              <div className="px-5 py-4">
+                {descLines.length > 1 ? (
+                  <ul className="space-y-1.5">
+                    {descLines.map((line, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-foreground">
+                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                ) : entry.description ? (
+                  <p className="text-sm text-foreground leading-relaxed">{entry.description}</p>
+                ) : null}
+
+                {/* Equipment / Labour tags */}
+                {(listVal(entry.equipment) || listVal(entry.labour)) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {listVal(entry.equipment) && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground">
+                        <Wrench className="h-3 w-3 text-primary" />
+                        {listVal(entry.equipment)}
+                      </span>
+                    )}
+                    {listVal(entry.labour) && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground">
+                        <Users className="h-3 w-3 text-primary" />
+                        {listVal(entry.labour)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 3: Farming Timeline (vertical roadmap) ──────────────────────────
+
+const FarmingTimeline = memo(function FarmingTimeline({ it }: { it: CropItinerary }) {
+  const timeline = it.timeline ?? [];
+  if (!timeline.length) return null;
+
+  return (
+    <Sec title="Farming Timeline" icon={CalendarDays}>
+      <div className="relative pl-10 space-y-0">
+        {/* Vertical connector line */}
+        <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-border rounded-full" />
+
+        {timeline.map((entry, i) => (
+          <div key={i} className="relative">
+            {/* Node */}
+            <div className="absolute -left-6 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-card border-2 border-primary/40 text-base shadow-sm">
+              {stageEmoji(entry.title)}
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-card mb-2">
+              <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                <p className="font-semibold text-sm">{safe(entry.title, "Task")}</p>
+                {getWhen(entry) && (
+                  <span className="text-[11px] font-medium text-primary shrink-0">
+                    {getWhen(entry)}
+                  </span>
+                )}
+              </div>
+              {entry.description && (
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                  {entry.description}
+                </p>
+              )}
+            </div>
+
+            {/* Arrow between stages */}
+            {i < timeline.length - 1 && (
+              <div className="flex justify-start pl-0 mb-2">
+                <ArrowDown className="h-4 w-4 text-primary/30 ml-[-6px]" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 4: Important Dates (week / date milestones) ─────────────────────
+
+const ImportantDates = memo(function ImportantDates({ it }: { it: CropItinerary }) {
+  const timeline = it.timeline ?? [];
+  if (!timeline.length) return null;
+
+  return (
+    <Sec title="Important Dates" icon={CalendarDays}>
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="divide-y divide-border">
+          {timeline.map((entry, i) => {
+            const when = getWhen(entry);
+            if (!when && !entry.title) return null;
+            return (
+              <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                <span className="text-xl shrink-0">{stageEmoji(entry.title)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{safe(entry.title, "Task")}</p>
+                  {when && (
+                    <p className="text-xs text-primary font-medium mt-0.5">{when}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 5: Irrigation Guide ─────────────────────────────────────────────
+
+const IrrigationGuide = memo(function IrrigationGuide({ it }: { it: CropItinerary }) {
+  const rows = it.irrigationSchedule ?? [];
+  if (!rows.length) return null;
+
+  return (
+    <Sec title="Irrigation Guide" icon={Droplets}>
+      <SimpleTable
+        columns={["Stage", "When to Water", "Water Requirement"]}
+        rows={rows.map(r => [
+          <span className="font-medium">{safe(r.stage)}</span>,
+          safe(r.frequency),
+          safe(r.waterRequirement),
+        ])}
+      />
+    </Sec>
+  );
+});
+
+// ─── SECTION 6: Fertilizer Guide ─────────────────────────────────────────────
+
+const FertilizerGuide = memo(function FertilizerGuide({ it }: { it: CropItinerary }) {
+  const rows = it.fertilizerSchedule ?? [];
+  if (!rows.length) return null;
+
+  return (
+    <Sec title="Fertilizer Guide" icon={Sprout}>
+      <SimpleTable
+        columns={["Stage", "Fertilizer", "Quantity", "Time"]}
+        rows={rows.map(r => [
+          <span className="font-medium">{safe(r.stage)}</span>,
+          safe(r.fertilizer),
+          safe(r.quantity),
+          safe(r.time),
+        ])}
+      />
+    </Sec>
+  );
+});
+
+// ─── SECTION 7: Equipment Needed ─────────────────────────────────────────────
+
+const EquipmentNeeded = memo(function EquipmentNeeded({ it }: { it: CropItinerary }) {
+  const items = it.equipmentRequired ?? [];
+  if (!items.length) return null;
+
+  return (
+    <Sec title="Equipment Needed" icon={Wrench}>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.06 }}
+            className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-card"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Tractor className="h-5 w-5 text-primary" />
+              </div>
+              <p className="font-semibold text-sm leading-snug">{safe(item.name, "Equipment")}</p>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-3">
+              {safe(item.purpose)}
+            </p>
+            {has(item.estimatedRent) && (
+              <p className="text-sm font-semibold text-primary mb-3">
+                Est. Rent: {item.estimatedRent}
+              </p>
+            )}
+            <Link
+              to="/renter/search"
+              className="no-print inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Rent Equipment
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 8: Labour Requirement ───────────────────────────────────────────
+
+const LabourReq = memo(function LabourReq({ it }: { it: CropItinerary }) {
+  const rows = it.labourRequirement ?? [];
+  if (!rows.length) return null;
+
+  return (
+    <Sec title="Labour Requirement" icon={Users}>
+      <SimpleTable
+        columns={["Activity", "Workers Needed", "Days Required"]}
+        rows={rows.map(r => [
+          <span className="font-medium">{safe(r.activity, "Activity")}</span>,
+          safeCount(getLabourWorkers(r)),
+          safeCount(getLabourDays(r)),
+        ])}
+      />
+    </Sec>
+  );
+});
+
+// ─── SECTION 9: Weed Management ──────────────────────────────────────────────
+
+const WeedMgmt = memo(function WeedMgmt({ it }: { it: CropItinerary }) {
+  const items = it.weedManagement ?? [];
+  if (!items.length) return null;
+  return (
+    <Sec title="Weed Management" icon={CheckCircle2}>
+      <Checklist items={items} />
+    </Sec>
+  );
+});
+
+// ─── SECTION 10: Pest & Disease ───────────────────────────────────────────────
+
+const PestDisease = memo(function PestDisease({ it }: { it: CropItinerary }) {
+  const items = it.pestAndDiseaseManagement ?? [];
+  if (!items.length) return null;
+
+  return (
+    <Sec title="Pest & Disease" icon={ShieldAlert}>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {items.map((item, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5 shadow-card"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm font-bold text-destructive">{safe(item.problem, "Issue")}</p>
+            </div>
+            <div className="border-t border-destructive/15 pt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Solution
+              </p>
+              <p className="text-sm leading-relaxed">{safe(item.solution)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 11: Precautions ─────────────────────────────────────────────────
+
+const Precautions = memo(function Precautions({ it }: { it: CropItinerary }) {
+  const items = it.precautions ?? [];
+  if (!items.length) return null;
+  return (
+    <Sec title="Precautions" icon={AlertTriangle}>
+      <Checklist items={items} warning />
+    </Sec>
+  );
+});
+
+// ─── SECTION 12: Expert Tips ─────────────────────────────────────────────────
+
+const ExpertTips = memo(function ExpertTips({ it }: { it: CropItinerary }) {
+  const items = it.tips ?? [];
+  if (!items.length) return null;
+  return (
+    <Sec title="Expert Tips" icon={Lightbulb}>
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 shadow-card space-y-3">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-start gap-3">
+            <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm leading-relaxed">{item}</p>
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+});
+
+// ─── SECTION 13: Weather ─────────────────────────────────────────────────────
+
+const Weather = memo(function Weather({ it }: { it: CropItinerary }) {
+  const w = getWeather(it);
+
+  return (
+    <Sec title="Weather" icon={CloudRain}>
+      {!w ? (
+        <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground shadow-card">
+          Weather information is currently unavailable.
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+            {has(w.temperature) && (
+              <div className="flex items-center gap-3 p-4">
+                <Thermometer className="h-5 w-5 text-orange-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Temperature</p>
+                  <p className="text-sm font-bold">{w.temperature}°C</p>
+                </div>
+              </div>
+            )}
+            {has(w.humidity) && (
+              <div className="flex items-center gap-3 p-4 border-t sm:border-t-0">
+                <Droplets className="h-5 w-5 text-blue-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Humidity</p>
+                  <p className="text-sm font-bold">{w.humidity}%</p>
+                </div>
+              </div>
+            )}
+            {has(w.condition) && (
+              <div className="flex items-center gap-3 p-4 border-t sm:border-t-0">
+                <Wind className="h-5 w-5 text-sky-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Condition</p>
+                  <p className="text-sm font-bold">{w.condition}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {(has(w.recommendation) || fmtDate(w.lastUpdated ?? w.checkedAt)) && (
+            <div className="border-t border-border p-4 space-y-2">
+              {has(w.recommendation) && (
+                <p className="text-sm text-foreground leading-relaxed">
+                  <span className="font-semibold text-primary">Recommendation: </span>
+                  {w.recommendation}
+                </p>
+              )}
+              {fmtDate(w.lastUpdated ?? w.checkedAt) && (
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  Last updated: {fmtDate(w.lastUpdated ?? w.checkedAt)}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </Sec>
+  );
+});
+
+// ─── LAND PREPARATION (internal — shown as checklist if present) ──────────────
+
+const LandPrep = memo(function LandPrep({ it }: { it: CropItinerary }) {
+  const items = getLandPrepItems(it);
+  if (!items.length) return null;
+  return (
+    <Sec title="Land Preparation" icon={Layers}>
+      <Checklist items={items} />
+    </Sec>
+  );
+});
+
+// ─── TODAY'S FOCUS (if backend provides it) ───────────────────────────────────
+
+const TodaysFocus = memo(function TodaysFocus({ it }: { it: CropItinerary }) {
+  const task = it.todayTask;
+  if (!task || (!task.activity && !task.recommendation)) return null;
+
+  return (
+    <Sec title="Today's Focus" icon={CheckCircle2}>
+      <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm text-xl">
+            📌
+          </div>
+          <div className="space-y-3 flex-1">
+            {task.activity && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Current Activity
+                </p>
+                <p className="text-base font-bold mt-0.5">{task.activity}</p>
+              </div>
+            )}
+            {task.recommendation && (
+              <p className="text-sm leading-relaxed">{task.recommendation}</p>
+            )}
+            {task.scheduledDate && fmtDate(task.scheduledDate) && (
+              <p className="text-xs text-primary font-medium flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {fmtDate(task.scheduledDate)}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+});
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 function AIReportPage() {
   const { id } = Route.useParams();
-  const { message, trigger } = useInlineToast();
+  const { msg, show } = useToast();
 
-  const {
-    data: itinerary,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
+  const { data: it, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["ai-itinerary", id],
     queryFn: () => fetchItinerary(id),
     enabled: Boolean(id),
     retry: 1,
   });
 
-  const isNotFound = useMemo(() => axios.isAxiosError(error) && error.response?.status === 404, [error]);
+  const isNotFound = useMemo(
+    () => axios.isAxiosError(error) && error.response?.status === 404,
+    [error]
+  );
 
   const handlePrint = () => window.print();
+  const handleBack = () => window.history.back();
 
   const handleShare = async () => {
-    const shareUrl = window.location.href;
+    const url = window.location.href;
     if (navigator.share) {
-      try {
-        await navigator.share({ title: "FarmFleet Smart Farming Guide", url: shareUrl });
-        return;
-      } catch {
-        // Share was cancelled or failed — fall back to clipboard below.
-      }
+      try { await navigator.share({ title: "FarmFleet Farming Guide", url }); return; }
+      catch { /* cancelled */ }
     }
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      trigger("Report link copied to clipboard");
-    } catch {
-      trigger("Unable to share this report");
-    }
+    try { await navigator.clipboard.writeText(url); show("Link copied!"); }
+    catch { show("Unable to share"); }
   };
 
-  // Calls the existing backend PDF endpoint directly and downloads the
-  // response — the frontend never generates the PDF itself (no
-  // html2canvas / jsPDF). Adjust the path below only if it does not match
-  // the route already exposed by the PDF controller in this backend.
-  const handleDownloadPdf = async () => {
+  const handlePdf = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/ai/itinerary/${id}/pdf`, {
+      const res = await axios.get(`${API_BASE_URL}/api/ai/itinerary/${id}/pdf`, {
         responseType: "blob",
         headers: { Authorization: `Bearer ${localStorage.getItem("farmerToken") ?? ""}` },
       });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `FarmFleet_AI_Report_${itinerary?._id ?? id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `FarmFleet_Guide_${it?._id ?? id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch {
-      trigger("Could not download the PDF. Please try again.");
+      show("Could not download PDF. Please try again.");
     }
   };
 
-  if (isLoading) return <ReportSkeleton />;
-  if (isNotFound) return <EmptyState />;
-  if (isError || !itinerary) return <ReportErrorState onRetry={() => refetch()} />;
+  if (isLoading) return <Skeleton />;
+  if (isNotFound) return <Empty />;
+  if (isError || !it) return <Err onRetry={() => refetch()} />;
 
   return (
     <>
       <PrintStyles />
-      <section id="ai-report-printable" className="w-full px-4 sm:px-6 lg:px-10 xl:px-16 py-8 space-y-8">
-        <Breadcrumb crop={itinerary.crop} />
 
-        <ReportHeader
-          itinerary={itinerary}
-          onDownloadPdf={handleDownloadPdf}
-          onPrint={handlePrint}
-          onShare={handleShare}
-        />
+      <div
+        id="farmguide"
+        className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8 space-y-10"
+      >
+        {/* Breadcrumb */}
+        <nav className="no-print flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Link to="/renter/ai" className="hover:text-primary transition-colors">
+            AI Dashboard
+          </Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-foreground">{it.crop} Guide</span>
+        </nav>
 
-        <FarmInformationSection itinerary={itinerary} />
-        <FinancialSummarySection itinerary={itinerary} />
-        <FarmingCalendarSection itinerary={itinerary} />
-        <TodaysRecommendationSection itinerary={itinerary} />
-        <IrrigationSection itinerary={itinerary} />
-        <FertilizerSection itinerary={itinerary} />
-        <EquipmentSection itinerary={itinerary} />
-        <LabourSection itinerary={itinerary} />
-        <PestManagementSection itinerary={itinerary} />
-        <WeedManagementSection itinerary={itinerary} />
-        <LandPreparationSection itinerary={itinerary} />
-        <PrecautionsSection itinerary={itinerary} />
-        <TipsSection itinerary={itinerary} />
-        <WeatherSection itinerary={itinerary} />
+        {/* Header */}
+        <Header it={it} onPdf={handlePdf} onPrint={handlePrint} onBack={handleBack} />
 
-        <div className="h-4" />
-      </section>
+        {/* Section 1: Farm Info */}
+        <FarmInfo it={it} />
 
-      <InlineToast message={message} />
+        {/* Today's focus (if backend provides) */}
+        <TodaysFocus it={it} />
+
+        {/* Section 2: What Should I Do */}
+        <TaskCards it={it} />
+
+        {/* Section 3: Farming Timeline */}
+        <FarmingTimeline it={it} />
+
+        {/* Section 4: Important Dates */}
+        <ImportantDates it={it} />
+
+        {/* Section 5: Irrigation */}
+        <IrrigationGuide it={it} />
+
+        {/* Section 6: Fertilizer */}
+        <FertilizerGuide it={it} />
+
+        {/* Section 7: Equipment */}
+        <EquipmentNeeded it={it} />
+
+        {/* Section 8: Labour */}
+        <LabourReq it={it} />
+
+        {/* Land Prep checklist (if backend provides) */}
+        <LandPrep it={it} />
+
+        {/* Section 9: Weed Management */}
+        <WeedMgmt it={it} />
+
+        {/* Section 10: Pest & Disease */}
+        <PestDisease it={it} />
+
+        {/* Section 11: Precautions */}
+        <Precautions it={it} />
+
+        {/* Section 12: Expert Tips */}
+        <ExpertTips it={it} />
+
+        {/* Section 13: Weather */}
+        <Weather it={it} />
+
+        <div className="h-8" />
+      </div>
+
+      <Toast msg={msg} />
     </>
   );
 }

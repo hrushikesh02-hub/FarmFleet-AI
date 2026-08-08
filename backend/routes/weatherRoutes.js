@@ -7,13 +7,14 @@ const farmerAuth = require("../middleware/authMiddleware");
 const {
   getCurrentWeather,
   getWeatherReport,
-  refreshWeather,
   checkWeatherForItinerary,
   updateWeatherSchedule,
+  getMyAlerts,
+  markAlertAsRead,
 } = require("../controllers/weatherController");
 
 /* =====================================================
-   Current Weather By City
+   CURRENT WEATHER
    GET /api/weather/current?city=Ahmednagar
 ===================================================== */
 
@@ -24,7 +25,7 @@ router.get(
 );
 
 /* =====================================================
-   Complete Weather Report By City
+   COMPLETE WEATHER REPORT
    GET /api/weather/report?city=Ahmednagar
 ===================================================== */
 
@@ -35,18 +36,7 @@ router.get(
 );
 
 /* =====================================================
-   Refresh Weather For Existing Itinerary
-   GET /api/weather/current/:id
-===================================================== */
-
-router.get(
-  "/current/:id",
-  farmerAuth,
-  refreshWeather
-);
-
-/* =====================================================
-   Check Weather & Optimize Schedule
+   CHECK WEATHER FOR SINGLE ITINERARY
    POST /api/weather/check/:id
 ===================================================== */
 
@@ -57,7 +47,7 @@ router.post(
 );
 
 /* =====================================================
-   Force Update Weather Optimized Schedule
+   UPDATE WEATHER OPTIMIZED SCHEDULE
    POST /api/weather/update/:id
 ===================================================== */
 
@@ -68,7 +58,29 @@ router.post(
 );
 
 /* =====================================================
-   Export Router
+   GET ALL WEATHER ALERTS OF LOGGED-IN FARMER
+   GET /api/weather/alerts
+===================================================== */
+
+router.get(
+  "/alerts",
+  farmerAuth,
+  getMyAlerts
+);
+
+/* =====================================================
+   MARK WEATHER ALERT AS READ
+   POST /api/weather/alerts/:id/read
+===================================================== */
+
+router.post(
+  "/alerts/:id/read",
+  farmerAuth,
+  markAlertAsRead
+);
+
+/* =====================================================
+   EXPORT
 ===================================================== */
 
 module.exports = router;

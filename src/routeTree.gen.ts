@@ -38,8 +38,11 @@ import { Route as RenterAiIndexRouteImport } from './routes/renter.ai.index'
 import { Route as RenterLaboursIdRouteImport } from './routes/renter.labours.$id'
 import { Route as RenterEquipmentIdRouteImport } from './routes/renter.equipment.$id'
 import { Route as RenterBookingIdRouteImport } from './routes/renter.booking.$id'
+import { Route as RenterAiWeatherRouteImport } from './routes/renter.ai.weather'
+import { Route as RenterAiReportsRouteImport } from './routes/renter.ai.reports'
 import { Route as RenterAiProcessingRouteImport } from './routes/renter.ai.processing'
 import { Route as RenterAiGenerateRouteImport } from './routes/renter.ai.generate'
+import { Route as RenterAiCalendarRouteImport } from './routes/renter.ai.calendar'
 import { Route as RenterLaboursIdHireRouteImport } from './routes/renter.labours.$id.hire'
 import { Route as RenterAiReportIdRouteImport } from './routes/renter.ai.report.$id'
 
@@ -188,6 +191,16 @@ const RenterBookingIdRoute = RenterBookingIdRouteImport.update({
   path: '/renter/booking/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RenterAiWeatherRoute = RenterAiWeatherRouteImport.update({
+  id: '/weather',
+  path: '/weather',
+  getParentRoute: () => RenterAiRoute,
+} as any)
+const RenterAiReportsRoute = RenterAiReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => RenterAiRoute,
+} as any)
 const RenterAiProcessingRoute = RenterAiProcessingRouteImport.update({
   id: '/processing',
   path: '/processing',
@@ -196,6 +209,11 @@ const RenterAiProcessingRoute = RenterAiProcessingRouteImport.update({
 const RenterAiGenerateRoute = RenterAiGenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
+  getParentRoute: () => RenterAiRoute,
+} as any)
+const RenterAiCalendarRoute = RenterAiCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => RenterAiRoute,
 } as any)
 const RenterLaboursIdHireRoute = RenterLaboursIdHireRouteImport.update({
@@ -234,8 +252,11 @@ export interface FileRoutesByFullPath {
   '/renter/labours': typeof RenterLaboursRouteWithChildren
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/calendar': typeof RenterAiCalendarRoute
   '/renter/ai/generate': typeof RenterAiGenerateRoute
   '/renter/ai/processing': typeof RenterAiProcessingRoute
+  '/renter/ai/reports': typeof RenterAiReportsRoute
+  '/renter/ai/weather': typeof RenterAiWeatherRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
   '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
@@ -267,8 +288,11 @@ export interface FileRoutesByTo {
   '/renter/dashboard': typeof RenterDashboardRoute
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/calendar': typeof RenterAiCalendarRoute
   '/renter/ai/generate': typeof RenterAiGenerateRoute
   '/renter/ai/processing': typeof RenterAiProcessingRoute
+  '/renter/ai/reports': typeof RenterAiReportsRoute
+  '/renter/ai/weather': typeof RenterAiWeatherRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
   '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
@@ -303,8 +327,11 @@ export interface FileRoutesById {
   '/renter/labours': typeof RenterLaboursRouteWithChildren
   '/renter/profile': typeof RenterProfileRoute
   '/renter/search': typeof RenterSearchRoute
+  '/renter/ai/calendar': typeof RenterAiCalendarRoute
   '/renter/ai/generate': typeof RenterAiGenerateRoute
   '/renter/ai/processing': typeof RenterAiProcessingRoute
+  '/renter/ai/reports': typeof RenterAiReportsRoute
+  '/renter/ai/weather': typeof RenterAiWeatherRoute
   '/renter/booking/$id': typeof RenterBookingIdRoute
   '/renter/equipment/$id': typeof RenterEquipmentIdRoute
   '/renter/labours/$id': typeof RenterLaboursIdRouteWithChildren
@@ -340,8 +367,11 @@ export interface FileRouteTypes {
     | '/renter/labours'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/calendar'
     | '/renter/ai/generate'
     | '/renter/ai/processing'
+    | '/renter/ai/reports'
+    | '/renter/ai/weather'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
     | '/renter/labours/$id'
@@ -373,8 +403,11 @@ export interface FileRouteTypes {
     | '/renter/dashboard'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/calendar'
     | '/renter/ai/generate'
     | '/renter/ai/processing'
+    | '/renter/ai/reports'
+    | '/renter/ai/weather'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
     | '/renter/labours/$id'
@@ -408,8 +441,11 @@ export interface FileRouteTypes {
     | '/renter/labours'
     | '/renter/profile'
     | '/renter/search'
+    | '/renter/ai/calendar'
     | '/renter/ai/generate'
     | '/renter/ai/processing'
+    | '/renter/ai/reports'
+    | '/renter/ai/weather'
     | '/renter/booking/$id'
     | '/renter/equipment/$id'
     | '/renter/labours/$id'
@@ -653,6 +689,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RenterBookingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/renter/ai/weather': {
+      id: '/renter/ai/weather'
+      path: '/weather'
+      fullPath: '/renter/ai/weather'
+      preLoaderRoute: typeof RenterAiWeatherRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
+    '/renter/ai/reports': {
+      id: '/renter/ai/reports'
+      path: '/reports'
+      fullPath: '/renter/ai/reports'
+      preLoaderRoute: typeof RenterAiReportsRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
     '/renter/ai/processing': {
       id: '/renter/ai/processing'
       path: '/processing'
@@ -665,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/generate'
       fullPath: '/renter/ai/generate'
       preLoaderRoute: typeof RenterAiGenerateRouteImport
+      parentRoute: typeof RenterAiRoute
+    }
+    '/renter/ai/calendar': {
+      id: '/renter/ai/calendar'
+      path: '/calendar'
+      fullPath: '/renter/ai/calendar'
+      preLoaderRoute: typeof RenterAiCalendarRouteImport
       parentRoute: typeof RenterAiRoute
     }
     '/renter/labours/$id/hire': {
@@ -685,15 +742,21 @@ declare module '@tanstack/react-router' {
 }
 
 interface RenterAiRouteChildren {
+  RenterAiCalendarRoute: typeof RenterAiCalendarRoute
   RenterAiGenerateRoute: typeof RenterAiGenerateRoute
   RenterAiProcessingRoute: typeof RenterAiProcessingRoute
+  RenterAiReportsRoute: typeof RenterAiReportsRoute
+  RenterAiWeatherRoute: typeof RenterAiWeatherRoute
   RenterAiIndexRoute: typeof RenterAiIndexRoute
   RenterAiReportIdRoute: typeof RenterAiReportIdRoute
 }
 
 const RenterAiRouteChildren: RenterAiRouteChildren = {
+  RenterAiCalendarRoute: RenterAiCalendarRoute,
   RenterAiGenerateRoute: RenterAiGenerateRoute,
   RenterAiProcessingRoute: RenterAiProcessingRoute,
+  RenterAiReportsRoute: RenterAiReportsRoute,
+  RenterAiWeatherRoute: RenterAiWeatherRoute,
   RenterAiIndexRoute: RenterAiIndexRoute,
   RenterAiReportIdRoute: RenterAiReportIdRoute,
 }

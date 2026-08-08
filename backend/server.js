@@ -46,6 +46,14 @@ const aiRoutes = require("./routes/aiRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
 const pdfRoutes = require("./routes/pdfRoutes");
 
+/* ==========================
+   JOBS
+========================== */
+
+const {
+   startWeatherMonitorJob,
+} = require("./jobs/weatherJob");
+
 const app = express();
 
 /* ==========================
@@ -63,9 +71,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use(
-  express.urlencoded({
-    extended: true,
-  })
+   express.urlencoded({
+      extended: true,
+   })
 );
 
 /* ==========================
@@ -136,10 +144,10 @@ app.use("/api/pdf", pdfRoutes);
 ========================== */
 
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "🚜 FarmFleet Backend Running",
-  });
+   res.status(200).json({
+      success: true,
+      message: "🚜 FarmFleet Backend Running",
+   });
 });
 
 /* ==========================
@@ -147,10 +155,10 @@ app.get("/", (req, res) => {
 ========================== */
 
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-  });
+   res.status(404).json({
+      success: false,
+      message: "Route not found",
+   });
 });
 
 /* ==========================
@@ -160,5 +168,14 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+   console.log(`🚀 Server running on port ${PORT}`);
+
+   // Initialize Weather Monitoring Job (non-blocking)
+   try {
+      startWeatherMonitorJob();
+      console.log("🌦️  Weather Monitor Job Started");
+      console.log("✅ Weather monitoring initialized successfully.");
+   } catch (error) {
+      console.error("❌ Failed to start Weather Monitor Job:", error.message);
+   }
 });

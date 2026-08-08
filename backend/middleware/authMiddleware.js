@@ -5,15 +5,18 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Check Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
+    // ==============================
+    // 1. Get token from Authorization header
+    // ==============================
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
     }
 
-    // No token
+    // ==============================
+    // 2. Check token
+    // ==============================
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -21,16 +24,17 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    // ==============================
+    // 3. Verify JWT
+    // ==============================
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find farmer
-    const farmer = await Farmer.findById(
-      decoded.farmerId
-    ).select("-password");
+    // ==============================
+    // 4. Find farmer
+    // ==============================
+    const farmer = await Farmer.findById(decoded.farmerId).select(
+      "-password"
+    );
 
     if (!farmer) {
       return res.status(401).json({
@@ -39,12 +43,17 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // Attach farmer to request
+    // ==============================
+    // 5. Attach farmer to request
+    // ==============================
     req.farmer = farmer;
 
+    // ==============================
+    // 6. Continue
+    // ==============================
     next();
   } catch (error) {
-    console.error("Auth Error:", error);
+    console.error("Auth Error:", error.message);
 
     return res.status(401).json({
       success: false,
