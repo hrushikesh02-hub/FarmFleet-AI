@@ -35,7 +35,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FarmFleet — India's Smart Farm Equipment Rental Platform" },
+      { title: "FarmFleet AI — India's Smart Farming Platform" },
       {
         name: "description",
         content:
@@ -59,7 +59,7 @@ const CONTENT = {
     labour: "Continue as Labour",
   },
   hero: {
-    badge: "India's Smart Farm Equipment Rental Platform",
+    badge: "India's AI-Powered Smart Farm Equipment Rental Platform",
     headline1: "Rent. Share.",
     headline2: "Grow.",
     sub: "Access verified tractors, harvesters, and farm machinery when you need it — booked in minutes, delivered to your field.",
@@ -99,7 +99,7 @@ const CONTENT = {
   forOwners: {
     label: "For Equipment Owners",
     title: "Your equipment. Working for you.",
-    sub: "List your machinery on FarmFleet and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
+    sub: "List your machinery on FarmFleet AI and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
     features: [
       "Manage all your equipment listings",
       "Accept or decline booking requests",
@@ -123,7 +123,7 @@ const CONTENT = {
     resources: "Resources",
     company: "Company",
     legal: "Legal",
-    copyright: "© 2025 FarmFleet Technologies Pvt. Ltd.",
+    copyright: "© 2026 FarmFleet AI. Hackathon Prototype.",
   },
 };
 
@@ -446,7 +446,9 @@ function StyleLoader() {
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
   return null;
 }
@@ -756,6 +758,7 @@ function Navbar({ t }: { t: Content }) {
             </svg>
             <span style={{ fontWeight: 800, fontSize: 26, lineHeight: 1, letterSpacing: "-0.04em", color: "#111827" }}>
               Farm<span style={{ color: "#39B54A" }}>Fleet</span>
+              <span style={{ color: "#39B54A", marginLeft: 6 }}>AI</span>
             </span>
           </div>
 
@@ -911,7 +914,7 @@ function Navbar({ t }: { t: Content }) {
               onClick={(e) => e.stopPropagation()}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <span style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)" }}>FarmFleet</span>
+                <span style={{ fontWeight: 700, fontSize: 18, color: "var(--ink)" }}>Farm<span style={{ color: "#39B54A" }}>Fleet</span> <span style={{ color: "#39B54A", marginLeft: 4 }}>AI</span></span>
                 <button onClick={() => setMobileOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
                   <X size={22} color="var(--ink-500)" />
                 </button>
@@ -2054,19 +2057,39 @@ function Footer({ t }: { t: Content }) {
   const cols = [
     {
       title: t.footer.platform,
-      links: ["Search Equipment", "How It Works", "List Equipment", "Pricing"],
+      links: [
+        { label: "Search Equipment", href: "/renter/search" },
+        { label: "How It Works", href: "#how-it-works" },
+        { label: "List Equipment", href: "/login-owner" },
+        { label: "Pricing", href: "/payment-policy" },
+      ],
     },
     {
       title: t.footer.resources,
-      links: ["Help Center", "Farmer Guide", "Owner Guide", "Blog"],
+      links: [
+        { label: "Help Center", href: "/help" },
+        { label: "Farmer Guide", href: "/farmer-guide" },
+        { label: "Owner Guide", href: "/owner-guide" },
+        { label: "Labour Guide", href: "/labour-guide" },
+      ],
     },
     {
       title: t.footer.company,
-      links: ["About", "Careers", "Press", "Contact"],
+      links: [
+        { label: "About", href: "/about" },
+        { label: "Careers", href: "/careers" },
+        { label: "Press", href: "/press" },
+        { label: "Contact", href: "/contact" },
+      ],
     },
     {
       title: t.footer.legal,
-      links: ["Privacy Policy", "Terms of Service", "Cookie Policy", "Refund Policy"],
+      links: [
+        { label: "Privacy Policy", href: "/privacy-policy" },
+        { label: "Terms of Service", href: "/terms-of-service" },
+        { label: "Cookie Policy", href: "/cookie-policy" },
+        { label: "Refund Policy", href: "/refund-policy" },
+      ],
     },
   ];
 
@@ -2088,7 +2111,7 @@ function Footer({ t }: { t: Content }) {
                 <path d="M16 14V10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                 <circle cx="16" cy="9" r="1.5" fill="#F4B400"/>
               </svg>
-              <span style={{ fontWeight: 700, fontSize: 18, color: "white", letterSpacing: "-0.02em" }}>FarmFleet</span>
+              <span style={{ fontWeight: 700, fontSize: 18, color: "white", letterSpacing: "-0.02em" }}>FarmFleet <span style={{ color: "#39B54A", marginLeft: 4 }}>AI</span></span>
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.7, maxWidth: 260, marginBottom: 24 }}>
               {t.footer.tagline}
@@ -2122,15 +2145,15 @@ function Footer({ t }: { t: Content }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {col.links.map((l) => (
-                  <a
-                    key={l}
-                    href="#"
+                  <Link
+                    key={l.label}
+                    to={l.href}
                     style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textDecoration: "none", transition: "color 0.15s" }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+                    onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                    onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
                   >
-                    {l}
-                  </a>
+                    {l.label}
+                  </Link>
                 ))}
               </div>
             </div>

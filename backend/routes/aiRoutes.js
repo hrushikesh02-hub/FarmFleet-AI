@@ -8,6 +8,7 @@ const {
   generateCropItinerary,
   getItinerary,
   getMyItineraries,
+  downloadItineraryPDF,
 } = require("../controllers/aiController");
 
 /* =====================================================
@@ -37,6 +38,18 @@ router.get(
   "/my-itineraries",
   farmerAuth,
   getMyItineraries
+);
+
+/* =====================================================
+   Download Itinerary PDF
+   (Must be registered BEFORE /itinerary/:id so Express
+    matches the more specific path first.)
+===================================================== */
+
+router.get(
+  "/itinerary/:id/pdf",
+  farmerAuth,
+  downloadItineraryPDF
 );
 
 /* =====================================================

@@ -110,7 +110,7 @@ interface DashboardData {
 const API = "http://localhost:5000/api/labour";
 
 function authHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? "";
   return { Authorization: `Bearer ${token}` };
 }
 

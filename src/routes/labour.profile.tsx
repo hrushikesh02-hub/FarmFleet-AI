@@ -102,7 +102,7 @@ const AVAILABILITY_OPTIONS = ["available", "busy", "offline"] as const;
 
 const API = "http://localhost:5000/api/labour";
 const authHeader = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  headers: { Authorization: `Bearer ${localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? ""}` },
 });
 
 /* ─── Availability badge config ─────────────────────────────────── */
@@ -675,13 +675,24 @@ function LabourProfile() {
     try {
       setLoading(true);
       setError(null);
-      const [profileRes, statsRes] = await Promise.allSettled([
+      const [profileRes, dashboardRes] = await Promise.allSettled([
         axios.get(`${API}/profile`, authHeader()),
-        axios.get(`${API}/dashboard-stats`, authHeader()),
+        axios.get(`${API}/dashboard`, authHeader()),
       ]);
       if (profileRes.status === "fulfilled") setLabour(profileRes.value.data.labour);
       else throw new Error((profileRes.reason as any)?.response?.data?.message || "Failed to load profile");
-      if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
+
+      if (dashboardRes.status === "fulfilled") {
+        const dashData = dashboardRes.value.data?.dashboard ?? dashboardRes.value.data;
+        const statsObj = dashData?.statistics;
+        const ratingVal = dashData?.labour?.rating ?? profileRes.value?.data?.labour?.rating ?? 0;
+        setStats({
+          completedJobs: statsObj?.completedJobs ?? 0,
+          pendingRequests: statsObj?.pendingRequests ?? 0,
+          totalEarnings: statsObj?.totalEarnings ?? 0,
+          rating: ratingVal,
+        });
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to load profile");
     } finally {

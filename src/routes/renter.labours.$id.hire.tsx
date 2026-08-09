@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadRazorpayScript } from "@/lib/razorpay";
 import {
   Calendar,
   ChevronLeft,
@@ -36,6 +37,8 @@ import {
   BadgeCheck,
   Star,
   Info,
+  CreditCard,
+  Banknote,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -477,6 +480,11 @@ function LabourHiringWizard() {
     description: "",
   });
 
+  // Payment options
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cash">("online");
+  const [paymentPaid, setPaymentPaid] = useState(false);
+  const [paymentStatusText, setPaymentStatusText] = useState("");
+
   // Step 6 — Submit
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -641,8 +649,94 @@ function LabourHiringWizard() {
         },
         { headers: authHeaders() }
       );
-      setRequestId(data?.request?._id ?? data?.data?._id ?? data?._id ?? "");
-      setStep("success");
+
+      const rId = data?.request?._id ?? data?.data?._id ?? data?._id ?? "";
+      setRequestId(rId);
+
+      if (!rId) {
+        throw new Error("Labour request ID not returned.");
+      }
+
+      if (paymentMethod === "online") {
+        // Create payment order
+        const orderRes = await axios.post(
+          "/api/payment/create-order",
+          {
+            transactionType: "labour_request",
+            transactionId: rId,
+          },
+          { headers: authHeaders() }
+        );
+
+        const { orderId, amount, currency, keyId } = orderRes.data;
+
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded || !window.Razorpay) {
+          setSubmitError("Razorpay SDK failed to load. Please check internet connection.");
+          setSubmitting(false);
+          return;
+        }
+
+        const options = {
+          key: keyId,
+          amount: amount, // backend source of truth in paise
+          currency: currency || "INR",
+          name: "FarmFleet",
+          description: `Labour Hiring Payment - ${labour.fullName}`,
+          order_id: orderId,
+          handler: async function (response: any) {
+            try {
+              setSubmitting(true);
+              const verifyRes = await axios.post(
+                "/api/payment/verify",
+                {
+                  transactionType: "labour_request",
+                  transactionId: rId,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+                { headers: authHeaders() }
+              );
+
+              if (verifyRes.data.success) {
+                setPaymentPaid(true);
+                setPaymentStatusText("Paid Online via Razorpay (TEST MODE)");
+                setStep("success");
+              } else {
+                setSubmitError("Payment verification failed.");
+              }
+            } catch (err: unknown) {
+              setSubmitError(
+                axios.isAxiosError(err)
+                  ? (err.response?.data?.message ?? "Payment verification failed.")
+                  : "Payment verification failed."
+              );
+            } finally {
+              setSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setSubmitting(false);
+              setPaymentPaid(false);
+              setPaymentStatusText("Pending (Online payment pending)");
+              setStep("success");
+            },
+          },
+          theme: {
+            color: "#16a34a",
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        setPaymentPaid(false);
+        setPaymentStatusText("Cash Payment (Pay after work completion)");
+        setStep("success");
+        setSubmitting(false);
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
@@ -661,10 +755,9 @@ function LabourHiringWizard() {
       } else {
         setSubmitError("Request failed. Please try again.");
       }
-    } finally {
       setSubmitting(false);
     }
-  }, [labour, startDate, endDate, farmLocation, workDetails]);
+  }, [labour, startDate, endDate, farmLocation, workDetails, paymentMethod]);
 
   // ── Full-page error ───────────────────────────────────────────────────────
   if (!loading && loadError) {
@@ -1414,13 +1507,73 @@ function LabourHiringWizard() {
                     <StepCard step="confirm">
                       <div className="p-6 space-y-6">
                         <div>
-                          <h2 className="font-display font-bold text-xl tracking-tight">Confirmation</h2>
+                          <h2 className="font-display font-bold text-xl tracking-tight">Select Payment Method & Confirm</h2>
                           <p className="text-sm text-muted-foreground mt-1">
-                            How the FarmFleet hiring process works
+                            Choose how you wish to pay for this labour request
                           </p>
                         </div>
+
+                        {/* Payment method selection */}
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {/* Pay Online */}
+                          <div
+                            onClick={() => setPaymentMethod("online")}
+                            className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all duration-200 ${
+                              paymentMethod === "online"
+                                ? "border-primary bg-primary/5 shadow-card"
+                                : "border-border bg-card hover:border-border/80 hover:bg-accent/40"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <CreditCard className="h-4 w-4" />
+                              </div>
+                              {paymentMethod === "online" && (
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-sm mt-2">Pay Online</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Razorpay TEST MODE — UPI, Cards, NetBanking
+                            </p>
+                            <div className="mt-2 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
+                              Instant Checkout
+                            </div>
+                          </div>
+
+                          {/* Cash on Delivery */}
+                          <div
+                            onClick={() => setPaymentMethod("cash")}
+                            className={`relative cursor-pointer rounded-2xl border-2 p-4 transition-all duration-200 ${
+                              paymentMethod === "cash"
+                                ? "border-primary bg-primary/5 shadow-card"
+                                : "border-border bg-card hover:border-border/80 hover:bg-accent/40"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                                <Banknote className="h-4 w-4" />
+                              </div>
+                              {paymentMethod === "cash" && (
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-sm mt-2">Cash Payment</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Pay in cash directly to the labour after work completion
+                            </p>
+                            <div className="mt-2 inline-block rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-400">
+                              Pay After Work
+                            </div>
+                          </div>
+                        </div>
+
                         <div
-                          className="relative overflow-hidden rounded-2xl p-6 space-y-5"
+                          className="relative overflow-hidden rounded-2xl p-5 space-y-4"
                           style={{ background: `linear-gradient(135deg, ${ACCENT}10, ${ACCENT_DARK}08)`, border: `1px solid ${ACCENT}30` }}
                         >
                           <div
@@ -1429,36 +1582,19 @@ function LabourHiringWizard() {
                           />
                           <div className="flex items-center gap-3">
                             <div
-                              className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+                              className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
                               style={{ background: ACCENT, color: "white" }}
                             >
-                              <Shield className="h-6 w-6" />
+                              <Shield className="h-5 w-5" />
                             </div>
                             <div>
-                              <p className="font-bold text-lg leading-tight" style={{ color: ACCENT_DARK }}>
-                                Payment after work completion
+                              <p className="font-bold text-base leading-tight" style={{ color: ACCENT_DARK }}>
+                                FarmFleet Verified Request
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                No advance payment required
+                                {paymentMethod === "online" ? "Online test payment via Razorpay" : "Cash payment after work completion"}
                               </p>
                             </div>
-                          </div>
-                          <div className="grid sm:grid-cols-2 gap-3 border-t pt-5" style={{ borderColor: `${ACCENT}30` }}>
-                            {[
-                              { icon: CheckCircle2, text: "Labour request will be sent" },
-                              { icon: BadgeCheck, text: "Labour must accept" },
-                              { icon: Clock, text: "Payment after work completion" },
-                              { icon: Shield, text: "FarmFleet Verified Process" },
-                            ].map(({ icon: Icon, text }) => (
-                              <div
-                                key={text}
-                                className="flex items-center gap-2.5 rounded-xl border bg-white/50 dark:bg-card/50 px-3.5 py-3"
-                                style={{ borderColor: `${ACCENT}30` }}
-                              >
-                                <Icon className="h-4 w-4 shrink-0" style={{ color: ACCENT_DARK }} />
-                                <span className="text-xs font-semibold">✓ {text}</span>
-                              </div>
-                            ))}
                           </div>
                         </div>
 
@@ -1494,11 +1630,12 @@ function LabourHiringWizard() {
                           >
                             {submitting ? (
                               <>
-                                <Loader2 className="h-4 w-4 animate-spin" /> Sending request…
+                                <Loader2 className="h-4 w-4 animate-spin" /> Processing…
                               </>
                             ) : (
                               <>
-                                Send Request <ArrowRight className="h-4 w-4" />
+                                {paymentMethod === "online" ? "Pay Online & Send Request" : "Send Request"}{" "}
+                                <ArrowRight className="h-4 w-4" />
                               </>
                             )}
                           </motion.button>
@@ -1526,13 +1663,15 @@ function LabourHiringWizard() {
                           transition={{ delay: 0.2 }}
                         >
                           <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">
-                            Request Sent
+                            {paymentPaid ? "Payment Verified" : "Request Sent"}
                           </p>
                           <h2 className="font-display font-bold text-2xl sm:text-3xl tracking-tight">
-                            Request Sent Successfully
+                            {paymentPaid ? "✓ Request & Payment Confirmed!" : "✓ Request Sent Successfully"}
                           </h2>
                           <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto leading-relaxed">
-                            Your labour request has been sent. The labour will review and respond shortly.
+                            {paymentPaid
+                              ? "Your payment via Razorpay TEST MODE was verified successfully. The labour has been notified."
+                              : "Your labour request has been sent. Payment will be collected in cash after work completion."}
                           </p>
                         </motion.div>
                         {requestId && (
@@ -1545,6 +1684,21 @@ function LabourHiringWizard() {
                             Request ID: {requestId}
                           </motion.div>
                         )}
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.35 }}
+                          className="w-full max-w-sm rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/5 p-4 space-y-2 text-left"
+                        >
+                          <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            Status: <span className="font-semibold text-foreground">{paymentStatusText}</span>
+                          </div>
+                          <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            The labour will review and respond to your request shortly.
+                          </div>
+                        </motion.div>
                         <motion.div
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}

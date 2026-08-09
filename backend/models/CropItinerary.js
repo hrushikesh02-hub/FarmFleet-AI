@@ -73,6 +73,17 @@ const cropItinerarySchema = new mongoose.Schema(
 
     estimatedTotalCost: String,
 
+    expectedYield: String,
+
+    estimatedIncome: String,
+
+    estimatedProfit: String,
+
+    aiSummary: {
+      type: Object,
+      default: {},
+    },
+
     landPreparation: [String],
 
     seedRecommendation: {

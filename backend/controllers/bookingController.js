@@ -2,7 +2,7 @@ const Booking = require("../models/Booking");
 const Equipment = require("../models/Equipment");
 const Owner = require("../models/Owner");
 const Farmer = require("../models/Farmer");
-const sendEmail = require("../config/mail");
+const { sendEmail } = require("../config/mail");
 
 /* ==========================
    CREATE BOOKING

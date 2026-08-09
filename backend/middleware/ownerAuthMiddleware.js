@@ -6,6 +6,8 @@ const protectOwner = async (req, res, next) => {
     let token;
 
     // Check Authorization Header
+    console.log("OWNER AUTH HEADER:", !!req.headers.authorization);
+
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
@@ -17,6 +19,8 @@ const protectOwner = async (req, res, next) => {
         token,
         process.env.JWT_SECRET
       );
+
+      console.log("OWNER ID:", decoded.ownerId);
 
       // Find Owner
       req.owner = await Owner.findById(

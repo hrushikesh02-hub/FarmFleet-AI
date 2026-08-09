@@ -45,6 +45,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
 const pdfRoutes = require("./routes/pdfRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 /* ==========================
    JOBS
@@ -138,7 +139,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/pdf", pdfRoutes);
-
+app.use("/api/payment", paymentRoutes);
 /* ==========================
    TEST ROUTE
 ========================== */

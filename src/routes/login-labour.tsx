@@ -388,6 +388,7 @@ function SignInForm({ onSuccess, addToast }: { onSuccess: () => void; addToast: 
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("labourToken", response.data.token);
 
         if (response.data.labour) {
           localStorage.setItem(
@@ -566,6 +567,7 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("labourToken", response.data.token);
         localStorage.setItem("labour", JSON.stringify(response.data.labour));
 
         addToast("success", "Account created successfully!");

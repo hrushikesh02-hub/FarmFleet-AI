@@ -88,11 +88,11 @@ function parseGeminiResponse(response) {
     // ==========================================
 
     parsed.equipmentRequired = parsed.equipmentRequired.map((item) => ({
-      name: ensureString(item.name || item.equipment),
-      purpose: ensureString(item.purpose),
+      name: ensureString(item.name || item.equipment || item.toolName) || "Tractor",
+      purpose: ensureString(item.purpose || item.use || item.description) || "Field Operations",
       estimatedRent: ensureString(
-        item.estimatedRent || item.estimatedRentalCost
-      ),
+        item.estimatedRent || item.estimatedRentalCost || item.rentCost || item.cost
+      ) || "₹1,200 / hour",
     }));
 
     // ==========================================
@@ -100,9 +100,9 @@ function parseGeminiResponse(response) {
     // ==========================================
 
     parsed.labourRequirement = parsed.labourRequirement.map((item) => ({
-      activity: ensureString(item.activity),
-      workers: ensureString(item.workers || item.workersRequired),
-      days: ensureString(item.days || item.estimatedDays),
+      activity: ensureString(item.activity || item.title || item.task) || "Field Activity",
+      workers: ensureString(item.workers || item.workersRequired || item.workerCount || item.laborers) || "2 workers",
+      days: ensureString(item.days || item.estimatedDays || item.durationDays || item.duration) || "2 days",
     }));
 
     // ==========================================

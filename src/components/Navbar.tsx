@@ -120,10 +120,14 @@ export function Navbar() {
               fontWeight: 800,
               lineHeight: 1,
               letterSpacing: "-0.03em",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
             <span style={{ color: "#111827" }}>Farm</span>
             <span style={{ color: "#45B649" }}>Fleet</span>
+            <span style={{ color: "#45B649", marginLeft: "4px" }}>AI</span>
           </span>
         </Link>
 

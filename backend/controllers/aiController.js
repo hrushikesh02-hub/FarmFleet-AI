@@ -1,10 +1,22 @@
 const CropItinerary = require("../models/CropItinerary");
+const fs = require("fs");
+const path = require("path");
 
 const { generateContent } = require("../services/ai/geminiService");
 const { buildCropPrompt } = require("../services/ai/promptBuilder");
 const {
   parseGeminiResponse,
 } = require("../services/ai/responseParser");
+const {
+  generatePDF,
+} = require("../services/pdf/pdfService");
+const {
+  getSafeWeatherReport,
+} = require("../services/weather/weatherService");
+const {
+  generateSchedule,
+} = require("../services/weather/dateScheduler");
+
 
 /* =====================================================
    AI Test Endpoint
@@ -91,6 +103,26 @@ exports.generateCropItinerary = async (req, res) => {
     // Parse JSON
     const parsed = parseGeminiResponse(aiResponse);
 
+    // Fetch live weather snapshot for district so weather info is present immediately
+    let initialWeather = {};
+    try {
+      const weatherReport = await getSafeWeatherReport(district);
+      if (weatherReport && weatherReport.currentWeather) {
+        initialWeather = weatherReport.currentWeather;
+      }
+    } catch (weatherErr) {
+      console.warn("Weather fetch warning on itinerary generation:", weatherErr.message);
+    }
+
+    // Build timeline items with scheduled dates
+    const rawTimeline = (parsed.timeline || []).map((item) => ({
+      week: item.week,
+      title: item.title || item.activity || "Farming Activity",
+      description: item.description || "",
+      status: "Upcoming",
+    }));
+    const scheduledTimeline = generateSchedule(rawTimeline, new Date());
+
     // Save to MongoDB
     const itinerary = await CropItinerary.create({
       farmer: farmerId,
@@ -110,35 +142,33 @@ exports.generateCropItinerary = async (req, res) => {
 
       budget,
 
-      cropDuration: parsed.cropDuration,
+      cropDuration: parsed.cropDuration || "4-5 Months",
 
-      bestSeason: parsed.bestSeason,
+      bestSeason: parsed.bestSeason || "Kharif",
 
-      expectedYield: parsed.expectedYield,
+      expectedYield: parsed.expectedYield || "25-30 Quintals/Acre",
 
-      estimatedIncome: parsed.estimatedIncome,
+      estimatedIncome: parsed.estimatedIncome || `₹${(Number(budget) * 2).toLocaleString("en-IN")}`,
 
-      estimatedProfit: parsed.estimatedProfit,
+      estimatedProfit: parsed.estimatedProfit || `₹${(Number(budget) * 1.2).toLocaleString("en-IN")}`,
 
-      estimatedTotalCost: parsed.estimatedTotalCost,
+      estimatedTotalCost: parsed.estimatedTotalCost || `₹${Number(budget).toLocaleString("en-IN")}`,
 
-      timeline: (parsed.timeline || []).map((item) => ({
-        week: item.week,
+      aiSummary: {
+        cropDuration: parsed.cropDuration,
+        expectedYield: parsed.expectedYield,
+        estimatedCost: parsed.estimatedTotalCost,
+        estimatedIncome: parsed.estimatedIncome,
+        estimatedProfit: parsed.estimatedProfit,
+        bestSowingSeason: parsed.bestSeason,
+        riskLevel: "Low Risk",
+      },
 
-        title:
-          item.title ||
-          item.activity ||
-          "Farming Activity",
+      weather: initialWeather,
 
-        description:
-          item.description || "",
+      lastWeatherCheck: new Date(),
 
-        originalDate: null,
-
-        currentDate: null,
-
-        status: "Upcoming",
-      })),
+      timeline: scheduledTimeline,
 
       landPreparation:
         parsed.landPreparation || [],
@@ -164,15 +194,15 @@ exports.generateCropItinerary = async (req, res) => {
             name:
               item.name ||
               item.equipment ||
-              "",
+              "Tractor",
 
             purpose:
-              item.purpose || "",
+              item.purpose || "Field Operations",
 
             estimatedRent:
               item.estimatedRent ||
               item.estimatedRentalCost ||
-              "",
+              "₹1,200 / hour",
           })
         ),
 
@@ -180,17 +210,17 @@ exports.generateCropItinerary = async (req, res) => {
         (parsed.labourRequirement || []).map(
           (item) => ({
             activity:
-              item.activity || "",
+              item.activity || "Field Work",
 
             workers:
               item.workers ||
               item.workersRequired ||
-              "",
+              "2 workers",
 
             days:
               item.days ||
               item.estimatedDays ||
-              "",
+              "2 days",
           })
         ),
 
@@ -248,6 +278,29 @@ exports.getItinerary = async (req, res) => {
       });
     }
 
+    // Ownership check — a farmer must only access their own itineraries
+    if (itinerary.farmer.toString() !== req.farmer.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view this itinerary.",
+      });
+    }
+
+    // If weather is empty, auto-populate live weather for the itinerary's district
+    if (!itinerary.weather || Object.keys(itinerary.weather).length === 0) {
+      try {
+        const city = itinerary.location?.district || itinerary.location?.state || "Ahmednagar";
+        const weatherReport = await getSafeWeatherReport(city);
+        if (weatherReport && weatherReport.currentWeather) {
+          itinerary.weather = weatherReport.currentWeather;
+          itinerary.lastWeatherCheck = new Date();
+          await itinerary.save();
+        }
+      } catch (weatherErr) {
+        console.warn("Auto weather fetch warning on getItinerary:", weatherErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       itinerary,
@@ -292,5 +345,74 @@ exports.getMyItineraries = async (
       success: false,
       message: error.message,
     });
+  }
+};
+
+/* =====================================================
+   Download Itinerary PDF
+===================================================== */
+
+exports.downloadItineraryPDF = async (req, res) => {
+  try {
+    const itineraryId = req.params.id;
+
+    const itinerary = await CropItinerary.findById(itineraryId);
+
+    if (!itinerary) {
+      return res.status(404).json({
+        success: false,
+        message: "Itinerary not found.",
+      });
+    }
+
+    // Ownership check
+    if (itinerary.farmer.toString() !== req.farmer.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to download this report.",
+      });
+    }
+
+    // Generate (or regenerate) the PDF via pdfService
+    const result = await generatePDF(itineraryId);
+
+    if (!result || !result.pdfPath || !fs.existsSync(result.pdfPath)) {
+      return res.status(500).json({
+        success: false,
+        message: "PDF generation failed — file not found on disk.",
+      });
+    }
+
+    const filename = result.filename || `FarmFleet_AI_${itineraryId}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${filename}"`
+    );
+
+    const stream = fs.createReadStream(result.pdfPath);
+    stream.on("error", (err) => {
+      console.error("[aiController] PDF stream error:", err.message);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "Error streaming PDF file.",
+        });
+      }
+    });
+    stream.pipe(res);
+  } catch (error) {
+    console.error("\n====================================");
+    console.error("❌ PDF Download Error");
+    console.error("====================================");
+    console.error(error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to download PDF.",
+      });
+    }
   }
 };

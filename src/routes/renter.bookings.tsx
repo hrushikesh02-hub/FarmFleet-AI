@@ -42,6 +42,38 @@ interface BookingRecord {
   reviewDate?: string;
 }
 
+interface LabourRequestRecord {
+  _id: string;
+  labour: {
+    _id: string;
+    fullName: string;
+    mobile?: string;
+    email?: string;
+    village?: string;
+    district?: string;
+    profileImage?: string;
+    primarySkill?: string;
+    dailyCharges?: number;
+    rating?: number;
+  };
+  equipment?: {
+    _id: string;
+    name: string;
+    image?: string;
+  } | null;
+  startDate: string;
+  endDate: string;
+  village: string;
+  district: string;
+  dailyCharges: number;
+  totalAmount: number;
+  status: BackendStatus;
+  paymentStatus?: string;
+  createdAt: string;
+  reviewGiven?: boolean;
+  reviewDate?: string;
+}
+
 // ─── Status Config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<
@@ -1009,35 +1041,265 @@ function StatsBar({ bookings }: { bookings: BookingRecord[] }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Labour Review Modal ──────────────────────────────────────────────────────
 
-function RenterBookings() {
-  const navigate = useNavigate();
-  const [filter, setFilter] = useState<BackendStatus | "all">("all");
-  const [bookings, setBookings] = useState<BookingRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+function LabourReviewModal({
+  request,
+  onClose,
+  onSuccess,
+}: {
+  request: LabourRequestRecord;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
+  const handleSubmit = async () => {
+    if (rating === 0) return;
+    setSubmitting(true);
     setError(null);
     try {
-      const token = localStorage.getItem("farmerToken");
-      const res = await fetch("/api/booking/farmer", {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem("farmerToken") ?? localStorage.getItem("token") ?? "";
+      const res = await fetch("http://localhost:5000/api/labour/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          requestId: request._id,
+          rating,
+          comment,
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.message || `Request failed (${res.status})`);
       }
       const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Submission failed");
+      onSuccess();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not submit review.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch bookings");
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+        onClick={onClose}
+      >
+        <motion.div
+          key="modal"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-6 pt-6 pb-4 border-b border-border bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10">
+            <h2 className="text-xl font-bold">Rate Labour Experience</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share feedback for {request.labour.fullName} on completed work.
+            </p>
+          </div>
+          <div className="px-6 py-5 space-y-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+                Your Rating
+              </p>
+              <StarRating
+                rating={rating}
+                hovered={hovered}
+                onRate={setRating}
+                onHover={setHovered}
+                onLeave={() => setHovered(0)}
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                Your Review
+              </p>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value.slice(0, 500))}
+                rows={4}
+                placeholder="Describe work quality, punctuality, and professionalism..."
+                className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+          </div>
+          <div className="px-6 pb-6 flex gap-3">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted">
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={rating === 0 || submitting}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-primary text-primary-foreground disabled:opacity-50"
+            >
+              {submitting ? "Submitting..." : "Submit Review"}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Labour Request Card ──────────────────────────────────────────────────────
+
+function LabourRequestCard({
+  request,
+  onRefresh,
+  onToast,
+}: {
+  request: LabourRequestRecord;
+  onRefresh: () => void;
+  onToast: (msg: string) => void;
+}) {
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const cfg = STATUS_CONFIG[request.status];
+  const fmt = (d: string) =>
+    new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+  const days = Math.max(
+    1,
+    Math.ceil(
+      (new Date(request.endDate).getTime() - new Date(request.startDate).getTime()) / 86_400_000
+    ) + 1
+  );
+
+  return (
+    <>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      >
+        <div className="p-5 flex flex-wrap items-start justify-between gap-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-lg shrink-0">
+              {request.labour.profileImage ? (
+                <img src={request.labour.profileImage} alt="" className="h-full w-full object-cover rounded-xl" />
+              ) : (
+                request.labour.fullName.charAt(0)
+              )}
+            </div>
+            <div>
+              <p className="font-bold text-base">{request.labour.fullName}</p>
+              <p className="text-xs text-muted-foreground">
+                {request.labour.primarySkill || "Agricultural Labour"} · {request.village}, {request.district}
+              </p>
+            </div>
+          </div>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
+            <span>{cfg.icon}</span> {cfg.label}
+          </span>
+        </div>
+
+        <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+          <div>
+            <p className="text-muted-foreground font-medium">Work Period</p>
+            <p className="font-semibold text-foreground mt-0.5">{fmt(request.startDate)} – {fmt(request.endDate)}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground font-medium">Duration</p>
+            <p className="font-semibold text-foreground mt-0.5">{days} Working Days</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground font-medium">Daily Rate</p>
+            <p className="font-semibold text-foreground mt-0.5">₹{request.dailyCharges} / day</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground font-medium">Total Amount</p>
+            <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm mt-0.5">₹{request.totalAmount}</p>
+          </div>
+        </div>
+
+        {request.status === "completed" && (
+          <div className="px-5 pb-5">
+            {request.reviewGiven ? (
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
+                ✅ Review Submitted on {request.reviewDate ? fmt(request.reviewDate) : "Completed Work"}
+              </div>
+            ) : (
+              <button
+                onClick={() => setReviewOpen(true)}
+                className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-primary text-primary-foreground shadow-soft hover:opacity-90 transition"
+              >
+                ⭐ Leave Review for Labour
+              </button>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      {reviewOpen && (
+        <LabourReviewModal
+          request={request}
+          onClose={() => setReviewOpen(false)}
+          onSuccess={() => {
+            setReviewOpen(false);
+            onToast("Review submitted successfully.");
+            onRefresh();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+function RenterBookings() {
+  const navigate = useNavigate();
+  const [categoryTab, setCategoryTab] = useState<"equipment" | "labour">("equipment");
+  const [filter, setFilter] = useState<BackendStatus | "all">("all");
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [labourRequests, setLabourRequests] = useState<LabourRequestRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const fetchAllData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("farmerToken") ?? localStorage.getItem("token") ?? "";
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [eqRes, labRes] = await Promise.all([
+        fetch("/api/booking/farmer", { headers }).catch(() => null),
+        fetch("/api/labour-request/farmer", { headers }).catch(() => null),
+      ]);
+
+      if (eqRes && eqRes.ok) {
+        const eqData = await eqRes.json();
+        if (eqData.success) {
+          setBookings(Array.isArray(eqData.bookings) ? eqData.bookings : []);
+        }
       }
 
-      setBookings(Array.isArray(data.bookings) ? data.bookings : []);
+      if (labRes && labRes.ok) {
+        const labData = await labRes.json();
+        if (labData.success) {
+          setLabourRequests(Array.isArray(labData.requests) ? labData.requests : []);
+        }
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not load bookings.");
     } finally {
@@ -1046,30 +1308,63 @@ function RenterBookings() {
   }, []);
 
   useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   const bookingList = Array.isArray(bookings) ? bookings : [];
-  const visible =
+  const labourList = Array.isArray(labourRequests) ? labourRequests : [];
+
+  const visibleBookings =
     filter === "all" ? bookingList : bookingList.filter((b) => b.status === filter);
 
-  const countFor = (key: BackendStatus | "all") =>
-    key === "all" ? bookingList.length : bookingList.filter((b) => b.status === key).length;
+  const visibleLabour =
+    filter === "all" ? labourList : labourList.filter((l) => l.status === filter);
+
+  const countFor = (key: BackendStatus | "all") => {
+    const list = categoryTab === "equipment" ? bookingList : labourList;
+    return key === "all" ? list.length : list.filter((x) => x.status === key).length;
+  };
 
   return (
     <AppShell>
       <section className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold">My Bookings</h1>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Track equipment requests, owner responses, and booking progress.
-          </p>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold">My Bookings & Requests</h1>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Track equipment reservations and labour hiring requests.
+            </p>
+          </div>
+
+          {/* Module Switcher Tabs */}
+          <div className="flex bg-muted rounded-xl p-1 border border-border">
+            <button
+              onClick={() => setCategoryTab("equipment")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                categoryTab === "equipment"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🚜 Equipment ({bookingList.length})
+            </button>
+            <button
+              onClick={() => setCategoryTab("labour")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                categoryTab === "labour"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              👨‍🌾 Labour ({labourList.length})
+            </button>
+          </div>
         </div>
 
-        {/* Stats bar — only when data loaded */}
-        {!loading && !error && bookingList.length > 0 && (
+        {/* Stats bar — only when data loaded for equipment */}
+        {!loading && !error && categoryTab === "equipment" && bookingList.length > 0 && (
           <StatsBar bookings={bookingList} />
         )}
 
@@ -1124,7 +1419,7 @@ function RenterBookings() {
             </p>
             <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
             <button
-              onClick={fetchBookings}
+              onClick={fetchAllData}
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition"
             >
               Try Again
@@ -1133,43 +1428,59 @@ function RenterBookings() {
         )}
 
         {/* Empty */}
-        {!loading && !error && visible.length === 0 && (
+        {!loading && !error && (categoryTab === "equipment" ? visibleBookings.length === 0 : visibleLabour.length === 0) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="rounded-2xl border border-border bg-card px-6 py-14 text-center"
           >
-            <p className="text-3xl mb-3">📋</p>
+            <p className="text-3xl mb-3">{categoryTab === "equipment" ? "🚜" : "👨‍🌾"}</p>
             <p className="font-semibold text-lg mb-1">
               {filter === "all"
-                ? "No Bookings Yet"
-                : `No ${FILTERS.find((f) => f.key === filter)?.label} Bookings`}
+                ? `No ${categoryTab === "equipment" ? "Equipment Bookings" : "Labour Requests"} Yet`
+                : `No ${FILTERS.find((f) => f.key === filter)?.label} ${categoryTab === "equipment" ? "Bookings" : "Requests"}`}
             </p>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              {filter === "all"
+              {categoryTab === "equipment"
                 ? "Browse available equipment and submit a booking request to get started."
-                : `You have no ${filter} bookings right now.`}
+                : "Browse available agricultural workers and hire labour for your farm operations."}
             </p>
             {filter === "all" && (
               <button
-                onClick={() => navigate({ to: "/equipment" })}
+                onClick={() => navigate({ to: categoryTab === "equipment" ? "/renter/search" : "/renter/labours" })}
                 className="px-6 py-2.5 rounded-lg bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-soft hover:opacity-90 transition"
               >
-                Browse Equipment
+                {categoryTab === "equipment" ? "Browse Equipment" : "Find Labour"}
               </button>
             )}
           </motion.div>
         )}
 
-        {/* Booking list */}
-        {!loading && !error && visible.length > 0 && (
+        {/* Equipment list */}
+        {!loading && !error && categoryTab === "equipment" && visibleBookings.length > 0 && (
           <motion.div layout className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {visible.map((b) => (
+              {visibleBookings.map((b) => (
                 <BookingRow
                   key={b._id}
                   booking={b}
-                  onRefresh={fetchBookings}
+                  onRefresh={fetchAllData}
+                  onToast={setToast}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Labour request list */}
+        {!loading && !error && categoryTab === "labour" && visibleLabour.length > 0 && (
+          <motion.div layout className="space-y-3">
+            <AnimatePresence mode="popLayout">
+              {visibleLabour.map((req) => (
+                <LabourRequestCard
+                  key={req._id}
+                  request={req}
+                  onRefresh={fetchAllData}
                   onToast={setToast}
                 />
               ))}

@@ -9,12 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PressRouteImport } from './routes/press'
+import { Route as PaymentPolicyRouteImport } from './routes/payment-policy'
 import { Route as OwnerSetupRouteImport } from './routes/owner-setup'
+import { Route as OwnerGuideRouteImport } from './routes/owner-guide'
 import { Route as NotFoundRouteImport } from './routes/not-found'
 import { Route as LoginRenterRouteImport } from './routes/login-renter'
 import { Route as LoginOwnerRouteImport } from './routes/login-owner'
 import { Route as LoginLabourRouteImport } from './routes/login-labour'
+import { Route as LabourGuideRouteImport } from './routes/labour-guide'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as FarmerGuideRouteImport } from './routes/farmer-guide'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CareersRouteImport } from './routes/careers'
+import { Route as AiGuideRouteImport } from './routes/ai-guide'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RenterSearchRouteImport } from './routes/renter.search'
 import { Route as RenterProfileRouteImport } from './routes/renter.profile'
@@ -46,14 +62,44 @@ import { Route as RenterAiCalendarRouteImport } from './routes/renter.ai.calenda
 import { Route as RenterLaboursIdHireRouteImport } from './routes/renter.labours.$id.hire'
 import { Route as RenterAiReportIdRouteImport } from './routes/renter.ai.report.$id'
 
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PressRoute = PressRouteImport.update({
+  id: '/press',
+  path: '/press',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentPolicyRoute = PaymentPolicyRouteImport.update({
+  id: '/payment-policy',
+  path: '/payment-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerSetupRoute = OwnerSetupRouteImport.update({
   id: '/owner-setup',
   path: '/owner-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerGuideRoute = OwnerGuideRouteImport.update({
+  id: '/owner-guide',
+  path: '/owner-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotFoundRoute = NotFoundRouteImport.update({
@@ -74,6 +120,56 @@ const LoginOwnerRoute = LoginOwnerRouteImport.update({
 const LoginLabourRoute = LoginLabourRouteImport.update({
   id: '/login-labour',
   path: '/login-labour',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabourGuideRoute = LabourGuideRouteImport.update({
+  id: '/labour-guide',
+  path: '/labour-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmerGuideRoute = FarmerGuideRouteImport.update({
+  id: '/farmer-guide',
+  path: '/farmer-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisclaimerRoute = DisclaimerRouteImport.update({
+  id: '/disclaimer',
+  path: '/disclaimer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiePolicyRoute = CookiePolicyRouteImport.update({
+  id: '/cookie-policy',
+  path: '/cookie-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiGuideRoute = AiGuideRouteImport.update({
+  id: '/ai-guide',
+  path: '/ai-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -229,12 +325,28 @@ const RenterAiReportIdRoute = RenterAiReportIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ai-guide': typeof AiGuideRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
+  '/farmer-guide': typeof FarmerGuideRoute
+  '/help': typeof HelpRoute
+  '/labour-guide': typeof LabourGuideRoute
   '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
+  '/owner-guide': typeof OwnerGuideRoute
   '/owner-setup': typeof OwnerSetupRoute
+  '/payment-policy': typeof PaymentPolicyRoute
+  '/press': typeof PressRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/labour/dashboard': typeof LabourDashboardRoute
   '/labour/earnings': typeof LabourEarningsRoute
   '/labour/profile': typeof LabourProfileRoute
@@ -267,12 +379,28 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ai-guide': typeof AiGuideRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
+  '/farmer-guide': typeof FarmerGuideRoute
+  '/help': typeof HelpRoute
+  '/labour-guide': typeof LabourGuideRoute
   '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
+  '/owner-guide': typeof OwnerGuideRoute
   '/owner-setup': typeof OwnerSetupRoute
+  '/payment-policy': typeof PaymentPolicyRoute
+  '/press': typeof PressRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/labour/dashboard': typeof LabourDashboardRoute
   '/labour/earnings': typeof LabourEarningsRoute
   '/labour/profile': typeof LabourProfileRoute
@@ -304,12 +432,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ai-guide': typeof AiGuideRoute
+  '/careers': typeof CareersRoute
+  '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
+  '/farmer-guide': typeof FarmerGuideRoute
+  '/help': typeof HelpRoute
+  '/labour-guide': typeof LabourGuideRoute
   '/login-labour': typeof LoginLabourRoute
   '/login-owner': typeof LoginOwnerRoute
   '/login-renter': typeof LoginRenterRoute
   '/not-found': typeof NotFoundRoute
+  '/owner-guide': typeof OwnerGuideRoute
   '/owner-setup': typeof OwnerSetupRoute
+  '/payment-policy': typeof PaymentPolicyRoute
+  '/press': typeof PressRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/labour/dashboard': typeof LabourDashboardRoute
   '/labour/earnings': typeof LabourEarningsRoute
   '/labour/profile': typeof LabourProfileRoute
@@ -344,12 +488,28 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
+    | '/ai-guide'
+    | '/careers'
+    | '/contact'
+    | '/cookie-policy'
+    | '/disclaimer'
+    | '/faq'
+    | '/farmer-guide'
+    | '/help'
+    | '/labour-guide'
     | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
+    | '/owner-guide'
     | '/owner-setup'
+    | '/payment-policy'
+    | '/press'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/register'
+    | '/terms-of-service'
     | '/labour/dashboard'
     | '/labour/earnings'
     | '/labour/profile'
@@ -382,12 +542,28 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/ai-guide'
+    | '/careers'
+    | '/contact'
+    | '/cookie-policy'
+    | '/disclaimer'
+    | '/faq'
+    | '/farmer-guide'
+    | '/help'
+    | '/labour-guide'
     | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
+    | '/owner-guide'
     | '/owner-setup'
+    | '/payment-policy'
+    | '/press'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/register'
+    | '/terms-of-service'
     | '/labour/dashboard'
     | '/labour/earnings'
     | '/labour/profile'
@@ -418,12 +594,28 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
+    | '/ai-guide'
+    | '/careers'
+    | '/contact'
+    | '/cookie-policy'
+    | '/disclaimer'
+    | '/faq'
+    | '/farmer-guide'
+    | '/help'
+    | '/labour-guide'
     | '/login-labour'
     | '/login-owner'
     | '/login-renter'
     | '/not-found'
+    | '/owner-guide'
     | '/owner-setup'
+    | '/payment-policy'
+    | '/press'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/register'
+    | '/terms-of-service'
     | '/labour/dashboard'
     | '/labour/earnings'
     | '/labour/profile'
@@ -457,12 +649,28 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AiGuideRoute: typeof AiGuideRoute
+  CareersRoute: typeof CareersRoute
+  ContactRoute: typeof ContactRoute
+  CookiePolicyRoute: typeof CookiePolicyRoute
+  DisclaimerRoute: typeof DisclaimerRoute
+  FaqRoute: typeof FaqRoute
+  FarmerGuideRoute: typeof FarmerGuideRoute
+  HelpRoute: typeof HelpRoute
+  LabourGuideRoute: typeof LabourGuideRoute
   LoginLabourRoute: typeof LoginLabourRoute
   LoginOwnerRoute: typeof LoginOwnerRoute
   LoginRenterRoute: typeof LoginRenterRoute
   NotFoundRoute: typeof NotFoundRoute
+  OwnerGuideRoute: typeof OwnerGuideRoute
   OwnerSetupRoute: typeof OwnerSetupRoute
+  PaymentPolicyRoute: typeof PaymentPolicyRoute
+  PressRoute: typeof PressRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
+  TermsOfServiceRoute: typeof TermsOfServiceRoute
   LabourDashboardRoute: typeof LabourDashboardRoute
   LabourEarningsRoute: typeof LabourEarningsRoute
   LabourProfileRoute: typeof LabourProfileRoute
@@ -486,6 +694,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -493,11 +708,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/press': {
+      id: '/press'
+      path: '/press'
+      fullPath: '/press'
+      preLoaderRoute: typeof PressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-policy': {
+      id: '/payment-policy'
+      path: '/payment-policy'
+      fullPath: '/payment-policy'
+      preLoaderRoute: typeof PaymentPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner-setup': {
       id: '/owner-setup'
       path: '/owner-setup'
       fullPath: '/owner-setup'
       preLoaderRoute: typeof OwnerSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner-guide': {
+      id: '/owner-guide'
+      path: '/owner-guide'
+      fullPath: '/owner-guide'
+      preLoaderRoute: typeof OwnerGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/not-found': {
@@ -526,6 +776,76 @@ declare module '@tanstack/react-router' {
       path: '/login-labour'
       fullPath: '/login-labour'
       preLoaderRoute: typeof LoginLabourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/labour-guide': {
+      id: '/labour-guide'
+      path: '/labour-guide'
+      fullPath: '/labour-guide'
+      preLoaderRoute: typeof LabourGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farmer-guide': {
+      id: '/farmer-guide'
+      path: '/farmer-guide'
+      fullPath: '/farmer-guide'
+      preLoaderRoute: typeof FarmerGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disclaimer': {
+      id: '/disclaimer'
+      path: '/disclaimer'
+      fullPath: '/disclaimer'
+      preLoaderRoute: typeof DisclaimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookie-policy': {
+      id: '/cookie-policy'
+      path: '/cookie-policy'
+      fullPath: '/cookie-policy'
+      preLoaderRoute: typeof CookiePolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-guide': {
+      id: '/ai-guide'
+      path: '/ai-guide'
+      fullPath: '/ai-guide'
+      preLoaderRoute: typeof AiGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -793,12 +1113,28 @@ const RenterLaboursRouteWithChildren = RenterLaboursRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AiGuideRoute: AiGuideRoute,
+  CareersRoute: CareersRoute,
+  ContactRoute: ContactRoute,
+  CookiePolicyRoute: CookiePolicyRoute,
+  DisclaimerRoute: DisclaimerRoute,
+  FaqRoute: FaqRoute,
+  FarmerGuideRoute: FarmerGuideRoute,
+  HelpRoute: HelpRoute,
+  LabourGuideRoute: LabourGuideRoute,
   LoginLabourRoute: LoginLabourRoute,
   LoginOwnerRoute: LoginOwnerRoute,
   LoginRenterRoute: LoginRenterRoute,
   NotFoundRoute: NotFoundRoute,
+  OwnerGuideRoute: OwnerGuideRoute,
   OwnerSetupRoute: OwnerSetupRoute,
+  PaymentPolicyRoute: PaymentPolicyRoute,
+  PressRoute: PressRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
+  TermsOfServiceRoute: TermsOfServiceRoute,
   LabourDashboardRoute: LabourDashboardRoute,
   LabourEarningsRoute: LabourEarningsRoute,
   LabourProfileRoute: LabourProfileRoute,

@@ -104,26 +104,26 @@ export const Route =
         },
         {
           title:
-            "FarmFleet — Rent Farm Equipment Across India",
+            "FarmFleet AI — India's Smart Farming Platform",
         },
         {
           name: "description",
           content:
-            "FarmFleet is a farm equipment rental marketplace connecting equipment owners and farmers across India. Rent tractors, harvesters, rotavators, cultivators and more.",
+            "FarmFleet AI is an AI-powered agricultural platform connecting farmers, equipment owners, and agricultural labour across India.",
         },
         {
           name: "author",
-          content: "FarmFleet",
+          content: "FarmFleet AI",
         },
         {
           property: "og:title",
           content:
-            "FarmFleet — Rent Farm Equipment Across India",
+            "FarmFleet AI — India's Smart Farming Platform",
         },
         {
           property: "og:description",
           content:
-            "Farm equipment rental marketplace connecting equipment owners and farmers across India.",
+            "AI-powered agricultural platform connecting farmers, equipment owners, and labour across India.",
         },
         {
           property: "og:type",
@@ -135,7 +135,7 @@ export const Route =
         },
         {
           name: "twitter:site",
-          content: "@FarmFleet",
+          content: "@FarmFleetAI",
         },
       ],
 

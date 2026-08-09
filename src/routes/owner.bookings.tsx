@@ -63,7 +63,7 @@ type FilterStatus = Booking["status"] | "all";
 const API = "http://localhost:5000/api/booking";
 
 function authHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("ownerToken") ?? localStorage.getItem("token") ?? "";
   return { Authorization: `Bearer ${token}` };
 }
 
@@ -222,6 +222,7 @@ function BookingCard({
   onAccept,
   onReject,
   onComplete,
+  onMarkCashReceived,
   actionLoading,
 }: {
   booking: Booking;
@@ -229,6 +230,7 @@ function BookingCard({
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
   onComplete: (id: string) => void;
+  onMarkCashReceived?: (id: string) => void;
   actionLoading: string | null;
 }) {
   const { equipment, renter, status, totalAmount, createdAt, _id } = booking;
@@ -372,19 +374,36 @@ function BookingCard({
                 </>
               )}
               {status === "accepted" && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onComplete(_id)}
-                  disabled={isLoading}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-500/10 text-blue-600 border border-blue-200 hover:bg-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:border-blue-800"
-                >
-                  {isLoading ? (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <BadgeCheck className="h-3.5 w-3.5" />
+                <>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onComplete(_id)}
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-500/10 text-blue-600 border border-blue-200 hover:bg-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:border-blue-800"
+                  >
+                    {isLoading ? (
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                    )}
+                    Mark as Completed
+                  </motion.button>
+                  {onMarkCashReceived && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onMarkCashReceived(_id)}
+                      disabled={isLoading}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-300 hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <IndianRupee className="h-3.5 w-3.5" />
+                      )}
+                      Confirm Cash Received
+                    </motion.button>
                   )}
-                  Mark as Completed
-                </motion.button>
+                </>
               )}
             </div>
           )}
@@ -520,6 +539,22 @@ function OwnerBookings() {
     { v: "completed", label: t("owner.completed") },
   ];
 
+  async function handleMarkCashReceived(id: string) {
+    setActionLoading(id);
+    try {
+      await axios.post(
+        "http://localhost:5000/api/payment/cash/mark-received/equipment",
+        { transactionId: id },
+        { headers: authHeaders() }
+      );
+      await fetchBookings();
+    } catch (err) {
+      console.error("Failed to mark cash received:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <AppShell>
@@ -647,6 +682,7 @@ function OwnerBookings() {
                   onAccept={(id) => handleAction(id, "accept")}
                   onReject={(id) => handleAction(id, "reject")}
                   onComplete={(id) => handleAction(id, "complete")}
+                  onMarkCashReceived={handleMarkCashReceived}
                 />
               ))}
             </AnimatePresence>

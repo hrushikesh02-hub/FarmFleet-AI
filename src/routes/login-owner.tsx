@@ -363,6 +363,7 @@ function SignInForm({ onSuccess, addToast }: { onSuccess: () => void; addToast: 
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("ownerToken", response.data.token);
 
         if (response.data.owner) {
           localStorage.setItem(
@@ -538,6 +539,7 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("ownerToken", response.data.token);
         localStorage.setItem("owner", JSON.stringify(response.data.owner));
 
         addToast("success", "Account created successfully!");

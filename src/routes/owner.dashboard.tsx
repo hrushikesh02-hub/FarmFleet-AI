@@ -65,6 +65,7 @@ interface DashboardData {
   monthlyEarnings: MonthlyEarning[];
   equipmentUsage: EquipmentUsage[];
   activities: DashboardActivity[];
+  topEquipment?: any;
 }
 
 // ─── API helpers ──────────────────────────────────────────────────────────────

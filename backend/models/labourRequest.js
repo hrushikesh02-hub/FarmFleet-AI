@@ -124,6 +124,8 @@ const labourRequestSchema = new mongoose.Schema(
         "pending",
         "paid",
         "refunded",
+        "cash_pending",
+        "cash_received",
       ],
       default: "pending",
     },

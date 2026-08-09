@@ -13,6 +13,7 @@ const {
   completeRequest,
   getRequestById,
   getRequestHistory,
+  getFarmerRequests,
 } = require("../controllers/labourRequestController");
 
 /* ==========================
@@ -31,6 +32,13 @@ router.post(
   "/",
   farmerAuth,
   createRequest
+);
+
+// Farmer gets their labour requests
+router.get(
+  "/farmer",
+  farmerAuth,
+  getFarmerRequests
 );
 
 /* ==========================

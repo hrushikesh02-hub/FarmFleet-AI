@@ -75,7 +75,7 @@ const TAG_COLORS: Record<string, string> = {
 };
 
 function authHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? "";
   return { Authorization: `Bearer ${token}` };
 }
 

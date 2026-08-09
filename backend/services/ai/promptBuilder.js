@@ -106,83 +106,97 @@ Seed Recommendation:
 }
 
 ==================================================
-RETURN JSON
+RETURN JSON (Example structure with field types)
 ==================================================
 
 {
-  "crop": "",
+  "crop": "${crop}",
   "location": {
-    "state": "",
-    "district": ""
+    "state": "${state}",
+    "district": "${district}"
   },
-  "soilType": "",
-  "landArea": "",
-  "waterSource": "",
-  "budget": "",
-  "cropDuration": "",
-  "bestSeason": "",
-  "expectedYield": "",
-  "estimatedTotalCost": "",
-  "estimatedIncome": "",
-  "estimatedProfit": "",
+  "soilType": "${soilType}",
+  "landArea": "${landArea}",
+  "waterSource": "${waterSource}",
+  "budget": "₹${budget}",
+  "cropDuration": "4 - 5 Months",
+  "bestSeason": "Kharif (June - October)",
+  "expectedYield": "25 - 30 Quintals per Acre",
+  "estimatedTotalCost": "₹${budget}",
+  "estimatedIncome": "₹${Number(budget) * 2}",
+  "estimatedProfit": "₹${Number(budget)}",
   "landPreparation": [
-    ""
+    "Plough the land twice using a tractor rotavator to achieve a fine tilth.",
+    "Apply 5-8 tonnes of well-decomposed Farmyard Manure (FYM) per acre."
   ],
   "seedRecommendation": {
-    "variety": "",
-    "seedQuantity": "",
-    "estimatedCost": ""
+    "variety": "High-Yield Certified Hybrid Seed",
+    "seedQuantity": "8-10 kg per Acre",
+    "estimatedCost": "₹1,500 - ₹2,000 per Acre"
   },
   "timeline": [
     {
-      "week": "",
-      "title": "",
-      "description": ""
+      "week": "1",
+      "title": "Land Preparation & Soil Tillage",
+      "description": "Deep ploughing, levelling, and mixing organic manure into the soil."
+    },
+    {
+      "week": "2",
+      "title": "Sowing & Initial Irrigation",
+      "description": "Plant seeds at recommended row spacing and give light first irrigation."
     }
   ],
   "fertilizerSchedule": [
     {
-      "stage": "",
-      "fertilizer": "",
-      "quantity": "",
-      "time": ""
+      "stage": "Basal Application",
+      "fertilizer": "DAP + MOP",
+      "quantity": "50 kg DAP + 25 kg MOP per acre",
+      "time": "At the time of sowing"
     }
   ],
   "irrigationSchedule": [
     {
-      "stage": "",
-      "frequency": "",
-      "waterRequirement": ""
+      "stage": "Germination Stage",
+      "frequency": "Every 5-7 days",
+      "waterRequirement": "Light irrigation (2-3 inches)"
     }
   ],
   "weedManagement": [
-    ""
+    "Perform first manual weeding 20-25 days after sowing.",
+    "Use recommended pre-emergence herbicide within 48 hours of sowing."
   ],
   "pestAndDiseaseManagement": [
     {
-      "problem": "",
-      "solution": ""
+      "problem": "Stem Borer / Leaf Folder",
+      "solution": "Spray Chlorantraniliprole 18.5% SC @ 60ml per acre in 200L water."
     }
   ],
   "equipmentRequired": [
     {
-      "name": "",
-      "purpose": "",
-      "estimatedRent": ""
+      "name": "Tractor with Rotavator",
+      "purpose": "Land ploughing & soil pulverization",
+      "estimatedRent": "₹1,200 / hour"
     }
   ],
   "labourRequirement": [
     {
-      "activity": "",
-      "workers": "",
-      "days": ""
+      "activity": "Land Preparation & Manure Spreading",
+      "workers": "4 workers",
+      "days": "2 days"
+    },
+    {
+      "activity": "Sowing & Seed Treatment",
+      "workers": "5 workers",
+      "days": "1 day"
     }
   ],
   "precautions": [
-    ""
+    "Avoid waterlogging during early seed germination stage.",
+    "Always wear protective gloves when spraying pesticides."
   ],
   "tips": [
-    ""
+    "Maintain 45 cm distance between plant rows for optimal sunlight and growth.",
+    "Monitor farm weekly for early signs of pest infestation."
   ]
 }
 

@@ -161,7 +161,7 @@ async function generateCropItinerary(payload: CropItineraryPayload): Promise<Cro
     payload,
     {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("farmerToken") ?? ""}`,
+        Authorization: `Bearer ${localStorage.getItem("farmerToken") || localStorage.getItem("token") || ""}`,
       },
     }
   );
@@ -561,7 +561,7 @@ function GenerateCropPlan() {
       // fixed, so the generated id travels as a typed search param instead.
       navigate({
         to: "/renter/ai/processing",
-        search: { itineraryId } as Record<string, string>,
+        search: { itineraryId },
       });
     },
   });

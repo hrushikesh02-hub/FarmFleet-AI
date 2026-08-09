@@ -44,7 +44,9 @@ interface EquipmentFormData {
 // ─── API layer ─────────────────────────────────────────────────────────────────
 
 function authHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("ownerToken") ?? localStorage.getItem("token") ?? "";
+  console.log("OWNER EQUIPMENT REQUEST");
+  console.log("Owner token exists:", !!token);
   return { Authorization: `Bearer ${token}` };
 }
 

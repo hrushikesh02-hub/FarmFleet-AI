@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadRazorpayScript } from "@/lib/razorpay";
 import {
   Star,
   MapPin,
@@ -35,6 +36,8 @@ import {
   Landmark,
   Navigation,
   Zap,
+  CreditCard,
+  Banknote,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,8 +134,8 @@ function authHeaders() {
 // SKELETON COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-muted ${className}`} />;
+function Skeleton({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={`animate-pulse rounded-xl bg-muted ${className}`} style={style} />;
 }
 
 function SkeletonReview() {
@@ -768,6 +771,9 @@ function BookingWorkspace({
     state: "",
     landmark: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cash">("online");
+  const [paymentPaid, setPaymentPaid] = useState(false);
+  const [paymentStatusText, setPaymentStatusText] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState("");
@@ -838,18 +844,103 @@ function BookingWorkspace({
         { equipmentId: equipment._id, startDate, endDate },
         { headers: authHeaders() }
       );
-      setBookingId(data.booking?._id ?? "");
-      setBookingStep("success");
+
+      const bId = data.booking?._id ?? "";
+      setBookingId(bId);
+
+      if (!bId) {
+        throw new Error("Failed to retrieve booking ID.");
+      }
+
+      if (paymentMethod === "online") {
+        // Create payment order
+        const orderRes = await axios.post(
+          "/api/payment/create-order",
+          {
+            transactionType: "equipment_booking",
+            transactionId: bId,
+          },
+          { headers: authHeaders() }
+        );
+
+        const { orderId, amount, currency, keyId } = orderRes.data;
+
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded || !window.Razorpay) {
+          setBookingError("Razorpay SDK failed to load. Please check internet connection.");
+          setBookingLoading(false);
+          return;
+        }
+
+        const options = {
+          key: keyId,
+          amount: amount, // backend source of truth in smallest currency unit
+          currency: currency || "INR",
+          name: "FarmFleet",
+          description: `Equipment Rental Payment - ${equipment.name}`,
+          order_id: orderId,
+          handler: async function (response: any) {
+            try {
+              setBookingLoading(true);
+              const verifyRes = await axios.post(
+                "/api/payment/verify",
+                {
+                  transactionType: "equipment_booking",
+                  transactionId: bId,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+                { headers: authHeaders() }
+              );
+
+              if (verifyRes.data.success) {
+                setPaymentPaid(true);
+                setPaymentStatusText("Paid Online via Razorpay (TEST MODE)");
+                setBookingStep("success");
+              } else {
+                setBookingError("Payment verification failed.");
+              }
+            } catch (err: unknown) {
+              setBookingError(
+                axios.isAxiosError(err)
+                  ? (err.response?.data?.message ?? "Payment verification failed.")
+                  : "Payment verification failed."
+              );
+            } finally {
+              setBookingLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setBookingLoading(false);
+              setPaymentPaid(false);
+              setPaymentStatusText("Pending (Online payment pending)");
+              setBookingStep("success");
+            },
+          },
+          theme: {
+            color: "#16a34a",
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        setPaymentPaid(false);
+        setPaymentStatusText("Cash on Delivery (Pay after service)");
+        setBookingStep("success");
+        setBookingLoading(false);
+      }
     } catch (err: unknown) {
       setBookingError(
         axios.isAxiosError(err)
           ? (err.response?.data?.message ?? "Booking failed. Please try again.")
           : "Booking failed. Please try again."
       );
-    } finally {
       setBookingLoading(false);
     }
-  }, [equipment._id, startDate, endDate]);
+  }, [equipment._id, equipment.name, startDate, endDate, paymentMethod]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -1307,37 +1398,83 @@ function BookingWorkspace({
               <BookingWizardCard step="payment">
                 <div className="p-6 space-y-6">
                   <div>
-                    <h2 className="font-display font-bold text-xl tracking-tight">Payment Information</h2>
-                    <p className="text-sm text-muted-foreground mt-1">How payment works on FarmFleet</p>
+                    <h2 className="font-display font-bold text-xl tracking-tight">Select Payment Method</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Choose how you would like to pay for this booking</p>
                   </div>
-                  <div className="relative overflow-hidden rounded-2xl p-6 space-y-5" style={{ background: "linear-gradient(135deg, #22c55e10, #16a34a08)", border: "1px solid #22c55e30" }}>
-                    <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-20 blur-3xl bg-[#22c55e]" />
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#22c55e", color: "white" }}>
-                        <Shield className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[#16a34a] text-lg leading-tight">Payment after service</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">No advance payment required</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed border-t border-[#22c55e]/20 pt-5">
-                      Payment will be collected only after the work is completed. You will be contacted by the owner once the booking is approved.
-                    </p>
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {[
-                        { icon: CheckCircle2, text: "No Advance Payment" },
-                        { icon: Clock, text: "Pay After Service Completion" },
-                        { icon: BadgeCheck, text: "Owner Approval Required" },
-                        { icon: Shield, text: "Secure FarmFleet Booking" },
-                      ].map(({ icon: Icon, text }) => (
-                        <div key={text} className="flex items-center gap-2.5 rounded-xl border border-[#22c55e]/20 bg-white/50 dark:bg-card/50 px-3.5 py-3">
-                          <Icon className="h-4 w-4 text-[#16a34a] shrink-0" />
-                          <span className="text-xs font-semibold">{text}</span>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {/* Pay Online */}
+                    <div
+                      onClick={() => setPaymentMethod("online")}
+                      className={`relative cursor-pointer rounded-2xl border-2 p-5 transition-all duration-200 ${
+                        paymentMethod === "online"
+                          ? "border-primary bg-primary/5 shadow-card"
+                          : "border-border bg-card hover:border-border/80 hover:bg-accent/40"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <CreditCard className="h-5 w-5" />
                         </div>
-                      ))}
+                        {paymentMethod === "online" && (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-base mt-3">Pay Online</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Razorpay TEST MODE — Cards, UPI, NetBanking, Wallets
+                      </p>
+                      <div className="mt-3 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
+                        Instant Checkout
+                      </div>
+                    </div>
+
+                    {/* Cash on Delivery */}
+                    <div
+                      onClick={() => setPaymentMethod("cash")}
+                      className={`relative cursor-pointer rounded-2xl border-2 p-5 transition-all duration-200 ${
+                        paymentMethod === "cash"
+                          ? "border-primary bg-primary/5 shadow-card"
+                          : "border-border bg-card hover:border-border/80 hover:bg-accent/40"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                          <Banknote className="h-5 w-5" />
+                        </div>
+                        {paymentMethod === "cash" && (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-base mt-3">Cash on Delivery</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Pay in cash directly to the equipment owner after service
+                      </p>
+                      <div className="mt-3 inline-block rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                        Pay After Work
+                      </div>
                     </div>
                   </div>
+
+                  <div className="rounded-xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground leading-relaxed flex items-start gap-3">
+                    <Shield className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      {paymentMethod === "online" ? (
+                        <p>
+                          <strong>Razorpay TEST MODE:</strong> Clicking submit will open Razorpay's secure test popup. Use test credentials (UPI / Card) to complete payment.
+                        </p>
+                      ) : (
+                        <p>
+                          <strong>Cash on Delivery:</strong> No advance payment online. Pay the owner directly when work is finished.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex justify-between gap-3 pt-2">
                     <button onClick={() => setBookingStep("summary")} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border text-sm font-semibold hover:bg-accent transition">
                       <ArrowLeft className="h-4 w-4" /> Back
@@ -1356,7 +1493,7 @@ function BookingWorkspace({
                 <div className="p-6 space-y-6">
                   <div>
                     <h2 className="font-display font-bold text-xl tracking-tight">Submit Booking Request</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Everything looks good — submit your request to the owner</p>
+                    <p className="text-sm text-muted-foreground mt-1">Review your details and complete booking</p>
                   </div>
                   <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -1375,9 +1512,19 @@ function BookingWorkspace({
                       <span className="text-muted-foreground">Duration</span>
                       <span className="font-semibold">{totalDays} day{totalDays > 1 ? "s" : ""}</span>
                     </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Payment Method</span>
+                      <span className="font-semibold flex items-center gap-1.5 text-primary">
+                        {paymentMethod === "online" ? (
+                          <><CreditCard className="h-3.5 w-3.5" /> Razorpay Online (Test)</>
+                        ) : (
+                          <><Banknote className="h-3.5 w-3.5 text-amber-600" /> Cash on Delivery</>
+                        )}
+                      </span>
+                    </div>
                     <div className="h-px bg-border" />
                     <div className="flex items-center justify-between text-base font-bold">
-                      <span>Est. Total</span>
+                      <span>Total Amount</span>
                       <span className="text-[#16a34a]">₹{totalAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
@@ -1404,9 +1551,9 @@ function BookingWorkspace({
                       style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
                     >
                       {bookingLoading ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> Submitting request…</>
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
                       ) : (
-                        <>Submit Booking Request <ArrowRight className="h-4 w-4" /></>
+                        <>{paymentMethod === "online" ? "Pay Online & Book" : "Submit Booking Request"} <ArrowRight className="h-4 w-4" /></>
                       )}
                     </motion.button>
                   </div>
@@ -1428,10 +1575,16 @@ function BookingWorkspace({
                     <CheckCircle2 className="h-12 w-12 text-white" />
                   </motion.div>
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Request Sent</p>
-                    <h2 className="font-display font-bold text-2xl sm:text-3xl tracking-tight">✓ Booking Request Sent</h2>
+                    <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">
+                      {paymentPaid ? "Payment Verified" : "Request Sent"}
+                    </p>
+                    <h2 className="font-display font-bold text-2xl sm:text-3xl tracking-tight">
+                      {paymentPaid ? "✓ Booking & Payment Confirmed!" : "✓ Booking Request Sent"}
+                    </h2>
                     <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto leading-relaxed">
-                      Your booking request has been submitted successfully.
+                      {paymentPaid
+                        ? "Your payment via Razorpay TEST MODE was verified successfully. The owner has been notified."
+                        : "Your booking request has been submitted. Payment will be collected in cash after work completion."}
                     </p>
                   </motion.div>
                   {bookingId && (
@@ -1440,16 +1593,14 @@ function BookingWorkspace({
                     </motion.div>
                   )}
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="w-full max-w-sm rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/5 p-4 space-y-2 text-left">
-                    {[
-                      "The equipment owner will review and respond to your request.",
-                      "Payment is only required after work completion.",
-                      "You will be notified once your booking is approved.",
-                    ].map((msg) => (
-                      <div key={msg} className="flex items-start gap-2.5 text-xs text-muted-foreground">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        {msg}
-                      </div>
-                    ))}
+                    <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                      Status: <span className="font-semibold text-foreground">{paymentStatusText}</span>
+                    </div>
+                    <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                      The equipment owner will review and update your booking status.
+                    </div>
                   </motion.div>
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                     <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate({ to: "/renter/bookings" })} className="flex-1 py-3.5 rounded-2xl font-bold text-white shadow-card hover:shadow-elevated transition-all text-sm" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>

@@ -71,7 +71,7 @@ interface RecentRequest {
 const API = "http://localhost:5000/api/labour";
 
 function authHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? "";
   return { Authorization: `Bearer ${token}` };
 }
 
@@ -479,10 +479,11 @@ function LabourEarnings() {
         axios.get(`${API}/earnings/monthly`, { headers: authHeaders() }),
         axios.get(`${API}/dashboard`, { headers: authHeaders() }),
       ]);
-      setEarnings(summaryRes.data);
-      setMonthly(monthlyRes.data ?? []);
+      setEarnings(summaryRes.data?.summary ?? summaryRes.data);
+      setMonthly(monthlyRes.data?.monthlyEarnings ?? monthlyRes.data ?? []);
       setRecentRequests(dashboardRes.data?.dashboard?.recentRequests ?? []);
-    } catch {
+    } catch (err) {
+      console.error("Earnings fetch error:", err);
       setError(true);
     } finally {
       setLoading(false);

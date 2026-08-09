@@ -50,7 +50,7 @@ const API_BASE_URL =
     ?.VITE_API_BASE_URL ?? "http://localhost:5000";
 
 function authHeaders() {
-  const token = localStorage.getItem("farmerToken") ?? "";
+  const token = localStorage.getItem("farmerToken") || localStorage.getItem("token") || "";
   return { Authorization: `Bearer ${token}` };
 }
 

@@ -96,7 +96,7 @@ async function fetchReportStatus(itineraryId: string): Promise<AIReportStatusRes
     `${API_BASE_URL}/api/ai/itinerary/${itineraryId}`,
     {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("farmerToken") ?? ""}`,
+        Authorization: `Bearer ${localStorage.getItem("farmerToken") || localStorage.getItem("token") || ""}`,
       },
     }
   );

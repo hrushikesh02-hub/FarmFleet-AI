@@ -362,10 +362,8 @@ function SignInForm({ onSuccess, addToast }: { onSuccess: () => void; addToast: 
       );
 
       if (response.data.success) {
-        localStorage.setItem(
-  "farmerToken",
-  response.data.token
-);
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("farmerToken", response.data.token);
 
         if (response.data.farmer) {
           localStorage.setItem(
@@ -540,10 +538,8 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
       );
 
       if (response.data.success) {
-        localStorage.setItem(
-  "farmerToken",
-  response.data.token
-);
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("farmerToken", response.data.token);
         localStorage.setItem("farmer", JSON.stringify(response.data.farmer));
 
         addToast("success", "Account created successfully!");

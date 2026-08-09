@@ -1,152 +1,99 @@
-import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { Facebook, Twitter, Instagram } from "lucide-react";
 
 export function Footer() {
-  const { t } = useTranslation();
-
   return (
-    <footer className="border-t border-border bg-surface mt-16">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 grid gap-10 md:grid-cols-4">
+    <footer className="border-t border-border bg-card/60 backdrop-blur-sm mt-16">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         
-        {/* Brand Section */}
-        <div className="md:col-span-2">
-          <Link
-            to="/"
-            className="flex items-center gap-3 transition-transform hover:scale-[1.02]"
-          >
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <circle cx="24" cy="24" r="24" fill="#45B649" />
+        {/* Main Grid */}
+        <div className="grid gap-8 grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-12">
+          
+          {/* Brand Col */}
+          <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-4">
+            <Link to="/" className="inline-flex items-center gap-3 transition-transform hover:scale-[1.02]">
+              <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="24" fill="#45B649" />
+                <path d="M24 30V21" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M24 21C19 21 17 18 17 14C21 14 24 16 24 21Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+                <path d="M24 21C29 21 31 18 31 14C27 14 24 16 24 21Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+                <path d="M18 33H30" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
 
-              <path
-                d="M24 30V21"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
+              <span className="text-2xl font-extrabold tracking-tight inline-flex items-center gap-1">
+                <span className="text-foreground">Farm</span>
+                <span className="text-primary">Fleet</span>
+                <span className="ml-1 text-primary font-black">AI</span>
+              </span>
+            </Link>
 
-              <path
-                d="M24 21C19 21 17 18 17 14C21 14 24 16 24 21Z"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-                fill="none"
-              />
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+              AI-powered farming assistance, equipment rental and agricultural labour services for smarter, more accessible farming.
+            </p>
 
-              <path
-                d="M24 21C29 21 31 18 31 14C27 14 24 16 24 21Z"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-                fill="none"
-              />
+            <div className="pt-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Hackathon Prototype
+              </span>
+            </div>
+          </div>
 
-              <path
-                d="M18 33H30"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-            </svg>
+          {/* Platform */}
+          <div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
+              Platform
+            </h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/renter/search" className="transition hover:text-primary">Find Equipment</Link></li>
+              <li><Link to="/renter/labours" className="transition hover:text-primary">Labour Services</Link></li>
+              <li><Link to="/renter/ai/generate" className="transition hover:text-primary">AI Farming</Link></li>
+              <li><Link to="/faq" className="transition hover:text-primary">How It Works</Link></li>
+            </ul>
+          </div>
 
-            <span
-              style={{
-                fontSize: "28px",
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: "-0.03em",
-              }}
-            >
-              <span style={{ color: "#111827" }}>Farm</span>
-              <span style={{ color: "#45B649" }}>Fleet</span>
-            </span>
-          </Link>
+          {/* Farmers */}
+          <div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
+              Farmers
+            </h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/renter/dashboard" className="transition hover:text-primary">Renter Dashboard</Link></li>
+              <li><Link to="/renter/bookings" className="transition hover:text-primary">My Bookings</Link></li>
+              <li><Link to="/farmer-guide" className="transition hover:text-primary">Farmer Guide</Link></li>
+              <li><Link to="/help" className="transition hover:text-primary">Help Center</Link></li>
+            </ul>
+          </div>
 
-          <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-            {t("landing.footerTagline")}
-          </p>
+          {/* Resources & Company */}
+          <div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
+              Company
+            </h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/about" className="transition hover:text-primary">About FarmFleet AI</Link></li>
+              <li><Link to="/ai-guide" className="transition hover:text-primary">AI Guide</Link></li>
+              <li><Link to="/careers" className="transition hover:text-primary">Careers</Link></li>
+              <li><Link to="/press" className="transition hover:text-primary">Press</Link></li>
+              <li><Link to="/contact" className="transition hover:text-primary">Contact</Link></li>
+            </ul>
+          </div>
 
-          <div className="mt-6 flex gap-3">
-            {[Facebook, Twitter, Instagram].map((Icon, index) => (
-              <a
-                key={index}
-                href="#"
-                aria-label="Social Link"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border transition hover:bg-accent"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
+        </div>
+
+        {/* Legal Links Bar */}
+        <div className="pt-8 border-t border-border flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>© 2026 FarmFleet AI. Hackathon Prototype.</p>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <Link to="/privacy-policy" className="hover:text-primary transition">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:text-primary transition">Terms of Service</Link>
+            <Link to="/refund-policy" className="hover:text-primary transition">Refund Policy</Link>
+            <Link to="/payment-policy" className="hover:text-primary transition">Payment Policy</Link>
+            <Link to="/cookie-policy" className="hover:text-primary transition">Cookie Policy</Link>
+            <Link to="/disclaimer" className="hover:text-primary transition">Prototype Disclaimer</Link>
           </div>
         </div>
 
-        {/* Product Links */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold font-display">
-            {t("landing.footerProduct")}
-          </h4>
-
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>
-              <Link
-                to="/renter/search"
-                className="transition hover:text-primary"
-              >
-                {t("nav.search")}
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to="/availability"
-                className="transition hover:text-primary"
-              >
-                {t("nav.availability")}
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to="/owner/dashboard"
-                className="transition hover:text-primary"
-              >
-                {t("auth.owner")}
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Company Links */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold font-display">
-            {t("landing.footerCompany")}
-          </h4>
-
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>
-              <a href="#" className="transition hover:text-primary">
-                About
-              </a>
-            </li>
-
-            <li>
-              <a href="#" className="transition hover:text-primary">
-                Careers
-              </a>
-            </li>
-
-            <li>
-              <a href="#" className="transition hover:text-primary">
-                Contact
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Bottom Copyright */}
-      <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        {t("landing.footerCopyright")}
       </div>
     </footer>
   );
