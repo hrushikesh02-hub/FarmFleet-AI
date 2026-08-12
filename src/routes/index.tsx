@@ -2080,13 +2080,23 @@ function FAQ({ t }: { t: Content }) {
   );
 }
 
+function getProtectedFooterLink(target: string) {
+  if (typeof window === "undefined") return target;
+  const hasToken = Boolean(
+    localStorage.getItem("farmerToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("jwt")
+  );
+  return hasToken ? target : "/login-renter";
+}
+
 /* ─── FOOTER ─── */
 function Footer({ t }: { t: Content }) {
   const cols = [
     {
       title: t.footer.platform,
       links: [
-        { label: "Search Equipment", href: "/renter/search" },
+        { label: "Search Equipment", href: getProtectedFooterLink("/renter/search") },
         { label: "How It Works", href: "#how-it-works" },
         { label: "List Equipment", href: "/login-owner" },
         { label: "Pricing", href: "/payment-policy" },

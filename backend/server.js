@@ -146,7 +146,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/pdf", pdfRoutes);
-app.use("/api/payment", paymentRoutes);
+const contactRoutes = require("./routes/contactRoutes");
+app.use("/api/contact", contactRoutes);
 /* ==========================
    TEST ROUTE
 ========================== */

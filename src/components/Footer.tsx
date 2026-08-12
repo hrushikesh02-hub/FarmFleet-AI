@@ -1,5 +1,15 @@
 import { Link } from "@tanstack/react-router";
 
+function getProtectedLink(target: string) {
+  if (typeof window === "undefined") return target;
+  const hasToken = Boolean(
+    localStorage.getItem("farmerToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("jwt")
+  );
+  return hasToken ? target : "/login-renter";
+}
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card/60 backdrop-blur-sm mt-16">
@@ -44,7 +54,7 @@ export function Footer() {
               Platform
             </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/renter/search" className="transition hover:text-primary">Find Equipment</Link></li>
+              <li><Link to={getProtectedLink("/renter/search")} className="transition hover:text-primary">Find Equipment</Link></li>
               <li><Link to="/renter/labours" className="transition hover:text-primary">Labour Services</Link></li>
               <li><Link to="/renter/ai/generate" className="transition hover:text-primary">AI Farming</Link></li>
               <li><Link to="/faq" className="transition hover:text-primary">How It Works</Link></li>
@@ -57,8 +67,8 @@ export function Footer() {
               Farmers
             </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/renter/dashboard" className="transition hover:text-primary">Renter Dashboard</Link></li>
-              <li><Link to="/renter/bookings" className="transition hover:text-primary">My Bookings</Link></li>
+              <li><Link to={getProtectedLink("/renter/dashboard")} className="transition hover:text-primary">Renter Dashboard</Link></li>
+              <li><Link to={getProtectedLink("/renter/bookings")} className="transition hover:text-primary">My Bookings</Link></li>
               <li><Link to="/farmer-guide" className="transition hover:text-primary">Farmer Guide</Link></li>
               <li><Link to="/help" className="transition hover:text-primary">Help Center</Link></li>
             </ul>

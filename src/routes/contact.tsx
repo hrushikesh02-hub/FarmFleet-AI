@@ -4,6 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { motion } from "framer-motion";
 import { Mail, Send, Sparkles, CheckCircle2, MessageSquare } from "lucide-react";
 
+import api from "@/lib/api/api";
+
 export const Route = createFileRoute("/contact")({
   head: () => ({ meta: [{ title: "Contact Us — FarmFleet AI" }] }),
   component: ContactPage,
@@ -11,12 +13,33 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) return;
-    setSubmitted(true);
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post("/contact", form);
+      if (res.data && res.data.success) {
+        setSubmitted(true);
+        setForm({ name: "", email: "", subject: "", message: "" });
+      } else {
+        setError(res.data?.message || "Failed to send message. Please try again.");
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to send message at this time. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -137,11 +160,18 @@ function ContactPage() {
                   />
                 </div>
 
+                {error && (
+                  <div className="p-3 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive text-xs font-medium">
+                    {error}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-soft hover:opacity-90 transition flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-soft hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  <Send className="h-4 w-4" /> Send Message
+                  <Send className="h-4 w-4" /> {loading ? "Sending..." : "Send Message"}
                 </button>
               </form>
             )}
