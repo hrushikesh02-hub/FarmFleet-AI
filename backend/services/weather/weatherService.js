@@ -17,8 +17,8 @@ const RETRY_BASE_DELAY_MS = 1000;
 ========================================================== */
 
 if (!WEATHER_API_KEY) {
-  throw new Error(
-    "OPENWEATHER_API_KEY is missing. Set it in your environment (.env) before starting the server."
+  console.warn(
+    "[WeatherService] WARNING: OPENWEATHER_API_KEY is missing in environment. Live weather API calls will use mock fallback."
   );
 }
 

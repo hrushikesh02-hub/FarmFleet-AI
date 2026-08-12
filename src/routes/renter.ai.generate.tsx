@@ -4,6 +4,7 @@ import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -146,6 +147,7 @@ interface CropItineraryPayload {
   landArea: string;
   waterSource: string;
   budget: string;
+  language?: string;
 }
 
 interface CropItineraryResponse {
@@ -526,6 +528,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function GenerateCropPlan() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
 
   const {
@@ -583,6 +586,7 @@ function GenerateCropPlan() {
       landArea: String(data.landArea),
       waterSource: data.waterSource,
       budget: String(data.budget),
+      language: i18n.language,
     };
     mutation.mutate(payload);
   };

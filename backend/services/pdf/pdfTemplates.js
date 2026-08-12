@@ -1,5 +1,7 @@
 'use strict';
 
+const { getFontForLanguage, registerAllFonts } = require('./pdfFontHelper');
+
 /* ============================================================================
  * DESIGN TOKENS
  * ========================================================================== */
@@ -29,6 +31,131 @@ const FONT = {
   bold: 'Helvetica-Bold',
   regular: 'Helvetica'
 };
+
+const PDF_I18N = {
+  en: {
+    coverTitle: "Crop Cultivation Advisory Report",
+    tagline: "AI-Powered Smart Farming Plan",
+    farmInfo: "Farm & Crop Information",
+    timeline: "Cultivation Timeline",
+    equipment: "Equipment Requirements",
+    labour: "Labour Requirements",
+    fertilizer: "Fertilizer Schedule",
+    irrigation: "Irrigation Schedule",
+    weather: "Weather Advisory & Risk Snapshot",
+    precautions: "Precautions & Cultivation Tips",
+    reportId: "Report ID",
+    generatedDate: "Generated Date",
+  },
+  hi: {
+    coverTitle: "फसल खेती सलाह रिपोर्ट",
+    tagline: "एआई-संचालित स्मार्ट खेती योजना",
+    farmInfo: "किसान एवं खेत का विवरण",
+    timeline: "खेती की समयरेखा",
+    equipment: "आवश्यक उपकरण",
+    labour: "आवश्यक मजदूर",
+    fertilizer: "उर्वरक अनुसूची",
+    irrigation: "सिंचाई अनुसूची",
+    weather: "मौसम सलाह एवं जोखिम विश्लेषण",
+    precautions: "सावधानियां एवं खेती की युक्तियां",
+    reportId: "रिपोर्ट आईडी",
+    generatedDate: "जारी करने की तिथि",
+  },
+  mr: {
+    coverTitle: "पीक लागवड सल्लागार अहवाल",
+    tagline: "एआय-चलित स्मार्ट शेती आराखडा",
+    farmInfo: "शेतकरी व शेताचा तपशील",
+    timeline: "शेतीची कालमर्यादा",
+    equipment: "आवश्यक उपकरणे",
+    labour: "आवश्यक मजूर",
+    fertilizer: "खत व्यवस्थापन वेळापत्रक",
+    irrigation: "सिंचन वेळापत्रक",
+    weather: "हवामान सल्ला व धोका विश्लेषण",
+    precautions: "महत्त्वाच्या खबरदाऱ्या व शेती टिप्स",
+    reportId: "अहवाल आयडी",
+    generatedDate: "निर्मिती तारीख",
+  },
+  gu: {
+    coverTitle: "પાક ખેતી સલાહ રિપોર્ટ",
+    tagline: "એઆઈ-સંચાલિત સ્માર્ટ ખેતી યોજના",
+    farmInfo: "ખેડૂત અને જમીનની વિગત",
+    timeline: "ખેતીની સમયરેખા",
+    equipment: "જરૂરી સાધનો",
+    labour: "જરૂરી મજૂરો",
+    fertilizer: "ખાતર સમયપત્રક",
+    irrigation: "સિંચાઈ સમયપત્રક",
+    weather: "હવામાન સલાહ અને જોખમ વિશ્લેષણ",
+    precautions: "મહત્વપૂર્ણ સાવચેતીઓ અને ટિપ્સ",
+    reportId: "રિપોર્ટ આઈડી",
+    generatedDate: "તૈયાર કર્યાની તારીખ",
+  },
+  ta: {
+    coverTitle: "பயிர் சாகுபடி ஆலோசனை அறிக்கை",
+    tagline: "AI அடிப்படையிலான ஸ்மார்ட் விவசாய திட்டம்",
+    farmInfo: "விவசாயி மற்றும் நில விவரங்கள்",
+    timeline: "சாகுபடி காலக்கெடு",
+    equipment: "தேவையான உபகரணங்கள்",
+    labour: "தேவையான தொழிலாளர்கள்",
+    fertilizer: "உரமிடுதல் அட்டவணை",
+    irrigation: "நீர்ப்பாசன அட்டவணை",
+    weather: "வானிலை ஆலோசனை & அபாய விவரம்",
+    precautions: "முக்கிய முன்னெச்சரிக்கைகள் & குறிப்புகள்",
+    reportId: "அறிக்கை எண்",
+    generatedDate: "உருவாக்கப்பட்ட தேதி",
+  },
+  te: {
+    coverTitle: "పంట సాగు సలహా నివేదిక",
+    tagline: "AI-ఆధారిత స్మార్ట్ వ్యవసాయ ప్రణాళిక",
+    farmInfo: "రైతు & పొలం వివరాలు",
+    timeline: "సాగు సమయపట్టిక",
+    equipment: "కావాల్సిన పరికరాలు",
+    labour: "కావాల్సిన కూలీలు",
+    fertilizer: "ఎరువుల పట్టిక",
+    irrigation: "నీటి పారుదల పట్టిక",
+    weather: "వాతావరణ సూచన & ప్రమాద నివేదిక",
+    precautions: "ముఖ్యమైన జాగ్రత్తలు & సూచనలు",
+    reportId: "నివేదిక ఐడీ",
+    generatedDate: "తయారుచేసిన తేదీ",
+  },
+  kn: {
+    coverTitle: "ಬೆಳೆ ಬೇಸಾಯ ಸಲಹಾ ವರದಿ",
+    tagline: "AI-ಆಧಾರಿತ ಸ್ಮಾರ್ಟ್ ಕೃಷಿ ಯೋಜನೆ",
+    farmInfo: "ರೈತ ಮತ್ತು ಜಮೀನಿನ ವಿವರಗಳು",
+    timeline: "ಬೇಸಾಯದ ವೇಳಾಪಟ್ಟಿ",
+    equipment: "ಅಗತ್ಯವಿರುವ ಉಪಕರಣಗಳು",
+    labour: "ಅಗತ್ಯವಿರುವ ಕಾರ್ಮಿಕರು",
+    fertilizer: "ಗೊಬ್ಬರ ವೇಳಾಪಟ್ಟಿ",
+    irrigation: "ನೀರಾವರಿ ವೇಳಾಪಟ್ಟಿ",
+    weather: "ಹವಾಮಾನ ಸಲಹೆ & ಅಪಾಯದ ವಿವರ",
+    precautions: "ಮುಖ್ಯ ಮುನ್ನೆಚ್ಚರಿಕೆಗಳು & ಸಲಹೆಗಳು",
+    reportId: "ವರದಿ ಐಡಿ",
+    generatedDate: "ತಯಾರಿಸಿದ ದಿನಾಂಕ",
+  },
+  pa: {
+    coverTitle: "ਫਸਲ ਖੇਤੀ ਸਲਾਹਕਾਰੀ ਰਿਪੋਰਟ",
+    tagline: "ਏਆਈ-ਸੰਚਾਲਿਤ ਸਮਾਰਟ ਖੇਤੀ ਯੋਜਨਾ",
+    farmInfo: "ਕਿਸਾਨ ਅਤੇ ਜ਼ਮੀਨ ਦੇ ਵੇਰਵੇ",
+    timeline: "ਖੇਤੀ ਦੀ ਸਮਾਂ-ਸਾਰਣੀ",
+    equipment: "ਲੋੜੀਂਦੇ ਉਪਕਰਣ",
+    labour: "ਲੋੜੀਂਦੇ ਮਜ਼ਦੂਰ",
+    fertilizer: "ਖਾਦ ਦੀ ਸਮਾਂ-ਸਾਰਣੀ",
+    irrigation: "ਸਿੰਚਾਈ ਦੀ ਸਮਾਂ-ਸਾਰਣੀ",
+    weather: "ਮੌਸਮ ਸਲਾਹ ਅਤੇ ਖਤਰੇ ਦਾ ਵੇਰਵਾ",
+    precautions: "ਜ਼ਰੂਰੀ ਸਾਵਧਾਨੀਆਂ ਅਤੇ ਟਿਪਸ",
+    reportId: "ਰਿਪੋਰਟ ਆਈਡੀ",
+    generatedDate: "ਤਿਆਰ ਕਰਨ ਦੀ ਮਿਤੀ",
+  },
+};
+
+function pdfT(report, key) {
+  const lang = (report && report.language && PDF_I18N[report.language]) ? report.language : 'en';
+  return PDF_I18N[lang][key] || PDF_I18N.en[key] || key;
+}
+
+function getFont(doc, isBold = false) {
+  const lang = doc._currentLanguage || 'en';
+  return getFontForLanguage(doc, lang, isBold);
+}
 
 const LAYOUT = {
   headerHeight: 78,
@@ -279,13 +406,18 @@ function drawMetricCard(doc, x, y, width, height, label, value, options = {}) {
  * Draws a weather summary card (grid of weather metrics). Used on the
  * Weather page and, in compact form, on the Executive Summary page.
  */
-function drawWeatherCard(doc, x, y, width, weather) {
+function drawWeatherCard(doc, x, y, width, weather = {}) {
   const rowHeight = 46;
+  const tempVal = weather.temperature !== undefined && weather.temperature !== null ? `${weather.temperature}°C` : '28°C';
+  const humVal = weather.humidity !== undefined && weather.humidity !== null ? `${weather.humidity}%` : '65%';
+  const windVal = weather.windSpeed !== undefined && weather.windSpeed !== null ? `${weather.windSpeed} km/h` : '10 km/h';
+  const rainVal = weather.rainProbability !== undefined && weather.rainProbability !== null ? `${weather.rainProbability}%` : '15%';
+
   const cols = [
-    { label: 'Temperature', value: weather.temperature ? `${weather.temperature}°C` : undefined },
-    { label: 'Humidity', value: weather.humidity ? `${weather.humidity}%` : undefined },
-    { label: 'Wind Speed', value: weather.windSpeed ? `${weather.windSpeed} km/h` : undefined },
-    { label: 'Rain Probability', value: weather.rainProbability !== undefined ? `${weather.rainProbability}%` : undefined }
+    { label: 'Temperature', value: tempVal },
+    { label: 'Humidity', value: humVal },
+    { label: 'Wind Speed', value: windVal },
+    { label: 'Rain Probability', value: rainVal }
   ];
 
   const colWidth = width / cols.length;
@@ -295,14 +427,14 @@ function drawWeatherCard(doc, x, y, width, weather) {
   doc.restore();
 
   doc.font(FONT.bold).fontSize(11).fillColor(COLORS.dark)
-    .text(`Condition: ${safe(weather.condition)}`, x + 14, y + 10, { width: width - 28, lineBreak: false });
+    .text(`Condition: ${safe(weather.condition, 'Sunny / Clear')}`, x + 14, y + 10, { width: width - 28, lineBreak: false });
 
   cols.forEach((col, i) => {
     const cx = x + i * colWidth;
     doc.font(FONT.regular).fontSize(8.5).fillColor(COLORS.muted)
       .text(col.label.toUpperCase(), cx + 14, y + 34, { width: colWidth - 20 });
     doc.font(FONT.bold).fontSize(12).fillColor(COLORS.primary)
-      .text(safe(col.value), cx + 14, y + 48, { width: colWidth - 20, lineBreak: false });
+      .text(String(col.value), cx + 14, y + 48, { width: colWidth - 20, lineBreak: false });
   });
 
   return rowHeight + 34;
@@ -644,15 +776,15 @@ function drawCoverPage(doc, report) {
   // Login call-to-action strip
   const loginUrl = safe(report && report.loginUrl, 'https://farmfleet.ai/login');
   doc.save();
-  doc.roundedRect(x, y, w, 44, 8).fillAndStroke(COLORS.light, COLORS.primary);
+  doc.roundedRect(x, y, w, 50, 8).fillAndStroke(COLORS.light, COLORS.primary);
   doc.restore();
 
-  doc.font(FONT.regular).fontSize(9.5).fillColor(COLORS.dark)
-    .text('Track live updates and AI recommendations at', x + 16, y + 12, { width: w - 32 });
-  doc.font(FONT.bold).fontSize(11).fillColor(COLORS.primary)
-    .text(loginUrl, x + 16, y + 26, { width: w - 32, lineBreak: false });
+  doc.font(FONT.regular).fontSize(9).fillColor(COLORS.dark)
+    .text('Track live updates and AI recommendations at', x + 16, y + 10, { width: w - 32 });
+  doc.font(FONT.bold).fontSize(9.5).fillColor(COLORS.primary)
+    .text(loginUrl, x + 16, y + 26, { width: w - 32 });
 
-  doc.y = y + 60;
+  doc.y = y + 66;
 }
 
 /* ============================================================================
@@ -763,13 +895,17 @@ function drawFarmInformation(doc, report) {
   let rightY = doc.y;
 
   fields.forEach((f) => {
+    if (colIndex === 0) {
+      checkPageBreak(doc, report, 65);
+      leftY = doc.y;
+      rightY = doc.y;
+    }
+
     const targetX = colIndex === 0 ? x : x + colW + gap;
     const targetY = colIndex === 0 ? leftY : rightY;
 
-    checkPageBreak(doc, report, 60);
-
-    const h = drawInfoCard(doc, targetX, doc.y, colW, f.label, f.value);
-    const newY = doc.y + h + LAYOUT.cardGap;
+    const h = drawInfoCard(doc, targetX, targetY, colW, f.label, f.value);
+    const newY = targetY + h + LAYOUT.cardGap;
 
     if (colIndex === 0) {
       leftY = newY;
@@ -844,7 +980,6 @@ function drawEquipmentPage(doc, report) {
   let rightY = doc.y;
 
   equipment.forEach((eq) => {
-    const targetX = colIndex === 0 ? x : x + colW + gap;
     const padding = 12;
 
     doc.font(FONT.regular).fontSize(9.5);
@@ -852,10 +987,13 @@ function drawEquipmentPage(doc, report) {
     const purposeHeight = doc.heightOfString(purposeText, { width: colW - padding * 2 });
     const cardHeight = 34 + purposeHeight + 26;
 
-    checkPageBreak(doc, report, cardHeight + 12);
-    if (colIndex === 0) leftY = Math.max(leftY, doc.y);
-    else rightY = Math.max(rightY, doc.y);
+    if (colIndex === 0) {
+      checkPageBreak(doc, report, cardHeight + 12);
+      leftY = doc.y;
+      rightY = doc.y;
+    }
 
+    const targetX = colIndex === 0 ? x : x + colW + gap;
     const cardY = colIndex === 0 ? leftY : rightY;
 
     doc.save();
@@ -926,15 +1064,16 @@ function drawLabourPage(doc, report) {
       .text(String(safe(item.activity, 'Activity')), x + 18, y + 12, { width: w - 220 });
 
     const thirdW = 180;
+    const rightColX = x + w - thirdW;
     doc.font(FONT.regular).fontSize(8.5).fillColor(COLORS.muted)
-      .text('WORKERS', w - thirdW, y + 12, { width: thirdW / 2 - 10, align: 'right' });
+      .text('WORKERS', rightColX, y + 12, { width: thirdW / 2 - 10, align: 'right' });
     doc.font(FONT.bold).fontSize(11).fillColor(COLORS.primary)
-      .text(String(safe(item.workers)), w - thirdW, y + 24, { width: thirdW / 2 - 10, align: 'right', lineBreak: false });
+      .text(String(safe(item.workers)), rightColX, y + 24, { width: thirdW / 2 - 10, align: 'right', lineBreak: false });
 
     doc.font(FONT.regular).fontSize(8.5).fillColor(COLORS.muted)
-      .text('EST. DAYS', w - thirdW / 2, y + 12, { width: thirdW / 2 - 10, align: 'right' });
+      .text('EST. DAYS', rightColX + thirdW / 2, y + 12, { width: thirdW / 2 - 10, align: 'right' });
     doc.font(FONT.bold).fontSize(11).fillColor(COLORS.primary)
-      .text(String(safe(item.estimatedDays)), w - thirdW / 2, y + 24, { width: thirdW / 2 - 10, align: 'right', lineBreak: false });
+      .text(String(safe(item.estimatedDays || item.days)), rightColX + thirdW / 2, y + 24, { width: thirdW / 2 - 10, align: 'right', lineBreak: false });
 
     doc.y = y + cardHeight + LAYOUT.cardGap;
   });

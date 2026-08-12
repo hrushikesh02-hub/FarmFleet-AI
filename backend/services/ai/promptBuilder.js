@@ -10,7 +10,20 @@ function buildCropPrompt({
   landArea,
   waterSource,
   budget,
+  language = "en",
 }) {
+  const langNameMap = {
+    en: "English",
+    hi: "Hindi (हिन्दी)",
+    mr: "Marathi (मराठी)",
+    gu: "Gujarati (ગુજરાતી)",
+    ta: "Tamil (தமிழ்)",
+    te: "Telugu (తెలుగు)",
+    kn: "Kannada (ಕನ್ನಡ)",
+    pa: "Punjabi (ਪੰਜਾਬੀ)",
+  };
+  const targetLanguage = langNameMap[language] || "English";
+
   return `
 You are FarmFleet AI, an expert agricultural consultant for Indian farming.
 
@@ -27,6 +40,7 @@ Soil Type: ${soilType}
 Land Area: ${landArea} Acres
 Water Source: ${waterSource}
 Budget: ₹${budget}
+Preferred Output Language: ${targetLanguage}
 
 ==================================================
 INSTRUCTIONS
@@ -41,13 +55,17 @@ Generate recommendations suitable for:
 • Budget
 • Sustainable farming
 
+CRITICAL LANGUAGE INSTRUCTION:
+Generate ALL text, values, titles, descriptions, recommendations, precautions, and tips in ${targetLanguage}.
+However, you MUST keep ALL JSON keys EXACTLY in English as specified below (do NOT translate JSON key names).
+
 Return ONLY valid JSON.
 
 Do NOT return Markdown, explanations, notes, comments, or extra text.
 
 Do NOT rename, remove, or add any JSON keys.
 
-Every field must contain meaningful values.
+Every field must contain meaningful values in ${targetLanguage}.
 
 Timeline objects must contain ONLY:
 

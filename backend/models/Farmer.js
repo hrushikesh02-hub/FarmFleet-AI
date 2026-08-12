@@ -55,6 +55,12 @@ const farmerSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    preferredLanguage: {
+      type: String,
+      enum: ["en", "hi", "mr"],
+      default: "en",
+    },
   },
   {
     timestamps: true,

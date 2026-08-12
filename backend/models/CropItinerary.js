@@ -151,6 +151,12 @@ const cropItinerarySchema = new mongoose.Schema(
       type: String,
       default: "Active",
     },
+
+    language: {
+      type: String,
+      enum: ["en", "hi", "mr"],
+      default: "en",
+    },
   },
   {
     timestamps: true,

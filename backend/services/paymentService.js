@@ -1,10 +1,15 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+let razorpay = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+} else {
+  console.warn("⚠️  RAZORPAY keys missing — payment endpoints will return errors.");
+}
 
 const createRazorpayOrder = async ({
   amount,
@@ -17,6 +22,10 @@ const createRazorpayOrder = async ({
 
   // Ensure receipt is max 40 chars as required by Razorpay API
   const formattedReceipt = String(receipt).slice(0, 40);
+
+  if (!razorpay) {
+    throw new Error("Payment service is not configured (missing Razorpay keys).");
+  }
 
   const order = await razorpay.orders.create({
     amount: Math.round(amount * 100),

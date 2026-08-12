@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { AppShell } from "@/components/AppShell";
@@ -429,12 +430,15 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }>
 };
 
 function StatusBadge({ status }: { status?: string }) {
-  const config = STATUS_CONFIG[status?.toLowerCase() ?? ""] ?? STATUS_CONFIG.pending;
+  const { t } = useTranslation();
+  const s = status?.toLowerCase() ?? "pending";
+  const label = t(`status.${s}`, { defaultValue: t(`labour.${s}`, { defaultValue: s }) });
+  const config = STATUS_CONFIG[s] ?? STATUS_CONFIG.pending;
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${config.bg} ${config.text}`}
     >
-      {config.label}
+      {label}
     </span>
   );
 }
@@ -442,6 +446,7 @@ function StatusBadge({ status }: { status?: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 function LabourDashboard() {
+  const { t } = useTranslation();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

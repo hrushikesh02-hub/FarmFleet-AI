@@ -9,6 +9,7 @@ const {
   getItinerary,
   getMyItineraries,
   downloadItineraryPDF,
+  updateActivityStatus,
 } = require("../controllers/aiController");
 
 /* =====================================================
@@ -50,6 +51,16 @@ router.get(
   "/itinerary/:id/pdf",
   farmerAuth,
   downloadItineraryPDF
+);
+
+/* =====================================================
+   Update Activity Status (Mark as Completed / Undo)
+===================================================== */
+
+router.patch(
+  "/itinerary/:id/activity/:activityIndex/status",
+  farmerAuth,
+  updateActivityStatus
 );
 
 /* =====================================================

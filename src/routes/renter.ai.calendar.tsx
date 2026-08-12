@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -117,6 +118,18 @@ async function fetchItineraries(): Promise<ItineraryRecord[]> {
   );
   console.log("[Crop Calendar] Itineraries response:", data);
   return data.itineraries ?? data.data ?? [];
+}
+
+async function updateActivityStatus(
+  itineraryId: string,
+  activityIndex: number,
+  status: string
+): Promise<void> {
+  await axios.patch(
+    `${API_BASE_URL}/api/ai/itinerary/${itineraryId}/activity/${activityIndex}/status`,
+    { status },
+    { headers: authHeaders() }
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -844,20 +857,25 @@ const ActivityCard = memo(function ActivityCard({
   domId,
   highlighted,
   index,
+  onMarkCompleted,
+  isMarkingCompleted,
 }: {
   activity: TimelineActivity;
   domId?: string;
   highlighted?: boolean;
   index: number;
+  onMarkCompleted?: (activity: TimelineActivity) => void;
+  isMarkingCompleted?: boolean;
 }) {
   const decision = activity.weatherDecision;
   const weekLabel = resolveWeekLabel(activity);
   const dateLabel = resolveActivityDateLabel(activity);
-  const delayed = isDelayedActivity(activity) && !isCompletedActivity(activity);
+  const completed = isCompletedActivity(activity);
+  const delayed = isDelayedActivity(activity) && !completed;
 
   const cardBorder = delayed
     ? "border-amber-200/60 dark:border-amber-500/30"
-    : isCompletedActivity(activity)
+    : completed
     ? "border-green-200/60 dark:border-green-500/30"
     : "border-border";
 
@@ -960,6 +978,26 @@ const ActivityCard = memo(function ActivityCard({
             )}
           </div>
         )}
+
+        {/* Action buttons */}
+        {onMarkCompleted && !completed && (
+          <div className="pt-2 border-t border-border/60">
+            <button
+              onClick={() => onMarkCompleted(activity)}
+              disabled={isMarkingCompleted}
+              className="inline-flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-white transition shadow-sm"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isMarkingCompleted ? "Marking…" : "Mark as Completed"}
+            </button>
+          </div>
+        )}
+        {completed && (
+          <div className="pt-2 border-t border-border/60 flex items-center gap-2 text-green-600">
+            <CheckCircle2 className="h-4 w-4" />
+            <span className="text-sm font-semibold">Activity Completed</span>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -978,11 +1016,15 @@ const TimelineListView = memo(function TimelineListView({
   itineraryId,
   indexLookup,
   highlightIndex,
+  onMarkCompleted,
+  markingIndex,
 }: {
   activities: TimelineActivity[];
   itineraryId: string;
   indexLookup: Map<TimelineActivity, number>;
   highlightIndex: number | null;
+  onMarkCompleted?: (activity: TimelineActivity) => void;
+  markingIndex?: number | null;
 }) {
   if (!activities.length) {
     return (
@@ -1012,6 +1054,8 @@ const TimelineListView = memo(function TimelineListView({
               index={i}
               domId={activityDomId(itineraryId, globalIndex)}
               highlighted={highlightIndex === globalIndex}
+              onMarkCompleted={onMarkCompleted}
+              isMarkingCompleted={markingIndex === globalIndex}
             />
           </div>
         );
@@ -1025,11 +1069,15 @@ const MonthGroupedView = memo(function MonthGroupedView({
   itineraryId,
   indexLookup,
   highlightIndex,
+  onMarkCompleted,
+  markingIndex,
 }: {
   activities: TimelineActivity[];
   itineraryId: string;
   indexLookup: Map<TimelineActivity, number>;
   highlightIndex: number | null;
+  onMarkCompleted?: (activity: TimelineActivity) => void;
+  markingIndex?: number | null;
 }) {
   const groups = useMemo(() => {
     const map = new Map<string, TimelineActivity[]>();
@@ -1068,6 +1116,8 @@ const MonthGroupedView = memo(function MonthGroupedView({
                   index={i}
                   domId={activityDomId(itineraryId, globalIndex)}
                   highlighted={highlightIndex === globalIndex}
+                  onMarkCompleted={onMarkCompleted}
+                  isMarkingCompleted={markingIndex === globalIndex}
                 />
               );
             })}
@@ -1085,6 +1135,8 @@ const WeekGroupedView = memo(function WeekGroupedView({
   highlightIndex,
   windowStart,
   windowEnd,
+  onMarkCompleted,
+  markingIndex,
 }: {
   activities: TimelineActivity[];
   itineraryId: string;
@@ -1092,6 +1144,8 @@ const WeekGroupedView = memo(function WeekGroupedView({
   highlightIndex: number | null;
   windowStart: Date;
   windowEnd: Date;
+  onMarkCompleted?: (activity: TimelineActivity) => void;
+  markingIndex?: number | null;
 }) {
   const inWindow = useMemo(
     () =>
@@ -1122,6 +1176,8 @@ const WeekGroupedView = memo(function WeekGroupedView({
             index={i}
             domId={activityDomId(itineraryId, globalIndex)}
             highlighted={highlightIndex === globalIndex}
+            onMarkCompleted={onMarkCompleted}
+            isMarkingCompleted={markingIndex === globalIndex}
           />
         );
       })}
@@ -1518,12 +1574,14 @@ function CalendarError({ onRetry }: { onRetry: () => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function CropCalendarPage() {
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const [periodOffset, setPeriodOffset] = useState(0);
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [markingIndex, setMarkingIndex] = useState<number | null>(null);
 
   // ── Load farmer's itineraries ─────────────────────────────────────────────
   const {
@@ -1565,6 +1623,37 @@ function CropCalendarPage() {
     sortedTimeline.forEach((a, i) => map.set(a, i));
     return map;
   }, [sortedTimeline]);
+
+  // Mutation for updating activity status
+  const markCompletedMutation = useMutation({
+    mutationFn: async ({ activityIndex }: { activityIndex: number }) => {
+      if (!selectedItinerary) return;
+      await updateActivityStatus(selectedItinerary._id, activityIndex, "Completed");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["weather-check", selectedId] });
+    },
+    onSettled: () => {
+      setMarkingIndex(null);
+    },
+  });
+
+  const handleMarkCompleted = useCallback(
+    (activity: TimelineActivity) => {
+      if (!selectedItinerary) return;
+      // Find the index of activity in the original timeline array
+      const rawIndex = selectedItinerary.timeline?.findIndex(
+        a => a.title === activity.title && a.week === activity.week
+      );
+      if (rawIndex === undefined || rawIndex < 0) return;
+
+      const globalIdx = indexLookup.get(activity) ?? null;
+      setMarkingIndex(globalIdx);
+      markCompletedMutation.mutate({ activityIndex: rawIndex });
+    },
+    [selectedItinerary, indexLookup, markCompletedMutation]
+  );
 
   const progress = useMemo(() => computeProgress(timeline), [timeline]);
 
@@ -1725,6 +1814,8 @@ function CropCalendarPage() {
                   itineraryId={selectedItinerary._id}
                   indexLookup={indexLookup}
                   highlightIndex={highlightIndex}
+                  onMarkCompleted={handleMarkCompleted}
+                  markingIndex={markingIndex}
                 />
               )}
               {viewMode === "month" && (
@@ -1733,6 +1824,8 @@ function CropCalendarPage() {
                   itineraryId={selectedItinerary._id}
                   indexLookup={indexLookup}
                   highlightIndex={highlightIndex}
+                  onMarkCompleted={handleMarkCompleted}
+                  markingIndex={markingIndex}
                 />
               )}
               {viewMode === "week" && (
@@ -1743,6 +1836,8 @@ function CropCalendarPage() {
                   highlightIndex={highlightIndex}
                   windowStart={windowStart}
                   windowEnd={windowEnd}
+                  onMarkCompleted={handleMarkCompleted}
+                  markingIndex={markingIndex}
                 />
               )}
             </Section>

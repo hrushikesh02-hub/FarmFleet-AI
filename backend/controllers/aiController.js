@@ -65,7 +65,15 @@ exports.generateCropItinerary = async (req, res) => {
       landArea,
       waterSource,
       budget,
+      language: reqLanguage,
     } = req.body;
+
+    const validLangs = ["en", "hi", "mr", "gu", "ta", "te", "kn", "pa"];
+    const language = validLangs.includes(reqLanguage)
+      ? reqLanguage
+      : (req.farmer?.preferredLanguage && validLangs.includes(req.farmer.preferredLanguage)
+        ? req.farmer.preferredLanguage
+        : "en");
 
     if (
       !crop ||
@@ -83,7 +91,7 @@ exports.generateCropItinerary = async (req, res) => {
     }
 
     console.log("\n========================================");
-    console.log("🌾 Generating Crop Itinerary");
+    console.log(`🌾 Generating Crop Itinerary (${language.toUpperCase()})`);
     console.log("========================================");
 
     // Build Prompt
@@ -95,6 +103,7 @@ exports.generateCropItinerary = async (req, res) => {
       landArea,
       waterSource,
       budget,
+      language,
     });
 
     // Generate AI Response
@@ -126,6 +135,7 @@ exports.generateCropItinerary = async (req, res) => {
     // Save to MongoDB
     const itinerary = await CropItinerary.create({
       farmer: farmerId,
+      language,
 
       crop,
 
@@ -365,8 +375,10 @@ exports.downloadItineraryPDF = async (req, res) => {
       });
     }
 
-    // Ownership check
-    if (itinerary.farmer.toString() !== req.farmer.id.toString()) {
+    // Ownership check (safely handle populated farmer object or raw ObjectId)
+    const farmerIdStr = (itinerary.farmer._id || itinerary.farmer).toString();
+    const reqFarmerIdStr = (req.farmer._id || req.farmer.id).toString();
+    if (farmerIdStr !== reqFarmerIdStr) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to download this report.",
@@ -414,5 +426,60 @@ exports.downloadItineraryPDF = async (req, res) => {
         message: error.message || "Failed to download PDF.",
       });
     }
+  }
+};
+
+/* =====================================================
+   Update Activity Status (Mark as Completed / Undo)
+===================================================== */
+
+exports.updateActivityStatus = async (req, res) => {
+  try {
+    const { id, activityIndex } = req.params;
+    const { status } = req.body;
+
+    const itinerary = await CropItinerary.findById(id);
+
+    if (!itinerary) {
+      return res.status(404).json({
+        success: false,
+        message: "Itinerary not found.",
+      });
+    }
+
+    // Ownership check (safely handle populated farmer object or raw ObjectId)
+    const farmerIdStr = (itinerary.farmer._id || itinerary.farmer).toString();
+    const reqFarmerIdStr = (req.farmer._id || req.farmer.id).toString();
+    if (farmerIdStr !== reqFarmerIdStr) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this itinerary.",
+      });
+    }
+
+    const idx = parseInt(activityIndex, 10);
+    if (isNaN(idx) || idx < 0 || idx >= itinerary.timeline.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid activity index.",
+      });
+    }
+
+    itinerary.timeline[idx].status = status || "Completed";
+    itinerary.markModified("timeline");
+    await itinerary.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Activity status updated to "${itinerary.timeline[idx].status}".`,
+      itinerary,
+    });
+  } catch (error) {
+    console.error("Activity status update error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update activity status.",
+    });
   }
 };

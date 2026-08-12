@@ -69,6 +69,7 @@ const signup = async (req, res) => {
         state: farmer.state,
         bio: farmer.bio,
         profileImage: farmer.profileImage,
+        preferredLanguage: farmer.preferredLanguage || "en",
       },
     });
   } catch (error) {
@@ -130,6 +131,7 @@ const login = async (req, res) => {
         state: farmer.state,
         bio: farmer.bio,
         profileImage: farmer.profileImage,
+        preferredLanguage: farmer.preferredLanguage || "en",
       },
     });
   } catch (error) {
@@ -178,7 +180,11 @@ const updateProfile = async (req, res) => {
       req.body.state || farmer.state;
 
     farmer.bio =
-      req.body.bio || farmer.bio;
+      req.body.bio !== undefined ? req.body.bio : farmer.bio;
+
+    if (req.body.preferredLanguage && ["en", "hi", "mr", "gu", "ta", "te", "kn", "pa"].includes(req.body.preferredLanguage)) {
+      farmer.preferredLanguage = req.body.preferredLanguage;
+    }
 
     const updatedFarmer = await farmer.save();
 
@@ -194,8 +200,8 @@ const updateProfile = async (req, res) => {
         district: updatedFarmer.district,
         state: updatedFarmer.state,
         bio: updatedFarmer.bio,
-        profileImage:
-          updatedFarmer.profileImage,
+        profileImage: updatedFarmer.profileImage,
+        preferredLanguage: updatedFarmer.preferredLanguage || "en",
       },
     });
   } catch (error) {

@@ -196,6 +196,10 @@ const updateProfile = async (req, res) => {
     owner.bio =
       req.body.bio || owner.bio;
 
+    if (req.body.preferredLanguage && ["en", "hi", "mr", "gu", "ta", "te", "kn", "pa"].includes(req.body.preferredLanguage)) {
+      owner.preferredLanguage = req.body.preferredLanguage;
+    }
+
     const updatedOwner = await owner.save();
 
     res.status(200).json({
@@ -212,6 +216,7 @@ const updateProfile = async (req, res) => {
         bio: updatedOwner.bio,
         profileImage:
           updatedOwner.profileImage,
+        preferredLanguage: updatedOwner.preferredLanguage || "en",
       },
     });
   } catch (error) {

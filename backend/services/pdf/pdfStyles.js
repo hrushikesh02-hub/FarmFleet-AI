@@ -39,6 +39,8 @@
 
 'use strict';
 
+const { getFontForLanguage } = require('./pdfFontHelper');
+
 /* ============================================================================
  * DESIGN TOKENS — COLORS
  * ========================================================================== */
@@ -69,6 +71,21 @@ const fonts = {
   regular: 'Helvetica',
   italic: 'Helvetica-Oblique'
 };
+
+/**
+ * Resolves the appropriate font for a document based on active report language.
+ * @param {Object} doc - PDFDocument instance
+ * @param {boolean} [isBold=false]
+ * @param {string} [explicitFont=null]
+ * @returns {string}
+ */
+function resolveFont(doc, isBold = false, explicitFont = null) {
+  if (explicitFont && explicitFont !== 'Helvetica' && explicitFont !== 'Helvetica-Bold' && explicitFont !== 'Helvetica-Oblique') {
+    return explicitFont;
+  }
+  const lang = (doc && doc._currentLanguage) ? doc._currentLanguage : 'en';
+  return getFontForLanguage(doc, lang, isBold);
+}
 
 const fontSizes = {
   mainTitle: 30,
@@ -186,11 +203,11 @@ function getContentBottom(doc) {
  * other utility to reserve the correct amount of vertical space and to
  * decide whether a page break is required.
  */
-function wrapText(doc, text, width, fontSize = fontSizes.body, font = fonts.regular) {
+function wrapText(doc, text, width, fontSize = fontSizes.body, font = null) {
   const value = text === undefined || text === null ? '' : String(text);
 
   doc.save();
-  doc.font(font).fontSize(fontSize);
+  doc.font(resolveFont(doc, false, font)).fontSize(fontSize);
   const height = doc.heightOfString(value, { width });
   const lineHeight = doc.currentLineHeight(true);
   doc.restore();
@@ -228,7 +245,7 @@ function checkPageBreak(doc, requiredHeight, onNewPage) {
 
 /** Draws text centered horizontally within a given width. */
 function centerText(doc, text, x, y, width, options = {}) {
-  doc.font(options.font || fonts.regular)
+  doc.font(resolveFont(doc, false, options.font))
     .fontSize(options.fontSize || fontSizes.body)
     .fillColor(options.color || colors.darkText)
     .text(String(text), x, y, Object.assign({ width, align: 'center' }, options.textOptions));
@@ -236,7 +253,7 @@ function centerText(doc, text, x, y, width, options = {}) {
 
 /** Draws text right-aligned within a given width. */
 function rightAlign(doc, text, x, y, width, options = {}) {
-  doc.font(options.font || fonts.regular)
+  doc.font(resolveFont(doc, false, options.font))
     .fontSize(options.fontSize || fontSizes.body)
     .fillColor(options.color || colors.darkText)
     .text(String(text), x, y, Object.assign({ width, align: 'right' }, options.textOptions));
@@ -289,7 +306,7 @@ function drawRoundedBox(doc, x, y, width, height, radius = card.radius, options 
 
 /** Draws a small uppercase label (used above values in cards / key-value pairs). */
 function drawLabel(doc, text, x, y, width, options = {}) {
-  doc.font(options.font || fonts.bold)
+  doc.font(resolveFont(doc, true, options.font))
     .fontSize(options.fontSize || fontSizes.small)
     .fillColor(options.color || colors.mediumText)
     .text(String(text).toUpperCase(), x, y, { width, lineBreak: options.lineBreak !== false ? true : false });
@@ -297,7 +314,7 @@ function drawLabel(doc, text, x, y, width, options = {}) {
 
 /** Draws a value string beneath a label. */
 function drawValue(doc, text, x, y, width, options = {}) {
-  doc.font(options.font || fonts.bold)
+  doc.font(resolveFont(doc, true, options.font))
     .fontSize(options.fontSize || fontSizes.body)
     .fillColor(options.color || colors.darkText)
     .text(String(text === undefined || text === null || text === '' ? 'Not available' : text), x, y, { width });
@@ -305,7 +322,7 @@ function drawValue(doc, text, x, y, width, options = {}) {
 
 /** Draws a wrapping block of body text. */
 function drawParagraph(doc, text, x, y, width, options = {}) {
-  doc.font(options.font || fonts.regular)
+  doc.font(resolveFont(doc, false, options.font))
     .fontSize(options.fontSize || fontSizes.body)
     .fillColor(options.color || colors.darkText)
     .text(String(text === undefined || text === null || text === '' ? '' : text), x, y, { width });
@@ -313,7 +330,7 @@ function drawParagraph(doc, text, x, y, width, options = {}) {
 
 /** Draws a large page/main title. */
 function drawTitle(doc, text, x, y, width, options = {}) {
-  doc.font(fonts.bold)
+  doc.font(resolveFont(doc, true, options.font))
     .fontSize(options.fontSize || fontSizes.pageTitle)
     .fillColor(options.color || colors.darkText)
     .text(String(text), x, y, { width, align: options.align || 'left' });
@@ -321,7 +338,7 @@ function drawTitle(doc, text, x, y, width, options = {}) {
 
 /** Draws a muted subtitle line beneath a title. */
 function drawSubtitle(doc, text, x, y, width, options = {}) {
-  doc.font(fonts.regular)
+  doc.font(resolveFont(doc, false, options.font))
     .fontSize(options.fontSize || fontSizes.small)
     .fillColor(options.color || colors.mediumText)
     .text(String(text), x, y, { width, align: options.align || 'left' });
@@ -357,10 +374,10 @@ function drawHeader(doc, options = {}) {
   doc.circle(x + logoSize / 2, y + logoSize / 2, logoSize / 2).fill(colors.primary);
   doc.restore();
 
-  doc.font(fonts.bold).fontSize(fontSizes.cardTitle).fillColor(colors.darkText)
+  doc.font(resolveFont(doc, true, options.font)).fontSize(fontSizes.cardTitle).fillColor(colors.darkText)
     .text('FarmFleet AI', x + logoSize + 10, y + 1, { lineBreak: false });
 
-  doc.font(fonts.regular).fontSize(fontSizes.small).fillColor(colors.mediumText)
+  doc.font(resolveFont(doc, false, options.font)).fontSize(fontSizes.small).fillColor(colors.mediumText)
     .text(options.tagline || 'AI Powered Smart Farming', x + logoSize + 10, y + 17, { lineBreak: false });
 
   drawLine(doc, x, y + logoSize + 12, x + w, y + logoSize + 12, { color: divider.color });
@@ -384,7 +401,7 @@ function drawFooter(doc, options = {}) {
   doc._ffPageIndex = (doc._ffPageIndex || 0) + 1;
   const pageNumber = options.pageNumber || doc._ffPageIndex;
 
-  doc.font(fonts.regular).fontSize(fontSizes.footer).fillColor(colors.mediumText)
+  doc.font(resolveFont(doc, false, options.font)).fontSize(fontSizes.footer).fillColor(colors.mediumText)
     .text('Generated by FarmFleet AI  |  www.farmfleet.ai', x, footerTop + 10, {
       width: w * 0.7,
       lineBreak: false
@@ -412,7 +429,7 @@ function drawSectionTitle(doc, title, options = {}) {
   doc.rect(x, y + 3, 4, fontSizes.sectionTitle - 4).fill(colors.primary);
   doc.restore();
 
-  doc.font(fonts.bold).fontSize(fontSizes.sectionTitle).fillColor(colors.darkText)
+  doc.font(resolveFont(doc, true, options.font)).fontSize(fontSizes.sectionTitle).fillColor(colors.darkText)
     .text(options.continued ? `${title} (continued)` : title, x + 12, y, { width: w - 12 });
 
   doc.y = y + fontSizes.sectionTitle + 8;

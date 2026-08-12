@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
-import { LANGUAGES } from "@/i18n";
+import { LANGUAGES, changeAppLanguage } from "@/i18n";
 import {
   Edit2,
   CheckCircle2,
@@ -564,8 +564,8 @@ function LanguageSection() {
       {LANGUAGES.map((l) => (
         <button
           key={l.code}
-          onClick={() => i18n.changeLanguage(l.code)}
-          className={`w-full text-left px-4 py-3 rounded-xl border transition ${
+          onClick={() => changeAppLanguage(l.code)}
+          className={`w-full text-left px-4 py-3 rounded-xl border transition cursor-pointer ${
             i18n.language.startsWith(l.code)
               ? "border-primary bg-accent text-primary"
               : "border-border hover:border-primary/40"

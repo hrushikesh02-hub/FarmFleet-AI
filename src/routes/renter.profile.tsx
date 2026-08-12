@@ -81,11 +81,11 @@ interface PwdVals {
 }
 
 const INDIAN_STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa",
-  "Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala",
-  "Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland",
-  "Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura",
-  "Uttar Pradesh","Uttarakhand","West Bengal",
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
+  "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
+  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
+  "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal",
 ];
 
 const API = "http://localhost:5000/api/farmer";
@@ -104,11 +104,10 @@ function Toast({ message, type, onClose }: { message: string; type: "success" | 
       initial={{ opacity: 0, y: 24, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 12, scale: 0.94 }}
-      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl text-sm font-medium border ${
-        type === "success"
+      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl text-sm font-medium border ${type === "success"
           ? "bg-green-50 border-green-200 text-green-800"
           : "bg-red-50 border-red-200 text-red-800"
-      }`}
+        }`}
     >
       <span className={`h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${type === "success" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
         {type === "success" ? "✓" : "✕"}
@@ -369,7 +368,7 @@ function ChangePasswordModal({
 
       alert(
         res.data.message ||
-          "Password updated successfully"
+        "Password updated successfully"
       );
 
       reset();
@@ -380,7 +379,7 @@ function ChangePasswordModal({
     } catch (e: any) {
       alert(
         e?.response?.data?.message ||
-          "Failed to change password"
+        "Failed to change password"
       );
     } finally {
       setLoading(false);
@@ -413,7 +412,7 @@ function ChangePasswordModal({
               ...s,
               [showKey]:
                 !s[
-                  showKey as keyof typeof show
+                showKey as keyof typeof show
                 ],
             }))
           }
@@ -528,37 +527,37 @@ function DeleteAccountModal({ open, onClose, onDeleted }: { open: boolean; onClo
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-const handleDeleteAccount = async () => {
-  const confirmed = window.confirm(
-    "Are you sure you want to permanently delete your account?"
-  );
-
-  if (!confirmed) return;
-
-  try {
-    await axios.delete(
-      "http://localhost:5000/api/farmer/delete-account",
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(
-            "farmerToken"
-          )}`,
-        },
-      }
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account?"
     );
 
-    localStorage.removeItem("farmerToken");
-    localStorage.removeItem("farmer");
+    if (!confirmed) return;
 
-    alert("Account deleted successfully");
+    try {
+      await axios.delete(
+        "http://localhost:5000/api/farmer/delete-account",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem(
+              "farmerToken"
+            )}`,
+          },
+        }
+      );
 
-    window.location.href = "/login-renter";
-  } catch (error) {
-    console.error(error);
+      localStorage.removeItem("farmerToken");
+      localStorage.removeItem("farmer");
 
-    alert("Failed to delete account");
-  }
-};
+      alert("Account deleted successfully");
+
+      window.location.href = "/login-renter";
+    } catch (error) {
+      console.error(error);
+
+      alert("Failed to delete account");
+    }
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Delete Account">
@@ -733,11 +732,10 @@ function LanguageSection() {
         <button
           key={l.code}
           onClick={() => i18n.changeLanguage(l.code)}
-          className={`w-full text-left px-4 py-3 rounded-xl border transition ${
-            i18n.language.startsWith(l.code)
+          className={`w-full text-left px-4 py-3 rounded-xl border transition ${i18n.language.startsWith(l.code)
               ? "border-primary bg-accent text-primary"
               : "border-border hover:border-primary/40"
-          }`}
+            }`}
         >
           <span className="font-semibold">{l.native}</span>
           <span className="text-xs text-muted-foreground ml-2">({l.label})</span>
@@ -785,9 +783,8 @@ function ManagementRow({
 }) {
   const inner = (
     <div className={`flex items-center gap-3 px-5 py-4 group ${onClick ? "cursor-pointer" : ""} ${variant === "warn" ? "hover:bg-amber-50/60" : onClick ? "hover:bg-muted/40" : ""} transition`}>
-      <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-        variant === "warn" ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary"
-      }`}>
+      <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${variant === "warn" ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary"
+        }`}>
         <Icon className="h-4 w-4" />
       </div>
       <div className="flex-1 min-w-0">
@@ -795,9 +792,8 @@ function ManagementRow({
         <p className="text-xs text-muted-foreground truncate">{desc}</p>
       </div>
       {badge && (
-        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-          badgeColor === "green" ? "bg-green-100 text-green-700 border-green-200" : "bg-muted text-muted-foreground border-border"
-        }`}>
+        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor === "green" ? "bg-green-100 text-green-700 border-green-200" : "bg-muted text-muted-foreground border-border"
+          }`}>
           {badge}
         </span>
       )}
@@ -948,7 +944,7 @@ function RenterProfile() {
             </motion.div>
 
             {/* Member since badge */}
-      
+
           </div>
 
           {/* Profile body */}

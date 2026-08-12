@@ -236,6 +236,10 @@ const updateProfile = async (req, res) => {
       labour.availability = normalizedAvailability;
     }
 
+    if (req.body.preferredLanguage && ["en", "hi", "mr", "gu", "ta", "te", "kn", "pa"].includes(req.body.preferredLanguage)) {
+      labour.preferredLanguage = req.body.preferredLanguage;
+    }
+
     console.log("Updated Availability:", labour.availability);
 
     const updatedLabour = await labour.save();
@@ -257,6 +261,7 @@ const updateProfile = async (req, res) => {
         availability: updatedLabour.availability,
         bio: updatedLabour.bio,
         profileImage: updatedLabour.profileImage,
+        preferredLanguage: updatedLabour.preferredLanguage || "en",
       },
     });
   } catch (error) {

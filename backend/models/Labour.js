@@ -112,6 +112,12 @@ const labourSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    preferredLanguage: {
+      type: String,
+      enum: ["en", "hi", "mr"],
+      default: "en",
+    },
   },
   {
     timestamps: true,

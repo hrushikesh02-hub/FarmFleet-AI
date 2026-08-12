@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   motion,
   useScroll,
@@ -46,88 +48,106 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-/* ─── CONTENT (translation object removed — English only) ─── */
-const CONTENT = {
+/* ─── CONTENT (multilingual translation binder) ─── */
+const getContent = (t: (key: string) => string) => ({
   nav: {
-    howItWorks: "How It Works",
-    equipment: "Equipment Types",
-    forOwners: "For Owners",
-    reviews: "Reviews",
-    faq: "FAQ",
-    owner: "Continue as Owner",
-    renter: "Continue as Renter",
-    labour: "Continue as Labour",
+    howItWorks: t("landing.nav.howItWorks"),
+    equipment: t("landing.nav.equipment"),
+    forOwners: t("landing.nav.forOwners"),
+    reviews: t("landing.nav.reviews"),
+    faq: t("landing.nav.faq"),
+    owner: t("landing.nav.owner"),
+    renter: t("landing.nav.renter"),
+    labour: t("landing.nav.labour"),
+    continueAs: t("landing.nav.continueAs"),
   },
   hero: {
-    badge: "India's AI-Powered Smart Farm Equipment Rental Platform",
-    headline1: "Rent. Share.",
-    headline2: "Grow.",
-    sub: "Access verified tractors, harvesters, and farm machinery when you need it — booked in minutes, delivered to your field.",
-    ownerCard: "Continue as Equipment Owner",
-    ownerSub: "List your equipment and manage bookings",
-    renterCard: "Continue as Renter",
-    renterSub: "Find and book equipment near you",
-    labourCard: "Continue as Labour",
-    labourSub: "Accept farm work and equipment operation requests.",
+    badge: t("landing.hero.badge"),
+    headline1: t("landing.hero.headline1"),
+    headline2: t("landing.hero.headline2"),
+    sub: t("landing.hero.sub"),
+    ownerCard: t("landing.hero.ownerCard"),
+    ownerSub: t("landing.hero.ownerSub"),
+    renterCard: t("landing.hero.renterCard"),
+    renterSub: t("landing.hero.renterSub"),
+    labourCard: t("landing.hero.labourCard"),
+    labourSub: t("landing.hero.labourSub"),
   },
   howItWorks: {
-    label: "Simple Process",
-    title: "From search to field in three steps",
+    label: t("landing.howItWorks.label"),
+    title: t("landing.howItWorks.title"),
+    stepLabel: t("landing.howItWorks.stepLabel"),
     steps: [
       {
         n: "01",
-        title: "Search by Location",
-        desc: "Browse verified equipment near your farm. Filter by type, availability, and rental period.",
+        title: t("landing.howItWorks.step1Title"),
+        desc: t("landing.howItWorks.step1Desc"),
       },
       {
         n: "02",
-        title: "Pick Your Dates",
-        desc: "Select rental period and see instant pricing — transparent, with no hidden charges.",
+        title: t("landing.howItWorks.step2Title"),
+        desc: t("landing.howItWorks.step2Desc"),
       },
       {
         n: "03",
-        title: "Book & Confirm",
-        desc: "Secure checkout. Owner confirms within minutes. Equipment arrives ready to work.",
+        title: t("landing.howItWorks.step3Title"),
+        desc: t("landing.howItWorks.step3Desc"),
       },
     ],
   },
   browse: {
-    label: "Browse by Type",
-    title: "What do you need?",
-    sub: "Discover the right equipment for your crop and season.",
+    label: t("landing.browse.label"),
+    title: t("landing.browse.title"),
+    sub: t("landing.browse.sub"),
+    browseCta: t("landing.browse.browseCta"),
+    tractor: t("landing.browse.tractor"),
+    harvester: t("landing.browse.harvester"),
+    seeder: t("landing.browse.seeder"),
+    rotavator: t("landing.browse.rotavator"),
+    sprayer: t("landing.browse.sprayer"),
   },
   forOwners: {
-    label: "For Equipment Owners",
-    title: "Your equipment. Working for you.",
-    sub: "List your machinery on FarmFleet AI and accept rental requests from verified farmers in your area. Full control over availability, pricing, and scheduling.",
+    label: t("landing.forOwners.label"),
+    title: t("landing.forOwners.title"),
+    sub: t("landing.forOwners.sub"),
     features: [
-      "Manage all your equipment listings",
-      "Accept or decline booking requests",
-      "Set custom availability calendars",
-      "Track active and upcoming rentals",
-      "Monitor booking history",
+      t("landing.forOwners.feature1"),
+      t("landing.forOwners.feature2"),
+      t("landing.forOwners.feature3"),
+      t("landing.forOwners.feature4"),
+      t("landing.forOwners.feature5"),
     ],
-    cta: "Start listing for free",
+    cta: t("landing.forOwners.cta"),
   },
   reviews: {
-    label: "Trusted by Farmers",
-    title: "What farmers are saying",
+    label: t("landing.reviews.label"),
+    title: t("landing.reviews.title"),
+    loading: t("landing.reviews.loading"),
+    empty: t("landing.reviews.empty"),
   },
   faq: {
-    label: "FAQ",
-    title: "Common questions",
+    label: t("landing.faq.label"),
+    title: t("landing.faq.title"),
+    faqs: [
+      { q: t("landing.faq.q1"), a: t("landing.faq.a1") },
+      { q: t("landing.faq.q2"), a: t("landing.faq.a2") },
+      { q: t("landing.faq.q3"), a: t("landing.faq.a3") },
+      { q: t("landing.faq.q4"), a: t("landing.faq.a4") },
+      { q: t("landing.faq.q5"), a: t("landing.faq.a5") },
+    ],
   },
   footer: {
-    tagline: "Making farm machinery accessible to every Indian farmer.",
-    platform: "Platform",
-    resources: "Resources",
-    company: "Company",
-    legal: "Legal",
-    copyright: "© 2026 FarmFleet AI. Hackathon Prototype.",
+    tagline: t("landing.footer.tagline"),
+    platform: t("landing.footer.platform"),
+    resources: t("landing.footer.resources"),
+    company: t("landing.footer.company"),
+    legal: t("landing.footer.legal"),
+    copyright: t("landing.footer.copyright"),
+    operational: t("landing.footer.operational"),
   },
-};
+});
 
-type Content = typeof CONTENT;
+type Content = ReturnType<typeof getContent>;
 
 /* ─── CSS Injection ─── */
 function StyleLoader() {
@@ -796,7 +816,7 @@ function Navbar({ t }: { t: Content }) {
 
           {/* Right actions */}
           <div className="nav-desktop-actions" style={{ alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <LangSwitcher />
+            <LanguageSwitcher variant="compact" />
             <div ref={roleMenuRef} className="nav-role-menu" style={{ position: "relative" }}>
               <button
                 className="btn-primary nav-role-btn"
@@ -810,7 +830,7 @@ function Navbar({ t }: { t: Content }) {
                   gap: 6,
                 }}
               >
-                Continue As
+                {t.nav.continueAs}
                 <ChevronDown
                   size={15}
                   style={{
@@ -940,7 +960,7 @@ function Navbar({ t }: { t: Content }) {
                 </button>
               ))}
               <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10, paddingTop: 16 }}>
-                <LangSwitcher />
+                <LanguageSwitcher variant="compact" />
                 <button
                   className="btn-primary"
                   onClick={() => setMobileRoleOpen((o) => !o)}
@@ -952,7 +972,7 @@ function Navbar({ t }: { t: Content }) {
                     width: "100%",
                   }}
                 >
-                  Continue As
+                  {t.nav.continueAs}
                   <ChevronDown
                     size={15}
                     style={{
@@ -1378,6 +1398,14 @@ function HowItWorks({ t }: { t: Content }) {
 
 /* ─── BROWSE BY TYPE ─── */
 function Browse({ t }: { t: Content }) {
+  const categories = [
+    { label: t.browse.tractor, image: CATEGORIES[0].image },
+    { label: t.browse.harvester, image: CATEGORIES[1].image },
+    { label: t.browse.seeder, image: CATEGORIES[2].image },
+    { label: t.browse.rotavator, image: CATEGORIES[3].image },
+    { label: t.browse.sprayer, image: CATEGORIES[4].image },
+  ];
+
   return (
     <section id="browse" style={{ background: "white" }}>
       <div className="sec-inner">
@@ -1395,7 +1423,7 @@ function Browse({ t }: { t: Content }) {
         </motion.div>
 
         <div className="browse-grid">
-          {CATEGORIES.map((cat, i) => (
+          {categories.map((cat, i) => (
             <motion.div
               key={cat.label}
               initial={{ opacity: 0, y: 24 }}
@@ -1404,11 +1432,11 @@ function Browse({ t }: { t: Content }) {
               transition={{ delay: i * 0.07, duration: 0.5 }}
             >
               <Link
-  to="/login-renter"
-  style={{
-    textDecoration: "none",
-  }}
->
+                to="/login-renter"
+                style={{
+                  textDecoration: "none",
+                }}
+              >
                 <motion.div
                   whileHover={{ y: -8, scale: 1.02 }}
                   transition={{ type: "spring", damping: 20, stiffness: 300 }}
@@ -1461,7 +1489,7 @@ function Browse({ t }: { t: Content }) {
                       fontWeight: 600,
                       marginTop: 4,
                     }}>
-                      Browse <ArrowRight size={10} />
+                      {t.browse.browseCta} <ArrowRight size={10} />
                     </div>
                   </div>
                 </motion.div>
@@ -1677,7 +1705,7 @@ function ForOwners({ t }: { t: Content }) {
                 )}
                 {activeTab === 2 && (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-                    {["M","T","W","T","F","S","S"].map((d, idx) => (
+                    {["M", "T", "W", "T", "F", "S", "S"].map((d, idx) => (
                       <div key={idx} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--ink-300)", paddingBottom: 4 }}>{d}</div>
                     ))}
                     {Array.from({ length: 28 }, (_, i) => (
@@ -1686,13 +1714,13 @@ function ForOwners({ t }: { t: Content }) {
                         style={{
                           aspectRatio: "1",
                           borderRadius: 6,
-                          background: [3,4,10,11,17].includes(i) ? "var(--green-600)" : [6,7,13,14,20,21,27].includes(i) ? "var(--off-white)" : "var(--green-50)",
+                          background: [3, 4, 10, 11, 17].includes(i) ? "var(--green-600)" : [6, 7, 13, 14, 20, 21, 27].includes(i) ? "var(--off-white)" : "var(--green-50)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: 10,
                           fontWeight: 600,
-                          color: [3,4,10,11,17].includes(i) ? "white" : "var(--ink-500)",
+                          color: [3, 4, 10, 11, 17].includes(i) ? "white" : "var(--ink-500)",
                         }}
                       >
                         {i + 1}
@@ -1841,7 +1869,7 @@ function Reviews({ t }: { t: Content }) {
           >
             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
           </svg>
-          <span style={{ fontSize: 14 }}>Loading reviews…</span>
+          <span style={{ fontSize: 14 }}>{t.reviews.loading}</span>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
@@ -1855,7 +1883,7 @@ function Reviews({ t }: { t: Content }) {
             fontSize: 15,
           }}
         >
-          No reviews available yet.
+          {t.reviews.empty}
         </div>
       )}
 
@@ -1977,7 +2005,7 @@ function FAQ({ t }: { t: Content }) {
         </motion.div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {FAQS.map((faq, i) => (
+          {t.faq.faqs.map((faq, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 16 }}
@@ -2105,11 +2133,11 @@ function Footer({ t }: { t: Content }) {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-                <rect width="32" height="32" rx="9" fill="rgba(255,255,255,0.1)"/>
-                <path d="M7 20C7 20 9.5 14 16 14C22.5 14 25 20 25 20" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M12 20C12 17 14 14 16 14C18 14 20 17 20 20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M16 14V10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="16" cy="9" r="1.5" fill="#F4B400"/>
+                <rect width="32" height="32" rx="9" fill="rgba(255,255,255,0.1)" />
+                <path d="M7 20C7 20 9.5 14 16 14C22.5 14 25 20 25 20" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" />
+                <path d="M12 20C12 17 14 14 16 14C18 14 20 17 20 20" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <path d="M16 14V10" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="16" cy="9" r="1.5" fill="#F4B400" />
               </svg>
               <span style={{ fontWeight: 700, fontSize: 18, color: "white", letterSpacing: "-0.02em" }}>FarmFleet <span style={{ color: "#39B54A", marginLeft: 4 }}>AI</span></span>
             </div>
@@ -2171,10 +2199,10 @@ function Footer({ t }: { t: Content }) {
           fontSize: 12,
           color: "rgba(255,255,255,0.3)",
         }}>
-          <div>{t.footer.copyright} All rights reserved.</div>
+          <div>{t.footer.copyright}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green-400)" }} />
-            All systems operational
+            {t.footer.operational}
           </div>
         </div>
       </div>
@@ -2184,20 +2212,21 @@ function Footer({ t }: { t: Content }) {
 
 /* ─── ROOT ─── */
 function Landing() {
-  const t = CONTENT;
+  const { t } = useTranslation();
+  const content = getContent(t);
 
   return (
     <>
       <StyleLoader />
       <div style={{ minHeight: "100vh", background: "var(--off-white)", overflowX: "hidden" }}>
-        <Navbar t={t} />
-        <Hero t={t} />
-        <HowItWorks t={t} />
-        <Browse t={t} />
-        <ForOwners t={t} />
-        <Reviews t={t} />
-        <FAQ t={t} />
-        <Footer t={t} />
+        <Navbar t={content} />
+        <Hero t={content} />
+        <HowItWorks t={content} />
+        <Browse t={content} />
+        <ForOwners t={content} />
+        <Reviews t={content} />
+        <FAQ t={content} />
+        <Footer t={content} />
       </div>
     </>
   );

@@ -1062,7 +1062,17 @@ function AIReportPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
-    } catch {
+    } catch (err: any) {
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          show(json.message || "Could not download PDF. Please try again.");
+          return;
+        } catch {
+          /* fallback */
+        }
+      }
       show("Could not download PDF. Please try again.");
     }
   };
