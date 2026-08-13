@@ -7,7 +7,7 @@ function getProtectedLink(target: string) {
     localStorage.getItem("token") ||
     localStorage.getItem("jwt")
   );
-  return hasToken ? target : "/login-renter";
+  return hasToken ? target : `/login-renter?redirect=${encodeURIComponent(target)}`;
 }
 
 export function Footer() {
@@ -55,8 +55,8 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to={getProtectedLink("/renter/search")} className="transition hover:text-primary">Find Equipment</Link></li>
-              <li><Link to="/renter/labours" className="transition hover:text-primary">Labour Services</Link></li>
-              <li><Link to="/renter/ai/generate" className="transition hover:text-primary">AI Farming</Link></li>
+              <li><Link to={getProtectedLink("/renter/labours")} className="transition hover:text-primary">Labour Services</Link></li>
+              <li><Link to={getProtectedLink("/renter/ai/generate")} className="transition hover:text-primary">AI Farming</Link></li>
               <li><Link to="/faq" className="transition hover:text-primary">How It Works</Link></li>
             </ul>
           </div>

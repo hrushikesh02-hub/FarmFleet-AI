@@ -796,8 +796,15 @@ export default function RenterAuthPage() {
   const [tab, setTab] = useState<Tab>("signin");
   const { toasts, addToast, removeToast } = useToast();
 
-  const handleSignIn = () => nav({ to: "/renter/dashboard" });
-  const handleSignUp = () => nav({ to: "/renter/dashboard" });
+  const getRedirectTarget = () => {
+    if (typeof window === "undefined") return "/renter/dashboard";
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    return redirect && redirect.startsWith("/") ? redirect : "/renter/dashboard";
+  };
+
+  const handleSignIn = () => nav({ to: getRedirectTarget() });
+  const handleSignUp = () => nav({ to: getRedirectTarget() });
 
   return (
     <div className="min-h-dvh flex bg-background">
@@ -854,7 +861,7 @@ export default function RenterAuthPage() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="font-display text-4xl font-bold leading-tight"
             >
-              {t("landing.heroTitle")}
+              Rent Equipment. Farm Smarter.
             </motion.h2>
 
             <motion.p
@@ -863,7 +870,7 @@ export default function RenterAuthPage() {
               transition={{ delay: 0.45, duration: 0.5 }}
               className="mt-4 text-white/85 max-w-md leading-relaxed"
             >
-              {t("landing.heroSubtitle")}
+              Access 500+ verified equipment listings across India. Book tractors, harvesters, and more — all in one place.
             </motion.p>
 
             {/* Feature pills */}
@@ -885,7 +892,7 @@ export default function RenterAuthPage() {
             </motion.div>
           </div>
 
-          <p className="text-sm text-white/70">{t("landing.trustedBy")}</p>
+          <p className="text-sm text-white/70">Trusted by 10,000+ farmers across India</p>
         </div>
       </div>
 

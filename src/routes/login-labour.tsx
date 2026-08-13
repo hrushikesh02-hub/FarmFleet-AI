@@ -901,8 +901,15 @@ export default function LabourAuthPage() {
   const [tab, setTab] = useState<Tab>("signin");
   const { toasts, addToast, removeToast } = useToast();
 
-  const handleSignIn = () => nav({ to: "/labour/dashboard" });
-  const handleSignUp = () => nav({ to: "/labour/dashboard" });
+  const getRedirectTarget = () => {
+    if (typeof window === "undefined") return "/labour/dashboard";
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    return redirect && redirect.startsWith("/") ? redirect : "/labour/dashboard";
+  };
+
+  const handleSignIn = () => nav({ to: getRedirectTarget() });
+  const handleSignUp = () => nav({ to: getRedirectTarget() });
 
   return (
     <div className="min-h-dvh flex bg-background">
@@ -979,7 +986,7 @@ export default function LabourAuthPage() {
             </motion.div>
           </div>
 
-          <p className="text-sm text-white/70">{t("landing.trustedBy")}</p>
+          <p className="text-sm text-white/70">Trusted by 10,000+ farmers across India</p>
         </div>
       </div>
 
