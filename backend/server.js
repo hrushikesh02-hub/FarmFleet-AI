@@ -138,11 +138,6 @@ app.use("/api/earnings", earningsRoutes);
 ========================== */
 
 app.use("/api/reviews", reviewRoutes);
-
-/* ==========================
-   PAYMENT ROUTES
-========================== */
-
 app.use("/api/payment", paymentRoutes);
 
 /* ==========================
