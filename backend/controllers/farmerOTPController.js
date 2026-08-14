@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
 
 const { sendEmail } = require("../config/mail");
+const { buildOTPTemplate } = require("../templates/emailTemplate");
 
 /* ==========================
    SEND OTP
@@ -58,35 +59,14 @@ exports.sendOTP = async (req, res) => {
     });
 
     await sendEmail({
-  to: email,
-
-  subject:
-    "FarmFleet Email Verification",
-
-  html: `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <h2>🚜 FarmFleet Email Verification</h2>
-
-      <p>
-        Your verification code is:
-      </p>
-
-      <h1 style="color: #16a34a;">
-        ${otp}
-      </h1>
-
-      <p>
-        This OTP is valid for
-        <strong>5 minutes</strong>.
-      </p>
-
-      <p>
-        If you did not request this,
-        please ignore this email.
-      </p>
-    </div>
-  `,
-});
+      to: email,
+      subject: "FarmFleet AI — Email Verification Code",
+      html: buildOTPTemplate({
+        role: "Renter (Farmer)",
+        otp,
+        expiryMinutes: 5,
+      }),
+    });
 
     return res.status(200).json({
       success: true,

@@ -4,6 +4,7 @@
   const Equipment = require("../models/Equipment");
   const Booking = require("../models/Booking");
   const { sendEmail } = require("../config/mail");
+  const { buildLabourRequestEmailTemplate } = require("../templates/emailTemplate");
 
   /* ==========================
     HELPERS
@@ -171,28 +172,28 @@
         if (labour?.email) {
           await sendEmail({
             to: labour.email,
-            subject: "New Labour Request on FarmFleet",
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color:#16a34a; margin-bottom: 8px;">🚜 FarmFleet — New Labour Request</h2>
-                <p>Hello <strong>${labour.fullName}</strong>,</p>
-                <p>You have received a new work request from <strong>${req.farmer.fullName}</strong>!</p>
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                  <tr><td style="padding: 6px 0; color: #64748b;">Farmer Name:</td><td style="font-weight: bold;">${req.farmer.fullName}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Location:</td><td style="font-weight: bold;">${request.village}, ${request.district}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Start Date:</td><td style="font-weight: bold;">${new Date(request.startDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">End Date:</td><td style="font-weight: bold;">${new Date(request.endDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Working Days:</td><td style="font-weight: bold;">${days} days</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Daily Rate:</td><td style="font-weight: bold;">₹${request.dailyCharges} / day</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Total Amount:</td><td style="font-weight: bold; color: #16a34a;">₹${request.totalAmount}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Status:</td><td style="font-weight: bold; color: #d97706;">Pending Approval</td></tr>
-                </table>
-                <br />
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/labour/requests" style="background:#16a34a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; font-weight: bold;">View Request</a>
-                <p style="margin-top:24px; font-size:12px; color:#94a3b8;">Thank you for using FarmFleet 🌾</p>
-              </div>
-            `,
+            subject: "New Labour Request — FarmFleet AI",
+            html: buildLabourRequestEmailTemplate({
+              role: "Labour Worker",
+              headline: "New Agricultural Work Request",
+              recipientName: labour.fullName,
+              message: `You have received a new work request from Farmer <strong>${req.farmer.fullName}</strong>!`,
+              details: [
+                { label: "Farmer Name", value: req.farmer.fullName },
+                { label: "Work Location", value: `${request.village}, ${request.district}` },
+                { label: "Start Date", value: new Date(request.startDate).toLocaleDateString("en-IN") },
+                { label: "End Date", value: new Date(request.endDate).toLocaleDateString("en-IN") },
+                { label: "Working Days", value: `${days} day(s)` },
+                { label: "Daily Rate", value: `₹${request.dailyCharges} / day` },
+                { label: "Total Amount", value: `₹${request.totalAmount}`, highlight: true },
+                { label: "Request Status", value: "Pending Approval", isStatus: true },
+              ],
+              cta: {
+                text: "View Work Request",
+                url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/labour/requests`,
+              },
+              footerNote: "Log in to your labour portal to accept or reject this request.",
+            }),
           });
         }
       } catch (emailError) {
@@ -350,28 +351,27 @@
         if (farmer?.email) {
           await sendEmail({
             to: farmer.email,
-            subject: "Your Labour Request Has Been Accepted",
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color:#16a34a; margin-bottom: 8px;">🎉 Labour Request Accepted!</h2>
-                <p>Hello <strong>${farmer.fullName}</strong>,</p>
-                <p>Great news! <strong>${labour.fullName}</strong> has accepted your labour request.</p>
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                  <tr><td style="padding: 6px 0; color: #64748b;">Labour Name:</td><td style="font-weight: bold;">${labour.fullName}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Work Location:</td><td style="font-weight: bold;">${request.village}, ${request.district}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Start Date:</td><td style="font-weight: bold;">${new Date(request.startDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">End Date:</td><td style="font-weight: bold;">${new Date(request.endDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Daily Charges:</td><td style="font-weight: bold;">₹${request.dailyCharges} / day</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Total Amount:</td><td style="font-weight: bold; color: #16a34a;">₹${request.totalAmount}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Request ID:</td><td style="font-weight: bold;">${request._id}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Status:</td><td style="font-weight: bold; color: #16a34a;">Accepted</td></tr>
-                </table>
-                <br />
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings" style="background:#16a34a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; font-weight: bold;">View Booking</a>
-                <p style="margin-top:24px; font-size:12px; color:#94a3b8;">Thank you for using FarmFleet 🌾</p>
-              </div>
-            `,
+            subject: "Labour Request Accepted — FarmFleet AI",
+            html: buildLabourRequestEmailTemplate({
+              role: "Renter (Farmer)",
+              headline: "Labour Request Accepted! 🎉",
+              recipientName: farmer.fullName,
+              message: `Great news! <strong>${labour.fullName}</strong> has accepted your agricultural work request.`,
+              details: [
+                { label: "Labour Name", value: labour.fullName },
+                { label: "Work Location", value: `${request.village}, ${request.district}` },
+                { label: "Start Date", value: new Date(request.startDate).toLocaleDateString("en-IN") },
+                { label: "End Date", value: new Date(request.endDate).toLocaleDateString("en-IN") },
+                { label: "Daily Charges", value: `₹${request.dailyCharges} / day` },
+                { label: "Total Amount", value: `₹${request.totalAmount}`, highlight: true },
+                { label: "Request ID", value: request._id },
+                { label: "Request Status", value: "Accepted", highlight: true },
+              ],
+              cta: {
+                text: "View Booking Details",
+                url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings`,
+              },
+            }),
           });
         }
       } catch (emailErr) {
@@ -496,28 +496,27 @@
         if (farmer?.email) {
           await sendEmail({
             to: farmer.email,
-            subject: "Your Labour Work Has Been Completed",
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color:#16a34a; margin-bottom: 8px;">✅ Work Completed!</h2>
-                <p>Hello <strong>${farmer.fullName}</strong>,</p>
-                <p><strong>${labour.fullName}</strong> has marked your requested work as completed.</p>
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                  <tr><td style="padding: 6px 0; color: #64748b;">Labour Name:</td><td style="font-weight: bold;">${labour.fullName}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Location:</td><td style="font-weight: bold;">${request.village}, ${request.district}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Start Date:</td><td style="font-weight: bold;">${new Date(request.startDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">End Date:</td><td style="font-weight: bold;">${new Date(request.endDate).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Completion Date:</td><td style="font-weight: bold;">${new Date(request.completedAt).toLocaleDateString("en-IN")}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Total Amount:</td><td style="font-weight: bold; color: #16a34a;">₹${request.totalAmount}</td></tr>
-                  <tr><td style="padding: 6px 0; color: #64748b;">Request ID:</td><td style="font-weight: bold;">${request._id}</td></tr>
-                </table>
-                <br />
-                <p>Please log in to leave a review and share your feedback on the work!</p>
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings" style="background:#16a34a; color:white; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; font-weight: bold;">Leave a Review</a>
-                <p style="margin-top:24px; font-size:12px; color:#94a3b8;">Thank you for using FarmFleet 🌾</p>
-              </div>
-            `,
+            subject: "Labour Work Completed — FarmFleet AI",
+            html: buildLabourRequestEmailTemplate({
+              role: "Renter (Farmer)",
+              headline: "Agricultural Work Completed",
+              recipientName: farmer.fullName,
+              message: `<strong>${labour.fullName}</strong> has marked your requested work as completed.`,
+              details: [
+                { label: "Labour Name", value: labour.fullName },
+                { label: "Work Location", value: `${request.village}, ${request.district}` },
+                { label: "Start Date", value: new Date(request.startDate).toLocaleDateString("en-IN") },
+                { label: "End Date", value: new Date(request.endDate).toLocaleDateString("en-IN") },
+                { label: "Completion Date", value: new Date(request.completedAt).toLocaleDateString("en-IN") },
+                { label: "Total Amount", value: `₹${request.totalAmount}`, highlight: true },
+                { label: "Request ID", value: request._id },
+              ],
+              cta: {
+                text: "Leave Review & Rating",
+                url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings`,
+              },
+              footerNote: "Your rating helps recognize hard-working agricultural labourers.",
+            }),
           });
         }
       } catch (emailErr) {

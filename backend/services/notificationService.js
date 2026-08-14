@@ -1,30 +1,10 @@
-const nodemailer = require("nodemailer");
-
-// ======================================================
-// Email Transport
-// ======================================================
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// ======================================================
-// Verify Connection
-// ======================================================
-
-transporter.verify((error) => {
-  if (error) {
-    console.log("❌ Email Configuration Error");
-    console.log(error);
-  } else {
-    console.log("✅ Email Service Ready");
-  }
-});
+const { sendEmail } = require("../config/mail");
+const {
+  buildOfficialEmailBody,
+  buildDetailsTable,
+  buildWelcomeEmailTemplate,
+  buildCropItineraryTemplate,
+} = require("../templates/emailTemplate");
 
 // ======================================================
 // Send Weather Update Email
@@ -40,85 +20,49 @@ const sendWeatherAlert = async ({
   reason,
 }) => {
   try {
-    const mailOptions = {
-      from: `"FarmFleet AI" <${process.env.EMAIL_USER}>`,
+    const details = [
+      { label: "Crop", value: crop },
+      { label: "Activity", value: activity },
+      { label: "Original Scheduled Date", value: oldDate },
+      { label: "Recommended Updated Date", value: newDate, highlight: true },
+      { label: "Weather Reason", value: reason },
+    ];
 
+    const detailsTableHtml = buildDetailsTable(details);
+
+    const bodyHtml = `
+      <p style="margin-top: 0; color: #334155;">
+        Our AI system has detected weather conditions that may affect your scheduled farming activities.
+      </p>
+      ${detailsTableHtml}
+      <p style="font-size: 14px; color: #475569;">
+        Please open FarmFleet AI to review and confirm your updated farming itinerary.
+      </p>
+    `;
+
+    const html = buildOfficialEmailBody({
+      categoryBadge: "Weather Schedule Alert",
+      userRoleBadge: "Renter (Farmer)",
+      headline: "🌦 Weather Schedule Update",
+      greeting: farmerName,
+      bodyHtml,
+      cta: {
+        text: "View Updated Itinerary",
+        url: process.env.FRONTEND_URL || "http://localhost:5173",
+      },
+      footerNote: "Farming schedules are dynamically calculated based on real-time weather forecasts.",
+    });
+
+    await sendEmail({
       to,
-
-      subject: "🌦 FarmFleet AI - Weather Schedule Update",
-
-      html: `
-      <div style="font-family:Arial;padding:25px">
-
-        <h2 style="color:#2E7D32">
-          🌾 FarmFleet AI
-        </h2>
-
-        <h3>Hello ${farmerName},</h3>
-
-        <p>
-          Our AI has detected weather conditions that may affect your farming schedule.
-        </p>
-
-        <table
-          border="1"
-          cellpadding="10"
-          cellspacing="0"
-          style="border-collapse:collapse"
-        >
-
-          <tr>
-            <td><b>Crop</b></td>
-            <td>${crop}</td>
-          </tr>
-
-          <tr>
-            <td><b>Activity</b></td>
-            <td>${activity}</td>
-          </tr>
-
-          <tr>
-            <td><b>Old Date</b></td>
-            <td>${oldDate}</td>
-          </tr>
-
-          <tr>
-            <td><b>Updated Date</b></td>
-            <td>${newDate}</td>
-          </tr>
-
-          <tr>
-            <td><b>Reason</b></td>
-            <td>${reason}</td>
-          </tr>
-
-        </table>
-
-        <br>
-
-        <p>
-          Please open FarmFleet AI to view the updated farming itinerary.
-        </p>
-
-        <br>
-
-        <b>
-          Happy Farming 🌱
-        </b>
-
-      </div>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
+      subject: "🌦 FarmFleet AI — Weather Schedule Update",
+      html,
+    });
 
     console.log("✅ Weather Alert Email Sent");
-
     return true;
   } catch (error) {
-    console.error("❌ Failed to Send Email");
-    console.error(error);
-
+    console.error("❌ Failed to Send Weather Alert Email:", error);
     return false;
   }
 };
@@ -134,52 +78,22 @@ const sendCropItinerary = async ({
   pdfLink,
 }) => {
   try {
-    const mailOptions = {
-      from: `"FarmFleet AI" <${process.env.EMAIL_USER}>`,
+    const html = buildCropItineraryTemplate({
+      farmerName,
+      crop,
+      pdfLink,
+    });
 
+    await sendEmail({
       to,
-
-      subject: "🌾 Your AI Crop Itinerary is Ready",
-
-      html: `
-      <div style="font-family:Arial;padding:25px">
-
-      <h2 style="color:#2E7D32">
-      FarmFleet AI
-      </h2>
-
-      <h3>Hello ${farmerName},</h3>
-
-      <p>
-      Your AI-powered farming itinerary for
-      <b>${crop}</b>
-      has been successfully generated.
-      </p>
-
-      <p>
-      You can download your farming report using the link below.
-      </p>
-
-      <a href="${pdfLink}">
-      Download AI Report
-      </a>
-
-      <br><br>
-
-      Happy Farming 🌱
-
-      </div>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
+      subject: "🌾 Your AI Crop Itinerary is Ready — FarmFleet AI",
+      html,
+    });
 
     console.log("✅ Crop Itinerary Email Sent");
-
     return true;
   } catch (error) {
-    console.error(error);
-
+    console.error("❌ Failed to Send Crop Itinerary Email:", error);
     return false;
   }
 };
@@ -191,50 +105,24 @@ const sendCropItinerary = async ({
 const sendWelcomeEmail = async ({
   to,
   farmerName,
+  role = "Farmer",
 }) => {
   try {
-    const mailOptions = {
-      from: `"FarmFleet AI" <${process.env.EMAIL_USER}>`,
+    const html = buildWelcomeEmailTemplate({
+      farmerName,
+      role,
+    });
 
+    await sendEmail({
       to,
-
-      subject: "Welcome to FarmFleet AI",
-
-      html: `
-      <h2>Welcome ${farmerName}!</h2>
-
-      <p>
-
-      Thank you for joining FarmFleet AI.
-
-      You can now
-
-      ✔ Generate AI Crop Plans
-
-      ✔ Rent Equipment
-
-      ✔ Hire Labour
-
-      ✔ Receive Weather Alerts
-
-      ✔ Get AI Farming Assistance
-
-      </p>
-
-      <br>
-
-      Happy Farming 🌱
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
+      subject: "Welcome to FarmFleet AI — Empowering Indian Agriculture",
+      html,
+    });
 
     console.log("✅ Welcome Email Sent");
-
     return true;
   } catch (error) {
-    console.error(error);
-
+    console.error("❌ Failed to Send Welcome Email:", error);
     return false;
   }
 };

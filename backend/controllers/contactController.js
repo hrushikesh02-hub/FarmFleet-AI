@@ -1,6 +1,7 @@
 'use strict';
 
 const { sendEmail } = require("../config/mail");
+const { buildContactEmailTemplate } = require("../templates/emailTemplate");
 const jwt = require("jsonwebtoken");
 const Farmer = require("../models/Farmer");
 const Owner = require("../models/Owner");
@@ -111,31 +112,20 @@ const submitContact = async (req, res) => {
     const cleanSubject = subject.trim();
     const cleanMessage = message.trim();
 
-    // 3. Construct HTML Email using Project's Email Design
-    const emailHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-      <h2 style="color: #2E7D32; margin-top: 0; margin-bottom: 8px;">🌾 FarmFleet AI</h2>
-      <h3 style="color: #1f2937; margin-top: 0; margin-bottom: 20px; font-weight: 600;">New Contact Inquiry</h3>
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-      <p style="font-size: 14px; color: #334155; margin: 8px 0;"><strong>Name:</strong> ${cleanName}</p>
-      <p style="font-size: 14px; color: #334155; margin: 8px 0;"><strong>Email:</strong> ${cleanEmail}</p>
-      <p style="font-size: 14px; color: #334155; margin: 8px 0;"><strong>User Role:</strong> ${userRole}</p>
-      ${authenticatedUser ? `<p style="font-size: 14px; color: #334155; margin: 8px 0;"><strong>User ID:</strong> ${authenticatedUser._id}</p>` : ""}
-      <p style="font-size: 14px; color: #334155; margin: 8px 0;"><strong>Subject:</strong> ${cleanSubject}</p>
-      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-      <p style="font-size: 14px; color: #334155; margin-bottom: 8px;"><strong>Message:</strong></p>
-      <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; font-size: 14px; color: #1e293b; white-space: pre-wrap; line-height: 1.6; border: 1px solid #f1f5f9;">${cleanMessage}</div>
-      <br />
-      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-        Sent via FarmFleet AI Contact System
-      </p>
-    </div>
-    `;
+    // 3. Construct Official FarmFleet AI HTML Email
+    const emailHtml = buildContactEmailTemplate({
+      senderName: cleanName,
+      senderEmail: cleanEmail,
+      userRole,
+      userId: authenticatedUser ? authenticatedUser._id.toString() : null,
+      subject: cleanSubject,
+      message: cleanMessage,
+    });
 
-    // 4. Send Email using Existing Configured Mail Service
+    // 4. Send Email using Configured Mail Service
     await sendEmail({
       to: "officialfarmfleet@gmail.com",
-      subject: `[FarmFleet Contact] ${cleanSubject}`,
+      subject: `[FarmFleet AI Contact] ${cleanSubject}`,
       html: emailHtml,
     });
 

@@ -23,7 +23,7 @@ const sendEmail = async ({
 }) => {
   try {
     await transporter.sendMail({
-      from: `"FarmFleet" <${process.env.EMAIL_USER}>`,
+      from: `"FarmFleet AI" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,

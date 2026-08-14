@@ -3,6 +3,7 @@ const Equipment = require("../models/Equipment");
 const Owner = require("../models/Owner");
 const Farmer = require("../models/Farmer");
 const { sendEmail } = require("../config/mail");
+const { buildBookingEmailTemplate } = require("../templates/emailTemplate");
 
 /* ==========================
    CREATE BOOKING
@@ -82,78 +83,26 @@ const createBooking = async (req, res) => {
       if (owner?.email) {
         await sendEmail({
           to: owner.email,
-          subject:
-            "New Booking Request - FarmFleet",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-              <h2 style="color:#16a34a;">
-                New Booking Request
-              </h2>
-
-              <p>
-                Hello ${owner.fullName},
-              </p>
-
-              <p>
-                A farmer has submitted a booking request for your equipment.
-              </p>
-
-              <hr />
-
-              <p>
-                <strong>Equipment:</strong>
-                ${equipment.name}
-              </p>
-
-              <p>
-                <strong>Location:</strong>
-                ${equipment.location}
-              </p>
-
-              <p>
-                <strong>Start Date:</strong>
-                ${new Date(
-                  startDate
-                ).toLocaleDateString()}
-              </p>
-
-              <p>
-                <strong>End Date:</strong>
-                ${new Date(
-                  endDate
-                ).toLocaleDateString()}
-              </p>
-
-              <p>
-                <strong>Total Amount:</strong>
-                ₹${totalAmount}
-              </p>
-
-              <br />
-
-              <a
-                href="${process.env.FRONTEND_URL}/owner/login"
-                style="
-                  background:#16a34a;
-                  color:white;
-                  padding:12px 20px;
-                  text-decoration:none;
-                  border-radius:8px;
-                  display:inline-block;
-                "
-              >
-                Login To FarmFleet
-              </a>
-
-              <p style="margin-top:20px;">
-                Please review and respond to this booking request.
-              </p>
-
-              <p>
-                Team FarmFleet 🚜
-              </p>
-            </div>
-          `,
+          subject: "New Booking Request — FarmFleet AI",
+          html: buildBookingEmailTemplate({
+            role: "Equipment Owner",
+            headline: "New Equipment Booking Request",
+            recipientName: owner.fullName,
+            message: `Farmer <strong>${req.farmer.fullName || 'A farmer'}</strong> has submitted a booking request for your equipment.`,
+            details: [
+              { label: "Equipment Name", value: equipment.name },
+              { label: "Location", value: equipment.location },
+              { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN") },
+              { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN") },
+              { label: "Total Amount", value: `₹${totalAmount}`, highlight: true },
+              { label: "Booking Status", value: "Pending Response", isStatus: true },
+            ],
+            cta: {
+              text: "Review & Respond to Booking",
+              url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/owner/login`,
+            },
+            footerNote: "Please log in to your owner dashboard to accept or reject this request.",
+          }),
         });
       }
     } catch (emailError) {
@@ -307,50 +256,21 @@ const acceptBooking = async (req, res) => {
       if (farmer?.email) {
         await sendEmail({
           to: farmer.email,
-          subject:
-            "Booking Accepted - FarmFleet",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-              <h2 style="color:#16a34a;">
-                Booking Accepted
-              </h2>
-
-              <p>
-                Hello ${farmer.fullName},
-              </p>
-
-              <p>
-                Great news! Your booking request has been accepted by the equipment owner.
-              </p>
-
-              <p>
-                <strong>Booking ID:</strong>
-                ${booking._id}
-              </p>
-
-              <p>
-                The owner has approved your request and the booking is now confirmed.
-              </p>
-
-              <a
-                href="${process.env.FRONTEND_URL}/renter/bookings"
-                style="
-                  background:#16a34a;
-                  color:white;
-                  padding:12px 20px;
-                  text-decoration:none;
-                  border-radius:8px;
-                  display:inline-block;
-                "
-              >
-                View Booking
-              </a>
-
-              <p style="margin-top:20px;">
-                Thank you for using FarmFleet 🚜
-              </p>
-            </div>
-          `,
+          subject: "Booking Accepted — FarmFleet AI",
+          html: buildBookingEmailTemplate({
+            role: "Renter (Farmer)",
+            headline: "Booking Request Accepted! 🎉",
+            recipientName: farmer.fullName,
+            message: "Great news! Your booking request has been accepted by the equipment owner.",
+            details: [
+              { label: "Booking ID", value: booking._id },
+              { label: "Booking Status", value: "Accepted / Confirmed", highlight: true },
+            ],
+            cta: {
+              text: "View Booking Details",
+              url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings`,
+            },
+          }),
         });
       }
     } catch (emailError) {
@@ -419,50 +339,22 @@ const rejectBooking = async (req, res) => {
       if (farmer?.email) {
         await sendEmail({
           to: farmer.email,
-          subject:
-            "Booking Rejected - FarmFleet",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-              <h2 style="color:#dc2626;">
-                Booking Rejected
-              </h2>
-
-              <p>
-                Hello ${farmer.fullName},
-              </p>
-
-              <p>
-                Unfortunately, the equipment owner has rejected your booking request.
-              </p>
-
-              <p>
-                <strong>Booking ID:</strong>
-                ${booking._id}
-              </p>
-
-              <p>
-                You can browse other available equipment and submit a new booking request.
-              </p>
-
-              <a
-                href="${process.env.FRONTEND_URL}"
-                style="
-                  background:#16a34a;
-                  color:white;
-                  padding:12px 20px;
-                  text-decoration:none;
-                  border-radius:8px;
-                  display:inline-block;
-                "
-              >
-                Browse Equipment
-              </a>
-
-              <p style="margin-top:20px;">
-                Thank you for using FarmFleet 🚜
-              </p>
-            </div>
-          `,
+          subject: "Booking Request Update — FarmFleet AI",
+          html: buildBookingEmailTemplate({
+            role: "Renter (Farmer)",
+            headline: "Booking Request Update",
+            recipientName: farmer.fullName,
+            message: "Unfortunately, the equipment owner is unable to fulfill your booking request at this time.",
+            details: [
+              { label: "Booking ID", value: booking._id },
+              { label: "Booking Status", value: "Declined", isStatus: true },
+            ],
+            cta: {
+              text: "Browse Other Equipment",
+              url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/dashboard`,
+            },
+            footerNote: "You can search for alternative available equipment in your area.",
+          }),
         });
       }
     } catch (emailError) {
@@ -531,60 +423,22 @@ const completeBooking = async (req, res) => {
       if (farmer?.email) {
         await sendEmail({
           to: farmer.email,
-          subject:
-            "Booking Completed - FarmFleet",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
-              
-              <h2 style="color:#16a34a;">
-                Booking Completed
-              </h2>
-
-              <p>
-                Hello ${farmer.fullName},
-              </p>
-
-              <p>
-                The equipment owner has marked your booking as completed.
-              </p>
-
-              <p>
-                <strong>Booking ID:</strong>
-                ${booking._id}
-              </p>
-
-              <p>
-                We hope the equipment and service met your expectations.
-              </p>
-
-              <p>
-                Please login to FarmFleet and leave a review and rating for your experience.
-              </p>
-
-              <a
-                href="${process.env.FRONTEND_URL}/renter/bookings"
-                style="
-                  background:#16a34a;
-                  color:white;
-                  padding:12px 20px;
-                  text-decoration:none;
-                  border-radius:8px;
-                  display:inline-block;
-                "
-              >
-                Leave Review
-              </a>
-
-              <p style="margin-top:20px;">
-                Your feedback helps other farmers make better decisions.
-              </p>
-
-              <p>
-                Thank you for using FarmFleet 🚜
-              </p>
-
-            </div>
-          `,
+          subject: "Booking Completed — FarmFleet AI",
+          html: buildBookingEmailTemplate({
+            role: "Renter (Farmer)",
+            headline: "Equipment Booking Completed",
+            recipientName: farmer.fullName,
+            message: "The equipment owner has marked your booking as completed. We hope the service met your expectations!",
+            details: [
+              { label: "Booking ID", value: booking._id },
+              { label: "Booking Status", value: "Completed", highlight: true },
+            ],
+            cta: {
+              text: "Leave Review & Rating",
+              url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/renter/bookings`,
+            },
+            footerNote: "Your feedback helps fellow farmers make better rental choices.",
+          }),
         });
       }
     } catch (emailError) {
