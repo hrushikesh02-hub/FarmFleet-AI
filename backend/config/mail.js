@@ -1,68 +1,48 @@
-const nodemailer = require("nodemailer");
-const dns = require("dns");
+const { BrevoClient } = require("@getbrevo/brevo");
 
 /* ==========================
-   NODEMAILER TRANSPORTER
+   BREVO (HTTP API) EMAIL
+   -----------------------
+   Render free tier blocks SMTP ports (25, 465, 587).
+   Brevo sends emails over HTTPS — no port restrictions.
 ========================== */
 
-// Force IPv4 DNS resolution to prevent ENETUNREACH on Render (no IPv6 support)
-const ipv4Lookup = (hostname, options, callback) => {
-  dns.lookup(hostname, { ...options, family: 4 }, callback);
-};
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const SENDER_EMAIL = process.env.EMAIL_USER || process.env.BREVO_SENDER_EMAIL || "noreply@farmfleet.ai";
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || "FarmFleet AI";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587", 10),
-  secure: false, // TLS via STARTTLS
-  family: 4,
-  dnsLookup: ipv4Lookup,
-  auth: {
-    user: process.env.EMAIL_USER || process.env.SMTP_USER,
-    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+let brevoClient = null;
+
+if (BREVO_API_KEY) {
+  brevoClient = new BrevoClient({ apiKey: BREVO_API_KEY });
+  console.log("✅ Brevo email client initialized");
+} else {
+  console.warn("⚠️  BREVO_API_KEY not set — emails will be skipped");
+}
 
 /* ==========================
    SEND EMAIL FUNCTION
 ========================== */
 
-const sendEmail = async ({
-  to,
-  subject,
-  html,
-}) => {
+const sendEmail = async ({ to, subject, html }) => {
+  if (!brevoClient) {
+    console.warn(`⚠️  Email skipped (no BREVO_API_KEY): ${subject} → ${to}`);
+    return { success: false, error: "BREVO_API_KEY not configured" };
+  }
+
   try {
-    const sender = process.env.EMAIL_USER || process.env.SMTP_USER;
-    await transporter.sendMail({
-      from: `"FarmFleet AI" <${sender}>`,
-      to,
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
       subject,
-      html,
+      htmlContent: html,
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: to }],
     });
 
-    console.log(
-      `✅ Email sent successfully to ${to}`
-    );
-
-    return {
-      success: true,
-    };
+    console.log(`✅ Email sent successfully to ${to} (messageId: ${result.messageId})`);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error(
-      "❌ Email Error:",
-      error.message || error
-    );
-
-    return {
-      success: false,
-      error: error.message,
-    };
+    console.error("❌ Email Error:", error.message || error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -71,6 +51,5 @@ const sendEmail = async ({
 ========================== */
 
 module.exports = {
-  transporter,
   sendEmail,
 };
