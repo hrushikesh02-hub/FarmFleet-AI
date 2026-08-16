@@ -1816,7 +1816,8 @@ function Reviews({ t }: { t: Content }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/reviews/public")
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    fetch(`${API_BASE}/api/reviews/public`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         const list: Review[] = Array.isArray(data) ? data : (data?.reviews ?? []);

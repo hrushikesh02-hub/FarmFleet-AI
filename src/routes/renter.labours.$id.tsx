@@ -87,8 +87,9 @@ interface Labour {
 // ---------------------------------------------------------------------------
 
 async function fetchLabour(id: string): Promise<Labour> {
-  const { data } = await axios.get(`/api/labour/public/${id}`)
-  return data?.data ?? data?.labour ?? data
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const { data } = await axios.get(`${API_BASE}/api/labour/public/${id}`);
+  return data?.data ?? data?.labour ?? data;
 }
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadRazorpayScript } from "@/lib/razorpay";
@@ -498,7 +500,7 @@ function LabourHiringWizard() {
     setLoadError(null);
     try {
       const { data } = await axios.get<LabourFetchResponse | Labour>(
-        `/api/labour/public/${id}`
+        `${API_BASE}/api/labour/public/${id}`
       );
       // Backend may respond with the labour object directly, wrapped as
       // { success, labour } or wrapped as { data: labour } — support all three.
@@ -584,7 +586,7 @@ function LabourHiringWizard() {
     setAvailabilityMessage(null);
     try {
       const { data } = await axios.post<AvailabilityCheckResponse>(
-        "/api/labour-request/check-availability",
+        `${API_BASE}/api/labour-request/check-availability`,
         { labourId: labour._id, startDate, endDate },
         { headers: authHeaders() }
       );
@@ -630,7 +632,7 @@ function LabourHiringWizard() {
     setSubmitError(null);
     try {
       const { data } = await axios.post<SubmitRequestResponse>(
-        "/api/labour-request",
+        `${API_BASE}/api/labour-request`,
         {
           labourId: labour._id,
           startDate,
@@ -660,7 +662,7 @@ function LabourHiringWizard() {
       if (paymentMethod === "online") {
         // Create payment order
         const orderRes = await axios.post(
-          "/api/payment/create-order",
+          `${API_BASE}/api/payment/create-order`,
           {
             transactionType: "labour_request",
             transactionId: rId,
@@ -688,7 +690,7 @@ function LabourHiringWizard() {
             try {
               setSubmitting(true);
               const verifyRes = await axios.post(
-                "/api/payment/verify",
+                `${API_BASE}/api/payment/verify`,
                 {
                   transactionType: "labour_request",
                   transactionId: rId,

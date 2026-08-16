@@ -320,7 +320,8 @@ function ReviewModal({
     setError(null);
     try {
       const token = localStorage.getItem("farmerToken");
-      const res = await fetch("/api/reviews/create", {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const res = await fetch(`${API_BASE}/api/reviews/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1283,9 +1284,10 @@ function RenterBookings() {
       const token = localStorage.getItem("farmerToken") ?? localStorage.getItem("token") ?? "";
       const headers = { Authorization: `Bearer ${token}` };
 
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
       const [eqRes, labRes] = await Promise.all([
-        fetch("/api/booking/farmer", { headers }).catch(() => null),
-        fetch("/api/labour-request/farmer", { headers }).catch(() => null),
+        fetch(`${API_BASE}/api/booking/farmer`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/api/labour-request/farmer`, { headers }).catch(() => null),
       ]);
 
       if (eqRes && eqRes.ok) {

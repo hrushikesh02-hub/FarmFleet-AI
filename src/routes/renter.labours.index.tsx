@@ -738,7 +738,8 @@ function RenterLabours() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get("/api/labour/public");
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const res = await axios.get(`${API_BASE}/api/labour/public`);
       const payload = res.data;
       const data: Labour[] = Array.isArray(payload)
         ? payload

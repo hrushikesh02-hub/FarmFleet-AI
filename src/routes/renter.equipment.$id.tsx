@@ -3,6 +3,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadRazorpayScript } from "@/lib/razorpay";
@@ -815,7 +817,7 @@ function BookingWorkspace({
     setBookingStep("availability");
     try {
       const { data } = await axios.post(
-        "/api/booking/check-availability",
+        `${API_BASE}/api/booking/check-availability`,
         { equipmentId: equipment._id, startDate, endDate },
         { headers: authHeaders() }
       );
@@ -840,7 +842,7 @@ function BookingWorkspace({
     setBookingError(null);
     try {
       const { data } = await axios.post<BookingResponse>(
-        "/api/booking/create",
+        `${API_BASE}/api/booking/create`,
         { equipmentId: equipment._id, startDate, endDate },
         { headers: authHeaders() }
       );
@@ -855,7 +857,7 @@ function BookingWorkspace({
       if (paymentMethod === "online") {
         // Create payment order
         const orderRes = await axios.post(
-          "/api/payment/create-order",
+          `${API_BASE}/api/payment/create-order`,
           {
             transactionType: "equipment_booking",
             transactionId: bId,
@@ -883,7 +885,7 @@ function BookingWorkspace({
             try {
               setBookingLoading(true);
               const verifyRes = await axios.post(
-                "/api/payment/verify",
+                `${API_BASE}/api/payment/verify`,
                 {
                   transactionType: "equipment_booking",
                   transactionId: bId,
@@ -1646,7 +1648,7 @@ function EquipmentDetails() {
     setError(null);
     try {
       const { data } = await axios.get<{ success: boolean; equipment: Equipment }>(
-        `/api/equipment/${id}`
+        `${API_BASE}/api/equipment/${id}`
       );
       setEquipment(data.equipment);
     } catch (err: unknown) {
@@ -1663,7 +1665,7 @@ function EquipmentDetails() {
   const fetchReviews = useCallback(async () => {
     setReviewsLoading(true);
     try {
-      const { data } = await axios.get(`/api/reviews/equipment/${id}`);
+      const { data } = await axios.get(`${API_BASE}/api/reviews/equipment/${id}`);
       const list: Review[] = Array.isArray(data) ? data : (data?.reviews ?? []);
       setReviews(list);
     } catch {
