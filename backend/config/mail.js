@@ -5,10 +5,19 @@ const nodemailer = require("nodemailer");
 ========================== */
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: false, // TLS via STARTTLS
+  family: 4, // Force IPv4 to prevent ENETUNREACH errors on cloud hosts (Render)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER || process.env.SMTP_USER,
+    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
@@ -22,8 +31,9 @@ const sendEmail = async ({
   html,
 }) => {
   try {
+    const sender = process.env.EMAIL_USER || process.env.SMTP_USER;
     await transporter.sendMail({
-      from: `"FarmFleet AI" <${process.env.EMAIL_USER}>`,
+      from: `"FarmFleet AI" <${sender}>`,
       to,
       subject,
       html,
@@ -39,10 +49,13 @@ const sendEmail = async ({
   } catch (error) {
     console.error(
       "❌ Email Error:",
-      error
+      error.message || error
     );
 
-    throw error;
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
