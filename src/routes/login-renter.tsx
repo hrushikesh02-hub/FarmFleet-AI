@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
 import {
   Sprout,
   ArrowLeft,
@@ -354,7 +356,7 @@ function SignInForm({ onSuccess, addToast }: { onSuccess: () => void; addToast: 
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/farmer/login",
+        `${API_BASE}/api/farmer/login`,
         {
           email: data.email,
           password: data.password,
@@ -504,7 +506,7 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
       setSignupData(data);
 
       await axios.post(
-        "http://localhost:5000/api/farmer/send-otp",
+        `${API_BASE}/api/farmer/send-otp`,
         { email: data.email }
       );
 
@@ -524,7 +526,7 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
       setOtpLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/farmer/verify-otp",
+        `${API_BASE}/api/farmer/verify-otp`,
         {
           fullName: signupData.fullName,
           mobile: signupData.mobile,
@@ -558,7 +560,7 @@ function CreateAccountForm({ onSuccess, addToast }: { onSuccess: () => void; add
     if (!signupData) return;
     try {
       await axios.post(
-        "http://localhost:5000/api/farmer/send-otp",
+        `${API_BASE}/api/farmer/send-otp`,
         { email: signupData.email }
       );
       addToast("success", "OTP resent successfully");

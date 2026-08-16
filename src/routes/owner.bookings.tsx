@@ -60,7 +60,8 @@ type FilterStatus = Booking["status"] | "all";
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
-const API = "http://localhost:5000/api/booking";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/booking`;
 
 function authHeaders() {
   const token = localStorage.getItem("ownerToken") ?? localStorage.getItem("token") ?? "";
@@ -239,7 +240,7 @@ function BookingCard({
   const imageSrc = equipment.image?.startsWith("http")
     ? equipment.image
     : equipment.image
-    ? `http://localhost:5000${equipment.image}`
+    ? `${API_BASE}${equipment.image}`
     : null;
 
   return (
@@ -543,7 +544,7 @@ function OwnerBookings() {
     setActionLoading(id);
     try {
       await axios.post(
-        "http://localhost:5000/api/payment/cash/mark-received/equipment",
+        `${API_BASE}/api/payment/cash/mark-received/equipment`,
         { transactionId: id },
         { headers: authHeaders() }
       );

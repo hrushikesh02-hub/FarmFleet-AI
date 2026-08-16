@@ -38,7 +38,7 @@ export function LanguageSwitcher({ variant = "default" }: Props) {
         
         axios
           .put(
-            `http://localhost:5000${endpoint}`,
+            `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${endpoint}`,
             { preferredLanguage: langCode },
             { headers: { Authorization: `Bearer ${token}` } }
           )

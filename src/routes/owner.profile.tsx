@@ -90,7 +90,8 @@ const INDIAN_STATES = [
   "Uttar Pradesh","Uttarakhand","West Bengal",
 ];
 
-const API = "http://localhost:5000/api/owner";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/owner`;
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
@@ -372,7 +373,7 @@ const handleDelete = async () => {
     setLoading(true);
 
     const res = await axios.delete(
-      "http://localhost:5000/api/owner/delete-account",
+      `${API}/delete-account`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem(

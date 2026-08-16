@@ -88,7 +88,8 @@ const INDIAN_STATES = [
   "Uttar Pradesh", "Uttarakhand", "West Bengal",
 ];
 
-const API = "http://localhost:5000/api/farmer";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE_URL}/api/farmer`;
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("jwt") || localStorage.getItem("farmerToken")}` },
 });
@@ -536,7 +537,7 @@ function DeleteAccountModal({ open, onClose, onDeleted }: { open: boolean; onClo
 
     try {
       await axios.delete(
-        "http://localhost:5000/api/farmer/delete-account",
+        `${API}/delete-account`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(

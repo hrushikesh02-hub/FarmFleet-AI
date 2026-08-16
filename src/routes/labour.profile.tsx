@@ -100,7 +100,8 @@ const INDIAN_STATES = [
 const EXPERIENCE_OPTIONS = ["Fresher", "1-3 Years", "3-5 Years", "5+ Years", "10+ Years"];
 const AVAILABILITY_OPTIONS = ["available", "busy", "offline"] as const;
 
-const API = "http://localhost:5000/api/labour";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/labour`;
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? ""}` },
 });
@@ -432,7 +433,7 @@ function DeleteAccountModal({ open, onClose, onDeleted }: { open: boolean; onClo
       setLoading(true);
 
       const res = await axios.delete(
-        "http://localhost:5000/api/labour/delete-account",
+        `${API}/delete-account`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

@@ -59,7 +59,8 @@ type FilterStatus = LabourRequest["status"] | "all";
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
-const API = "http://localhost:5000/api/labour-request";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/labour-request`;
 
 function authHeaders() {
   const token = localStorage.getItem("labourToken") ?? localStorage.getItem("token") ?? "";
@@ -267,7 +268,7 @@ function RequestCard({
   const imageSrc = equipment?.image?.startsWith("http")
     ? equipment.image
     : equipment?.image
-    ? `http://localhost:5000${equipment.image}`
+    ? `${API_BASE}${equipment.image}`
     : null;
 
   return (
@@ -602,7 +603,7 @@ function LabourRequests() {
     setActionLoading(id);
     try {
       await axios.post(
-        "http://localhost:5000/api/payment/cash/mark-received/labour",
+        `${API_BASE}/api/payment/cash/mark-received/labour`,
         { transactionId: id },
         { headers: authHeaders() }
       );

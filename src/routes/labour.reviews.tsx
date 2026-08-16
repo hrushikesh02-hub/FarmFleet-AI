@@ -61,7 +61,8 @@ interface ReviewsResponse {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const API = "http://localhost:5000/api/labour/reviews";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/labour/reviews`;
 
 const FILTER_TABS = ["All", "5 Stars", "4 Stars", "3 Stars", "2 Stars", "1 Star"];
 

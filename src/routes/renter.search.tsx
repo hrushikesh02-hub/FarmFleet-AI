@@ -643,7 +643,7 @@ export default function RenterSearch() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get("http://localhost:5000/api/equipment/all");
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/equipment/all`);
       if (res.data.success) {
         const data: Equipment[] = res.data.equipments ?? [];
         setEquipments(data);

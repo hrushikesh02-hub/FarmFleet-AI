@@ -70,7 +70,8 @@ interface DashboardData {
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
-const API = "http://localhost:5000/api/owner";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = `${API_BASE}/api/owner`;
 
 function authHeaders() {
   const token = localStorage.getItem("token");
