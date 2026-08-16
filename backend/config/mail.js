@@ -1,14 +1,21 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
 /* ==========================
    NODEMAILER TRANSPORTER
 ========================== */
 
+// Force IPv4 DNS resolution to prevent ENETUNREACH on Render (no IPv6 support)
+const ipv4Lookup = (hostname, options, callback) => {
+  dns.lookup(hostname, { ...options, family: 4 }, callback);
+};
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: parseInt(process.env.SMTP_PORT || "587", 10),
   secure: false, // TLS via STARTTLS
-  family: 4, // Force IPv4 to prevent ENETUNREACH errors on cloud hosts (Render)
+  family: 4,
+  dnsLookup: ipv4Lookup,
   auth: {
     user: process.env.EMAIL_USER || process.env.SMTP_USER,
     pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
