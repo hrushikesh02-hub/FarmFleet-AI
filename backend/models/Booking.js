@@ -57,6 +57,12 @@ const bookingSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // Automated reminder tracking (sent ~24h before startDate to owner)
+    ownerReminderSentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -380,6 +380,54 @@ const buildContactEmailTemplate = ({
   });
 };
 
+/**
+ * 7. Owner Booking Reminder Email Template (Sent 1 day before booking)
+ */
+const buildOwnerBookingReminderTemplate = ({
+  ownerName,
+  renterName,
+  equipmentName,
+  startDate,
+  endDate,
+  location,
+  totalAmount,
+}) => {
+  const details = [
+    { label: "Equipment", value: equipmentName, highlight: true },
+    ...(startDate ? [{ label: "Booking Date", value: startDate }] : []),
+    ...(endDate && endDate !== startDate ? [{ label: "End Date", value: endDate }] : []),
+    ...(renterName ? [{ label: "Renter", value: renterName }] : []),
+    ...(location ? [{ label: "Location", value: location }] : []),
+    ...(totalAmount !== undefined && totalAmount !== null ? [{ label: "Total Amount", value: `₹${Number(totalAmount).toLocaleString("en-IN")}` }] : []),
+    { label: "Status", value: "Confirmed (Tomorrow)", isStatus: true },
+  ];
+
+  const detailsTableHtml = buildDetailsTable(details);
+
+  const bodyHtml = `
+    <p style="margin-top: 0; color: #334155;">
+      This is a reminder that you have a confirmed equipment booking scheduled for <strong>tomorrow</strong>.
+    </p>
+    ${detailsTableHtml}
+    <p style="margin-top: 16px; color: #475569; font-size: 14px;">
+      Please ensure your equipment is inspected, fueled, and ready for pickup or handover at the scheduled time.
+    </p>
+  `;
+
+  return buildOfficialEmailBody({
+    categoryBadge: "Booking Reminder",
+    userRoleBadge: "Equipment Owner",
+    headline: "Your FarmFleet Booking is Tomorrow 🚜",
+    greeting: ownerName,
+    bodyHtml,
+    cta: {
+      text: "View Booking in Dashboard",
+      url: `${process.env.FRONTEND_URL || "https://farmfleetai.vercel.app"}/owner/login`,
+    },
+    footerNote: "Prompt handover ensures high renter ratings and repeat business on FarmFleet AI.",
+  });
+};
+
 module.exports = {
   buildOfficialEmailBody,
   buildDetailsTable,
@@ -389,4 +437,6 @@ module.exports = {
   buildLabourRequestEmailTemplate,
   buildCropItineraryTemplate,
   buildContactEmailTemplate,
+  buildOwnerBookingReminderTemplate,
 };
+

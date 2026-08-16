@@ -51,6 +51,7 @@ const aiRoutes = require("./routes/aiRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
 const pdfRoutes = require("./routes/pdfRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const cronRoutes = require("./routes/cronRoutes");
 
 /* ==========================
    JOBS
@@ -59,6 +60,9 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const {
    startWeatherMonitorJob,
 } = require("./jobs/weatherJob");
+const {
+   startBookingReminderJob,
+} = require("./jobs/bookingReminderJob");
 
 const app = express();
 
@@ -154,6 +158,8 @@ app.use("/api/weather", weatherRoutes);
 app.use("/api/pdf", pdfRoutes);
 const contactRoutes = require("./routes/contactRoutes");
 app.use("/api/contact", contactRoutes);
+app.use("/api/cron", cronRoutes);
+
 /* ==========================
    TEST ROUTE
 ========================== */
@@ -192,5 +198,14 @@ app.listen(PORT, () => {
       console.log("✅ Weather monitoring initialized successfully.");
    } catch (error) {
       console.error("❌ Failed to start Weather Monitor Job:", error.message);
+   }
+
+   // Initialize Owner Booking Reminder Scheduled Job (non-blocking)
+   try {
+      startBookingReminderJob();
+      console.log("⏰ Owner Booking Reminder Job Scheduled");
+      console.log("✅ Booking reminder job initialized successfully (8:00 AM IST daily).");
+   } catch (error) {
+      console.error("❌ Failed to start Booking Reminder Job:", error.message);
    }
 });

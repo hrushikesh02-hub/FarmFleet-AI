@@ -196,7 +196,7 @@ function StyleLoader() {
         overflow-x: hidden;
       }
       section { padding: 100px 24px; }
-      .sec-inner { max-width: 1200px; margin: 0 auto; }
+      .sec-inner { max-width: 1200px; margin: 0 auto; width: 100%; }
       .sec-label {
         display: inline-flex;
         align-items: center;
@@ -211,6 +211,8 @@ function StyleLoader() {
         padding: 5px 14px;
         border-radius: 100px;
         margin-bottom: 20px;
+        max-width: 100%;
+        box-sizing: border-box;
       }
       .sec-title {
         font-size: clamp(2rem, 4vw, 3.2rem);
@@ -342,17 +344,79 @@ function StyleLoader() {
         align-items: center;
       }
 
-      /* ── Hero grid ── */
+      /* ── Hero layout classes ── */
+      .hero-section {
+        min-height: 100vh;
+        padding-top: 72px;
+        background: var(--white);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-inner {
+        position: relative;
+        padding: 80px 24px 60px;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
       .hero-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 64px;
         align-items: center;
       }
+      .hero-h1 {
+        font-size: clamp(2.6rem, 5.5vw, 5rem);
+        font-weight: 700;
+        line-height: 1.0;
+        letter-spacing: -0.03em;
+        color: var(--ink);
+        margin: 0 0 20px;
+      }
+      .hero-sub-text {
+        margin-bottom: 44px;
+      }
+      .hero-cta-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-width: 480px;
+        width: 100%;
+      }
+      .hero-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-radius: 18px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .hero-card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
       .hero-visual {
         display: block;
         position: relative;
         height: 520px;
+      }
+      .hero-visual-inner {
+        position: absolute;
+        top: 40px;
+        left: 32px;
+        right: 0;
+        bottom: 0;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
       }
 
       /* ── Footer grid ── */
@@ -363,14 +427,46 @@ function StyleLoader() {
         margin-bottom: 60px;
       }
 
+      .hiw-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px 32px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--ink-100);
+        position: relative;
+        overflow: hidden;
+      }
+      .owner-mockup-card {
+        background: white;
+        border-radius: 24px;
+        border: 1px solid var(--ink-100);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+      }
+      .landing-footer {
+        background: var(--green-900);
+        color: rgba(255,255,255,0.55);
+        padding: 72px 24px 36px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
       /* ── Tablet: 768px–1023px ── */
       @media (max-width: 1023px) {
         .nav-links { display: none; }
         .nav-desktop-actions .nav-owner-btn,
         .nav-desktop-actions .nav-renter-btn,
-        .nav-desktop-actions .nav-labour-btn { display: none; }
+        .nav-desktop-actions .nav-labour-btn,
+        .nav-desktop-actions .nav-role-menu { display: none !important; }
         .mobile-menu-btn { display: flex !important; }
 
+        .hero-section {
+          min-height: auto;
+          padding-top: 72px;
+          padding-bottom: 40px;
+        }
+        .hero-inner {
+          padding: 48px 24px 32px;
+        }
         .hero-grid {
           grid-template-columns: 1fr;
           gap: 40px;
@@ -378,12 +474,21 @@ function StyleLoader() {
         .hero-visual {
           height: 340px;
         }
+        .hero-visual-inner {
+          top: 0;
+          left: 0;
+          border-radius: 24px;
+        }
 
         .hiw-grid {
           grid-template-columns: 1fr;
           gap: 20px;
         }
         .hiw-connector { display: none; }
+        .hiw-card {
+          padding: 32px 24px;
+          border-radius: 20px;
+        }
 
         .browse-grid {
           grid-template-columns: repeat(3, 1fr);
@@ -412,16 +517,58 @@ function StyleLoader() {
 
       /* ── Mobile: up to 767px ── */
       @media (max-width: 767px) {
-        section { padding: 60px 20px; }
+        section { padding: 52px 16px; }
 
-        .sec-title { font-size: clamp(1.75rem, 7vw, 2.4rem); }
+        .sec-title { font-size: clamp(1.7rem, 6.8vw, 2.3rem); }
         .sec-sub { font-size: 15px; }
+
+        .hero-section {
+          min-height: auto;
+          padding-top: 64px;
+          padding-bottom: 24px;
+        }
+        .hero-inner {
+          padding: 24px 16px 20px;
+        }
+        .sec-label {
+          font-size: clamp(9.5px, 2.7vw, 11px);
+          padding: 5px 12px;
+          line-height: 1.35;
+          text-align: center;
+          white-space: normal;
+          margin-bottom: 20px;
+        }
+        .hero-h1 {
+          font-size: clamp(2rem, 8vw, 3.2rem);
+          line-height: 1.05;
+          margin-bottom: 14px;
+        }
+        .hero-sub-text {
+          font-size: 15px;
+          margin-bottom: 28px;
+        }
+        .hero-cta-cards {
+          gap: 10px;
+        }
+        .hero-card {
+          padding: 15px 16px;
+          border-radius: 16px;
+        }
+        .hero-card-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+        }
 
         .hiw-grid {
           grid-template-columns: 1fr;
           gap: 16px;
         }
         .hiw-connector { display: none; }
+        .hiw-card {
+          padding: 26px 18px;
+          border-radius: 18px;
+        }
 
         .browse-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -430,17 +577,29 @@ function StyleLoader() {
 
         .for-owners-grid {
           grid-template-columns: 1fr;
-          gap: 40px;
+          gap: 36px;
+        }
+        .owner-mockup-card {
+          border-radius: 18px;
         }
 
         .hero-grid {
           grid-template-columns: 1fr;
-          gap: 32px;
+          gap: 28px;
         }
         .hero-visual {
-          height: 260px;
+          height: 220px;
+          margin-top: 4px;
+        }
+        .hero-visual-inner {
+          top: 0;
+          left: 0;
+          border-radius: 20px;
         }
 
+        .landing-footer {
+          padding: 48px 16px 28px;
+        }
         .footer-grid {
           grid-template-columns: 1fr;
           gap: 32px;
@@ -449,8 +608,17 @@ function StyleLoader() {
         .nav-links { display: none; }
         .nav-desktop-actions .nav-owner-btn,
         .nav-desktop-actions .nav-renter-btn,
-        .nav-desktop-actions .nav-labour-btn { display: none; }
+        .nav-desktop-actions .nav-labour-btn,
+        .nav-desktop-actions .nav-role-menu { display: none !important; }
         .mobile-menu-btn { display: flex !important; }
+      }
+
+      /* ── Tiny screens: 320px–360px ── */
+      @media (max-width: 360px) {
+        section { padding: 44px 12px; }
+        .hero-inner { padding: 20px 12px 16px; }
+        .hero-card { padding: 12px 12px; gap: 10px; }
+        .hero-card-icon { width: 36px; height: 36px; }
       }
 
       /* ── Very small: single col browse on tiny screens ── */
@@ -736,7 +904,7 @@ function Navbar({ t }: { t: Content }) {
           left: 0,
           right: 0,
           zIndex: 100,
-          padding: "0 24px",
+          padding: "0 16px",
           background: scrolled ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.80)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
@@ -755,7 +923,7 @@ function Navbar({ t }: { t: Content }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 16,
+            gap: 12,
           }}
         >
           {/* Logo */}
@@ -764,21 +932,21 @@ function Navbar({ t }: { t: Content }) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
+              gap: 8,
               cursor: "pointer",
               flexShrink: 0,
             }}
           >
-            <svg width="36" height="36" viewBox="0 0 42 42" fill="none">
+            <svg width="34" height="34" viewBox="0 0 42 42" fill="none" style={{ flexShrink: 0 }}>
               <circle cx="21" cy="21" r="21" fill="#39B54A" />
               <path d="M21 26V18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <path d="M21 18C17 18 15 15.5 15 12.5C18.5 12.5 21 14.5 21 18Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
               <path d="M21 18C25 18 27 15.5 27 12.5C23.5 12.5 21 14.5 21 18Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
               <path d="M16 29H26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <span style={{ fontWeight: 800, fontSize: 26, lineHeight: 1, letterSpacing: "-0.04em", color: "#111827" }}>
+            <span style={{ fontWeight: 800, fontSize: "clamp(20px, 5.5vw, 26px)", lineHeight: 1, letterSpacing: "-0.04em", color: "#111827", whiteSpace: "nowrap" }}>
               Farm<span style={{ color: "#39B54A" }}>Fleet</span>
-              <span style={{ color: "#39B54A", marginLeft: 6 }}>AI</span>
+              <span style={{ color: "#39B54A", marginLeft: 4 }}>AI</span>
             </span>
           </div>
 
@@ -815,7 +983,7 @@ function Navbar({ t }: { t: Content }) {
           </nav>
 
           {/* Right actions */}
-          <div className="nav-desktop-actions" style={{ alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div className="nav-desktop-actions" style={{ alignItems: "center", gap: 8, flexShrink: 0 }}>
             <LanguageSwitcher variant="compact" />
             <div ref={roleMenuRef} className="nav-role-menu" style={{ position: "relative" }}>
               <button
@@ -888,7 +1056,7 @@ function Navbar({ t }: { t: Content }) {
             <button
               className="mobile-menu-btn"
               onClick={() => setMobileOpen(true)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, alignItems: "center", justifyContent: "center" }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 6, alignItems: "center", justifyContent: "center" }}
             >
               <Menu size={22} color="var(--ink)" />
             </button>
@@ -1024,18 +1192,7 @@ function Navbar({ t }: { t: Content }) {
 /* ─── HERO ─── */
 function Hero({ t }: { t: Content }) {
   return (
-    <section
-      id="hero"
-      style={{
-        minHeight: "100vh",
-        paddingTop: 72,
-        background: "var(--white)",
-        display: "flex",
-        alignItems: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <section id="hero" className="hero-section">
       {/* Subtle green grid background */}
       <div
         style={{
@@ -1061,7 +1218,7 @@ function Hero({ t }: { t: Content }) {
         pointerEvents: "none",
       }} />
 
-      <div className="sec-inner" style={{ position: "relative", padding: "80px 24px 60px", width: "100%", maxWidth: 1200, margin: "0 auto" }}>
+      <div className="sec-inner hero-inner">
         <div className="hero-grid">
 
           {/* LEFT */}
@@ -1075,9 +1232,9 @@ function Hero({ t }: { t: Content }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               className="sec-label"
-              style={{ marginBottom: 28 }}
+              style={{ marginBottom: 20 }}
             >
-              <Leaf size={11} />
+              <Leaf size={11} style={{ flexShrink: 0 }} />
               {t.hero.badge}
             </motion.div>
 
@@ -1085,14 +1242,7 @@ function Hero({ t }: { t: Content }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                fontSize: "clamp(2.8rem, 6vw, 5rem)",
-                fontWeight: 700,
-                lineHeight: 1.0,
-                letterSpacing: "-0.03em",
-                color: "var(--ink)",
-                margin: "0 0 20px",
-              }}
+              className="hero-h1"
             >
               {t.hero.headline1}
               <br />
@@ -1110,8 +1260,7 @@ function Hero({ t }: { t: Content }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.28 }}
-              className="sec-sub"
-              style={{ marginBottom: 44 }}
+              className="sec-sub hero-sub-text"
             >
               {t.hero.sub}
             </motion.p>
@@ -1121,42 +1270,27 @@ function Hero({ t }: { t: Content }) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.36 }}
-              style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 }}
+              className="hero-cta-cards"
             >
               {/* Owner card */}
               <Link to="/login-owner" style={{ textDecoration: "none" }}>
                 <motion.div
                   whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(13,31,16,0.13)" }}
                   whileTap={{ scale: 0.99 }}
+                  className="hero-card"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "20px 24px",
-                    borderRadius: 18,
                     border: "1.5px solid var(--green-200)",
                     background: "var(--green-50)",
-                    cursor: "pointer",
-                    transition: "border-color 0.2s",
                     boxShadow: "var(--shadow-sm)",
                   }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-400)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-200)"; }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: "var(--green-700)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                    <div className="hero-card-icon" style={{ background: "var(--green-700)" }}>
                       <Settings size={20} color="white" />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
                         {t.hero.ownerCard}
                       </div>
@@ -1165,7 +1299,7 @@ function Hero({ t }: { t: Content }) {
                       </div>
                     </div>
                   </div>
-                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0 }} />
+                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0, marginLeft: 8 }} />
                 </motion.div>
               </Link>
 
@@ -1174,32 +1308,18 @@ function Hero({ t }: { t: Content }) {
                 <motion.div
                   whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(45,156,62,0.18)" }}
                   whileTap={{ scale: 0.99 }}
+                  className="hero-card"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "20px 24px",
-                    borderRadius: 18,
                     border: "1.5px solid var(--green-500)",
                     background: "var(--green-700)",
-                    cursor: "pointer",
                     boxShadow: "var(--shadow-green)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: "rgba(255,255,255,0.15)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                    <div className="hero-card-icon" style={{ background: "rgba(255,255,255,0.15)" }}>
                       <Search size={20} color="white" />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "white", letterSpacing: "-0.01em" }}>
                         {t.hero.renterCard}
                       </div>
@@ -1208,7 +1328,7 @@ function Hero({ t }: { t: Content }) {
                       </div>
                     </div>
                   </div>
-                  <ArrowUpRight size={18} color="rgba(255,255,255,0.8)" style={{ flexShrink: 0 }} />
+                  <ArrowUpRight size={18} color="rgba(255,255,255,0.8)" style={{ flexShrink: 0, marginLeft: 8 }} />
                 </motion.div>
               </Link>
 
@@ -1217,35 +1337,20 @@ function Hero({ t }: { t: Content }) {
                 <motion.div
                   whileHover={{ y: -3, boxShadow: "0 16px 48px rgba(13,31,16,0.13)" }}
                   whileTap={{ scale: 0.99 }}
+                  className="hero-card"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "20px 24px",
-                    borderRadius: 18,
                     border: "1.5px solid var(--green-200)",
                     background: "var(--green-50)",
-                    cursor: "pointer",
-                    transition: "border-color 0.2s",
                     boxShadow: "var(--shadow-sm)",
                   }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-400)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--green-200)"; }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: "var(--accent)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                    <div className="hero-card-icon" style={{ background: "var(--accent)" }}>
                       <HardHat size={20} color="white" />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
                         {t.hero.labourCard}
                       </div>
@@ -1254,7 +1359,7 @@ function Hero({ t }: { t: Content }) {
                       </div>
                     </div>
                   </div>
-                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0 }} />
+                  <ArrowUpRight size={18} color="var(--green-600)" style={{ flexShrink: 0, marginLeft: 8 }} />
                 </motion.div>
               </Link>
             </motion.div>
@@ -1268,20 +1373,11 @@ function Hero({ t }: { t: Content }) {
             className="hero-visual"
           >
             {/* Main image */}
-            <div style={{
-              position: "absolute",
-              top: 40,
-              left: 32,
-              right: 0,
-              bottom: 0,
-              borderRadius: 28,
-              overflow: "hidden",
-              boxShadow: "var(--shadow-xl)",
-            }}>
+            <div className="hero-visual-inner">
               <img
                 src="https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80"
                 alt="Farmer"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
               <div style={{
                 position: "absolute",
@@ -1329,15 +1425,7 @@ function HowItWorks({ t }: { t: Content }) {
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -6 }}
-                style={{
-                  background: "white",
-                  borderRadius: 24,
-                  padding: "40px 32px",
-                  boxShadow: "var(--shadow-md)",
-                  border: "1px solid var(--ink-100)",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
+                className="hiw-card"
               >
                 {/* large step number background */}
                 <div style={{
@@ -1525,13 +1613,7 @@ function ForOwners({ t }: { t: Content }) {
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div style={{
-              background: "white",
-              borderRadius: 24,
-              border: "1px solid var(--ink-100)",
-              boxShadow: "var(--shadow-xl)",
-              overflow: "hidden",
-            }}>
+            <div className="owner-mockup-card">
               {/* Title bar */}
               <div style={{
                 padding: "16px 20px",
@@ -2133,12 +2215,7 @@ function Footer({ t }: { t: Content }) {
   ];
 
   return (
-    <footer style={{
-      background: "var(--green-900)",
-      color: "rgba(255,255,255,0.55)",
-      padding: "72px 24px 36px",
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-    }}>
+    <footer className="landing-footer">
       <div className="sec-inner" style={{ padding: 0 }}>
         <div className="footer-grid">
           <div>
