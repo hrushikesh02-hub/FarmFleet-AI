@@ -1,5 +1,5 @@
 const CropItinerary = require("../../models/CropItinerary");
-const WeatherAlert = require("../../models/WeatherAlert");
+const WeatherAlert = require("../../models/weatherAlert");
 
 const { getSafeWeatherReport } = require("./weatherService");
 const {

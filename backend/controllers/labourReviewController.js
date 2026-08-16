@@ -1,4 +1,4 @@
-const LabourReview = require("../models/LabourReview");
+const LabourReview = require("../models/labourReview");
 const LabourRequest = require("../models/labourRequest");
 const Labour = require("../models/Labour");
 
