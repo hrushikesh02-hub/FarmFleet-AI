@@ -2,6 +2,7 @@ const Labour = require("../models/Labour");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../config/cloudinary");
+const geocodeLocation = require("../utils/geocodeLocation");
 
 const Booking = require("../models/Booking");
 
@@ -51,6 +52,15 @@ const signup = async (req, res) => {
       10
     );
 
+    const locationStr = [village, district, state].filter(Boolean).join(", ");
+    let coordinates = { lat: 0, lng: 0 };
+    if (locationStr) {
+      const geoResult = await geocodeLocation(locationStr);
+      if (geoResult) {
+        coordinates = geoResult;
+      }
+    }
+
     const labour = await Labour.create({
       fullName,
       mobile,
@@ -58,6 +68,8 @@ const signup = async (req, res) => {
       village,
       district,
       state,
+      location: locationStr,
+      coordinates,
       primarySkill,
       experience,
       dailyCharges,
@@ -86,6 +98,8 @@ const signup = async (req, res) => {
         village: labour.village,
         district: labour.district,
         state: labour.state,
+        location: labour.location,
+        coordinates: labour.coordinates,
         primarySkill: labour.primarySkill,
         experience: labour.experience,
         dailyCharges: labour.dailyCharges,
@@ -160,6 +174,8 @@ const login = async (req, res) => {
         village: labour.village,
         district: labour.district,
         state: labour.state,
+        location: labour.location || [labour.village, labour.district, labour.state].filter(Boolean).join(", "),
+        coordinates: labour.coordinates || { lat: 0, lng: 0 },
         primarySkill: labour.primarySkill,
         experience: labour.experience,
         dailyCharges: labour.dailyCharges,
@@ -197,12 +213,23 @@ const updateProfile = async (req, res) => {
       });
     }
 
+    const locationChanged = req.body.village || req.body.district || req.body.state || req.body.location;
     labour.fullName = req.body.fullName || labour.fullName;
     labour.mobile = req.body.mobile || labour.mobile;
     labour.email = req.body.email || labour.email;
     labour.village = req.body.village || labour.village;
     labour.district = req.body.district || labour.district;
     labour.state = req.body.state || labour.state;
+
+    if (locationChanged) {
+      const locationStr = req.body.location || [labour.village, labour.district, labour.state].filter(Boolean).join(", ");
+      labour.location = locationStr;
+      const geoResult = await geocodeLocation(locationStr);
+      if (geoResult) {
+        labour.coordinates = geoResult;
+      }
+    }
+
     labour.primarySkill =
       req.body.primarySkill || labour.primarySkill;
     labour.experience =
@@ -255,6 +282,8 @@ const updateProfile = async (req, res) => {
         village: updatedLabour.village,
         district: updatedLabour.district,
         state: updatedLabour.state,
+        location: updatedLabour.location || [updatedLabour.village, updatedLabour.district, updatedLabour.state].filter(Boolean).join(", "),
+        coordinates: updatedLabour.coordinates || { lat: 0, lng: 0 },
         primarySkill: updatedLabour.primarySkill,
         experience: updatedLabour.experience,
         dailyCharges: updatedLabour.dailyCharges,
@@ -545,6 +574,8 @@ const getPublicLabours = async (
           village: labour.village,
           district: labour.district,
           state: labour.state,
+          location: labour.location || [labour.village, labour.district, labour.state].filter(Boolean).join(", "),
+          coordinates: labour.coordinates || { lat: 0, lng: 0 },
           availability:
             labour.availability,
           rating:
@@ -606,6 +637,8 @@ const getPublicLabourById = async (req, res) => {
         village: labour.village,
         district: labour.district,
         state: labour.state,
+        location: labour.location || [labour.village, labour.district, labour.state].filter(Boolean).join(", "),
+        coordinates: labour.coordinates || { lat: 0, lng: 0 },
         availability: labour.availability,
         rating: labour.rating || 0,
         totalReviews: labour.totalReviews || 0,

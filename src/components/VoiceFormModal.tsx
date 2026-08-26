@@ -166,11 +166,10 @@ export function VoiceFormModal({ isOpen, onClose, onApply }: Props) {
                 <button
                   type="button"
                   onClick={toggleListening}
-                  className={`relative h-20 w-20 rounded-full flex items-center justify-center shadow-elevated transition-all duration-300 ${
-                    isListening
+                  className={`relative h-20 w-20 rounded-full flex items-center justify-center shadow-elevated transition-all duration-300 ${isListening
                       ? "bg-gradient-primary text-primary-foreground scale-105"
                       : "bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {isListening ? (
                     <Mic className="h-8 w-8 animate-pulse" />

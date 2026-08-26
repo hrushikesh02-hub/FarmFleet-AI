@@ -41,6 +41,22 @@ const labourSchema = new mongoose.Schema(
       trim: true,
     },
 
+    location: {
+      type: String,
+      default: "",
+    },
+
+    coordinates: {
+      lat: {
+        type: Number,
+        default: 0,
+      },
+      lng: {
+        type: Number,
+        default: 0,
+      },
+    },
+
     // Labour Specific
     primarySkill: {
       type: String,

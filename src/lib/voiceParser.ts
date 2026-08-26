@@ -128,7 +128,6 @@ const CROP_MAP: Record<string, string> = {
   chilli: "Chilli",
   chili: "Chilli",
   mirchi: "Chilli",
-  mirchi: "Chilli",
   "red chilli": "Chilli",
   "green chilli": "Chilli",
   pepper: "Chilli",

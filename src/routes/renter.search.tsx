@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { AppShell } from "@/components/AppShell";
 import { VoiceButton } from "@/components/VoiceButton";
+import { EquipmentMap } from "@/components/EquipmentMap";
+import { calculateHaversineDistance } from "@/utils/distance";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
@@ -10,6 +12,7 @@ import {
   SlidersHorizontal,
   Grid3x3,
   List,
+  Map as MapIcon,
   ChevronDown,
   X,
   AlertCircle,
@@ -24,6 +27,7 @@ import {
   MapPin,
   User,
   Clock,
+  Navigation,
 } from "lucide-react";
 
 export const Route = createFileRoute("/renter/search")({
@@ -49,11 +53,16 @@ interface Equipment {
   location: string;
   image: string;
   operatorIncluded: boolean;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   owner: Owner;
+  _distance?: number | null;
 }
 
-type SortKey = "relevance" | "price-low" | "price-high";
-type ViewMode = "grid" | "list";
+type SortKey = "relevance" | "price-low" | "price-high" | "distance-low";
+type ViewMode = "grid" | "list" | "map";
 
 /* ─── Equipment type icon map ────────────────────────────────────── */
 
@@ -146,9 +155,16 @@ function EquipmentGridCard({ e, index }: { e: Equipment; index: number }) {
       <div className="p-4 flex flex-col flex-1">
         <h3 className="font-display font-semibold text-base leading-tight line-clamp-1">{e.name}</h3>
         <div className="mt-2 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="line-clamp-1">{e.location}</span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="line-clamp-1">{e.location}</span>
+            </div>
+            {e._distance != null && (
+              <span className="shrink-0 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[11px]">
+                📍 {e._distance.toFixed(1)} km away
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <User className="h-3.5 w-3.5 shrink-0" />
@@ -216,6 +232,11 @@ function EquipmentListCard({ e, index }: { e: Equipment; index: number }) {
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[11px] font-medium">
                 {typeIcon(e.type)} {e.type}
               </span>
+              {e._distance != null && (
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[11px]">
+                  📍 {e._distance.toFixed(1)} km away
+                </span>
+              )}
             </div>
             <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -460,10 +481,6 @@ function CheckRow({
 }
 
 /* ─── Sidebar Filters — proper component ────────────────────────── */
-/*
- * BUG FIX: extracted from an inline JSX variable into a real component
- * so FilterSection instances keep stable identity across renders.
- */
 
 function SidebarFilters({
   allTypes,
@@ -480,6 +497,11 @@ function SidebarFilters({
   setOperatorOnly,
   sort,
   setSort,
+  maxDistance,
+  setMaxDistance,
+  userLocation,
+  handleGetLocation,
+  locatingUser,
   activeFilterCount,
   clearAll,
 }: {
@@ -497,6 +519,11 @@ function SidebarFilters({
   setOperatorOnly: (v: boolean) => void;
   sort: SortKey;
   setSort: (v: SortKey) => void;
+  maxDistance: number | null;
+  setMaxDistance: (v: number | null) => void;
+  userLocation: { lat: number; lng: number } | null;
+  handleGetLocation: () => void;
+  locatingUser: boolean;
   activeFilterCount: number;
   clearAll: () => void;
 }) {
@@ -516,6 +543,52 @@ function SidebarFilters({
           >
             Clear all ({activeFilterCount})
           </button>
+        )}
+      </div>
+
+      {/* Near Me / Geolocation trigger */}
+      <div className="p-3 rounded-xl bg-accent/50 border border-border/80 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <Navigation className="h-3.5 w-3.5 text-primary" />
+            Your Location
+          </span>
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            disabled={locatingUser}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+              userLocation
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+            }`}
+          >
+            {locatingUser ? "Locating..." : userLocation ? "Updated ✓" : "Use GPS"}
+          </button>
+        </div>
+
+        {userLocation && (
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
+              Filter by Radius:
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {[null, 10, 25, 50, 100].map((dist) => (
+                <button
+                  key={dist ?? "any"}
+                  type="button"
+                  onClick={() => setMaxDistance(dist)}
+                  className={`px-2 py-1 rounded-md text-xs text-center border transition ${
+                    maxDistance === dist
+                      ? "bg-primary text-primary-foreground border-primary font-semibold"
+                      : "bg-card border-border hover:bg-accent text-muted-foreground"
+                  }`}
+                >
+                  {dist === null ? "Any distance" : `≤ ${dist} km`}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -605,11 +678,16 @@ function SidebarFilters({
       {/* Sort */}
       <FilterSection title="Sort By" defaultOpen={false}>
         <div className="space-y-0.5">
-          {(["relevance", "price-low", "price-high"] as SortKey[]).map((s) => (
+          {(["relevance", "price-low", "price-high", "distance-low"] as SortKey[]).map((s) => (
             <RadioRow
               key={s}
               label={
-                { relevance: "Relevance", "price-low": "Price: Low to High", "price-high": "Price: High to Low" }[s]
+                {
+                  relevance: "Relevance",
+                  "price-low": "Price: Low to High",
+                  "price-high": "Price: High to Low",
+                  "distance-low": "Nearest First 📍",
+                }[s]
               }
               checked={sort === s}
               onChange={() => setSort(s)}
@@ -623,7 +701,7 @@ function SidebarFilters({
 
 /* ─── Main Page ──────────────────────────────────────────────────── */
 
-export default function RenterSearch() {
+function RenterSearch() {
   const { t } = useTranslation();
 
   /* Data */
@@ -631,17 +709,15 @@ export default function RenterSearch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /* User Location & Distance */
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locatingUser, setLocatingUser] = useState(false);
+  const [maxDistance, setMaxDistance] = useState<number | null>(null);
+
   /* Filters */
   const [q, setQ] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [type, setType] = useState("");
-  /*
-   * BUG FIX: was initialised to 5000. When dataMaxPrice resolved to 5000
-   * the comparison maxPrice < dataMaxPrice was always false and clearAll
-   * was setting maxPrice to the exact same value, never resetting the slider.
-   * We now use Infinity so "no price cap" is the correct default, and sync
-   * to dataMaxPrice once data arrives so the slider ceiling is meaningful.
-   */
   const [maxPrice, setMaxPrice] = useState(Infinity);
   const [locationFilter, setLocationFilter] = useState("");
   const [operatorOnly, setOperatorOnly] = useState(false);
@@ -650,6 +726,28 @@ export default function RenterSearch() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocatingUser(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setLocatingUser(false);
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        alert("Unable to fetch your location. Please check browser permissions.");
+        setLocatingUser(false);
+      }
+    );
+  };
 
   /* Fetch */
   const fetchEquipment = useCallback(async () => {
@@ -660,7 +758,6 @@ export default function RenterSearch() {
       if (res.data.success) {
         const data: Equipment[] = res.data.equipments ?? [];
         setEquipments(data);
-        // Sync price ceiling to real data on first load
         if (data.length > 0) {
           setMaxPrice(Math.max(...data.map((e) => e.pricePerHour)));
         }
@@ -701,10 +798,26 @@ export default function RenterSearch() {
     [equipments]
   );
 
-  /* Filtered + sorted results */
+  /* Filtered + sorted results with Haversine distance */
   const filtered = useMemo(() => {
     const ql = q.toLowerCase();
-    const list = equipments.filter((e) => {
+
+    const list: Equipment[] = equipments.map((e) => {
+      let dist: number | null = null;
+      if (
+        userLocation &&
+        e.coordinates &&
+        !(e.coordinates.lat === 0 && e.coordinates.lng === 0)
+      ) {
+        dist = calculateHaversineDistance(
+          userLocation.lat,
+          userLocation.lng,
+          e.coordinates.lat,
+          e.coordinates.lng
+        );
+      }
+      return { ...e, _distance: dist };
+    }).filter((e) => {
       if (
         ql &&
         !(
@@ -720,25 +833,29 @@ export default function RenterSearch() {
       if (maxPrice !== Infinity && e.pricePerHour > maxPrice) return false;
       if (locationFilter && e.location !== locationFilter) return false;
       if (operatorOnly && !e.operatorIncluded) return false;
+      if (maxDistance !== null && e._distance != null && e._distance > maxDistance) return false;
       return true;
     });
 
     if (sort === "price-low") list.sort((a, b) => a.pricePerHour - b.pricePerHour);
     if (sort === "price-high") list.sort((a, b) => b.pricePerHour - a.pricePerHour);
+    if (sort === "distance-low") list.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
     return list;
-  }, [equipments, q, type, maxPrice, locationFilter, operatorOnly, sort]);
+  }, [equipments, q, type, maxPrice, locationFilter, operatorOnly, maxDistance, userLocation, sort]);
 
   const activeFilterCount =
     (type ? 1 : 0) +
     (maxPrice < dataMaxPrice ? 1 : 0) +
     (locationFilter ? 1 : 0) +
-    (operatorOnly ? 1 : 0);
+    (operatorOnly ? 1 : 0) +
+    (maxDistance !== null ? 1 : 0);
 
   const clearAll = () => {
     setType("");
-    setMaxPrice(dataMaxPrice);   // reset to actual ceiling, not a hardcoded number
+    setMaxPrice(dataMaxPrice);
     setLocationFilter("");
     setOperatorOnly(false);
+    setMaxDistance(null);
   };
 
   /* Shared sidebar props */
@@ -757,6 +874,11 @@ export default function RenterSearch() {
     setOperatorOnly,
     sort,
     setSort,
+    maxDistance,
+    setMaxDistance,
+    userLocation,
+    handleGetLocation,
+    locatingUser,
     activeFilterCount,
     clearAll,
   };
@@ -913,6 +1035,20 @@ export default function RenterSearch() {
               )}
             </p>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={locatingUser}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                  userLocation
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                    : "border-border bg-card hover:bg-accent text-foreground"
+                }`}
+              >
+                <Navigation className={`h-3.5 w-3.5 ${locatingUser ? "animate-spin" : ""}`} />
+                {userLocation ? "Location Active ✓" : "Near Me"}
+              </button>
+
               <div className="relative">
                 <select
                   value={sort}
@@ -922,12 +1058,13 @@ export default function RenterSearch() {
                   <option value="relevance">Relevance</option>
                   <option value="price-low">Price: Low → High</option>
                   <option value="price-high">Price: High → Low</option>
+                  <option value="distance-low">Nearest First 📍</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               </div>
               <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
-                {(["grid", "list"] as ViewMode[]).map((v) => {
-                  const Icon = v === "grid" ? Grid3x3 : List;
+                {(["grid", "list", "map"] as ViewMode[]).map((v) => {
+                  const Icon = v === "grid" ? Grid3x3 : v === "list" ? List : MapIcon;
                   return (
                     <button
                       key={v}
@@ -965,6 +1102,12 @@ export default function RenterSearch() {
                 <Pill onClear={() => setOperatorOnly(false)}>
                   <User className="h-3 w-3" />
                   Operator included
+                </Pill>
+              )}
+              {maxDistance !== null && (
+                <Pill onClear={() => setMaxDistance(null)}>
+                  <Navigation className="h-3 w-3" />
+                  ≤ {maxDistance} km away
                 </Pill>
               )}
               <button
@@ -1006,8 +1149,8 @@ export default function RenterSearch() {
             </div>
           )}
 
-          {/* Results */}
-          {!loading && !error && filtered.length > 0 && (
+          {/* Results: Grid or List */}
+          {!loading && !error && filtered.length > 0 && view !== "map" && (
             <>
               {view === "grid" && (
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1024,6 +1167,29 @@ export default function RenterSearch() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Results: Map View */}
+          {!loading && !error && view === "map" && (
+            <div className="mt-5">
+              <EquipmentMap
+                items={filtered.map((e) => ({
+                  id: e._id,
+                  name: e.name,
+                  type: e.type,
+                  price: e.pricePerHour,
+                  priceUnit: "/hr",
+                  location: e.location,
+                  coordinates: e.coordinates,
+                  distance: e._distance,
+                  detailUrl: `/renter/equipment/${e._id}`,
+                  image: e.image,
+                  category: "equipment",
+                }))}
+                userLocation={userLocation}
+                height="580px"
+              />
+            </div>
           )}
 
           {/* Empty */}
@@ -1055,24 +1221,6 @@ export default function RenterSearch() {
                 <RefreshCw className="h-4 w-4" />
                 Reset Filters & Search
               </button>
-            </div>
-          )}
-
-          {/* Map coming soon */}
-          {!loading && !error && filtered.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-border bg-card p-5 flex items-center gap-4 shadow-card">
-              <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shrink-0">
-                <MapPin className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-display font-semibold text-sm">Map View — Coming Soon</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  See all equipment on an interactive map. Available in the next update.
-                </p>
-              </div>
-              <span className="ml-auto shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
-                <Clock className="h-3 w-3" /> Soon
-              </span>
             </div>
           )}
         </div>

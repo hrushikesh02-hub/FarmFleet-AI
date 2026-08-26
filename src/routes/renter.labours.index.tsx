@@ -3,6 +3,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { AppShell } from "@/components/AppShell";
 import { VoiceButton } from "@/components/VoiceButton";
+import { EquipmentMap } from "@/components/EquipmentMap";
+import { calculateHaversineDistance } from "@/utils/distance";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
@@ -10,6 +12,7 @@ import {
   SlidersHorizontal,
   Grid3x3,
   List,
+  Map as MapIcon,
   ChevronDown,
   X,
   AlertCircle,
@@ -26,6 +29,7 @@ import {
   Star,
   BadgeCheck,
   Users,
+  Navigation,
 } from "lucide-react";
 
 export const Route = createFileRoute("/renter/labours/")({
@@ -47,14 +51,20 @@ interface Labour {
   village: string;
   district: string;
   state: string;
+  location?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   availability: boolean;
   rating: number;
   totalReviews: number;
   mobile: string;
+  _distance?: number | null;
 }
 
-type SortKey = "highest-rated" | "lowest-charges" | "most-experienced" | "newest";
-type ViewMode = "grid" | "list";
+type SortKey = "highest-rated" | "lowest-charges" | "most-experienced" | "newest" | "distance-low";
+type ViewMode = "grid" | "list" | "map";
 
 /* ─── Skill icon map ──────────────────────────────────────────────── */
 
@@ -152,11 +162,18 @@ function LabourGridCard({ l, index }: { l: Labour; index: number }) {
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>{l.experience} Years Experience</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="line-clamp-1">
-              {l.village}, {l.district}
-            </span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="line-clamp-1">
+                {l.location || `${l.village}, ${l.district}`}
+              </span>
+            </div>
+            {l._distance != null && (
+              <span className="shrink-0 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[11px]">
+                📍 {l._distance.toFixed(1)} km away
+              </span>
+            )}
           </div>
         </div>
 
@@ -257,6 +274,12 @@ function LabourListCard({ l, index }: { l: Labour; index: number }) {
               >
                 {l.availability ? "Available" : "Unavailable"}
               </span>
+
+              {l._distance != null && (
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[11px]">
+                  📍 {l._distance.toFixed(1)} km away
+                </span>
+              )}
             </div>
 
             <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
@@ -548,6 +571,11 @@ function SidebarFilters({
   setAvailableOnly,
   sort,
   setSort,
+  maxDistance,
+  setMaxDistance,
+  userLocation,
+  handleGetLocation,
+  locatingUser,
   activeFilterCount,
   clearAll,
 }: {
@@ -566,6 +594,11 @@ function SidebarFilters({
   setAvailableOnly: (v: boolean) => void;
   sort: SortKey;
   setSort: (v: SortKey) => void;
+  maxDistance: number | null;
+  setMaxDistance: (v: number | null) => void;
+  userLocation: { lat: number; lng: number } | null;
+  handleGetLocation: () => void;
+  locatingUser: boolean;
   activeFilterCount: number;
   clearAll: () => void;
 }) {
@@ -585,6 +618,52 @@ function SidebarFilters({
           >
             Clear all ({activeFilterCount})
           </button>
+        )}
+      </div>
+
+      {/* Near Me / Geolocation trigger */}
+      <div className="p-3 rounded-xl bg-accent/50 border border-border/80 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <Navigation className="h-3.5 w-3.5 text-primary" />
+            Your Location
+          </span>
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            disabled={locatingUser}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+              userLocation
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+            }`}
+          >
+            {locatingUser ? "Locating..." : userLocation ? "Updated ✓" : "Use GPS"}
+          </button>
+        </div>
+
+        {userLocation && (
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
+              Filter by Radius:
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {[null, 10, 25, 50, 100].map((dist) => (
+                <button
+                  key={dist ?? "any"}
+                  type="button"
+                  onClick={() => setMaxDistance(dist)}
+                  className={`px-2 py-1 rounded-md text-xs text-center border transition ${
+                    maxDistance === dist
+                      ? "bg-primary text-primary-foreground border-primary font-semibold"
+                      : "bg-card border-border hover:bg-accent text-muted-foreground"
+                  }`}
+                >
+                  {dist === null ? "Any distance" : `≤ ${dist} km`}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -683,7 +762,7 @@ function SidebarFilters({
       {/* Sort */}
       <FilterSection title="Sort By" defaultOpen={false}>
         <div className="space-y-0.5">
-          {(["highest-rated", "lowest-charges", "most-experienced", "newest"] as SortKey[]).map(
+          {(["highest-rated", "lowest-charges", "most-experienced", "newest", "distance-low"] as SortKey[]).map(
             (s) => (
               <RadioRow
                 key={s}
@@ -693,6 +772,7 @@ function SidebarFilters({
                     "lowest-charges": "Lowest Charges",
                     "most-experienced": "Most Experienced",
                     newest: "Newest",
+                    "distance-low": "Nearest First 📍",
                   }[s]
                 }
                 checked={sort === s}
@@ -714,16 +794,16 @@ function RenterLabours() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /* User Location & Distance */
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locatingUser, setLocatingUser] = useState(false);
+  const [maxDistance, setMaxDistance] = useState<number | null>(null);
+
   /* Filters */
   const [q, setQ] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [skill, setSkill] = useState("");
   const [maxExperience, setMaxExperience] = useState(30);
-  /*
-   * Same Infinity-default pattern as Equipment Discover's price slider:
-   * avoids the "cap resolves to the exact ceiling so clearAll is a no-op" bug.
-   * Synced to the real data ceiling once labours load.
-   */
   const [maxCharges, setMaxCharges] = useState(Infinity);
   const [minRating, setMinRating] = useState(0);
   const [availableOnly, setAvailableOnly] = useState(false);
@@ -732,6 +812,28 @@ function RenterLabours() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocatingUser(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setLocatingUser(false);
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        alert("Unable to fetch your location. Please check browser permissions.");
+        setLocatingUser(false);
+      }
+    );
+  };
 
   /* Fetch */
   const fetchLabours = useCallback(async () => {
@@ -780,17 +882,34 @@ function RenterLabours() {
     [labours],
   );
 
-  /* Filtered + sorted results */
+  /* Filtered + sorted results with Haversine distance */
   const filtered = useMemo(() => {
     const ql = q.toLowerCase();
-    const list = labours.filter((l) => {
+
+    const list: Labour[] = labours.map((l) => {
+      let dist: number | null = null;
+      if (
+        userLocation &&
+        l.coordinates &&
+        !(l.coordinates.lat === 0 && l.coordinates.lng === 0)
+      ) {
+        dist = calculateHaversineDistance(
+          userLocation.lat,
+          userLocation.lng,
+          l.coordinates.lat,
+          l.coordinates.lng
+        );
+      }
+      return { ...l, _distance: dist };
+    }).filter((l) => {
       if (
         ql &&
         !(
           l.fullName?.toLowerCase().includes(ql) ||
           l.primarySkill?.toLowerCase().includes(ql) ||
           l.village?.toLowerCase().includes(ql) ||
-          l.district?.toLowerCase().includes(ql)
+          l.district?.toLowerCase().includes(ql) ||
+          l.location?.toLowerCase().includes(ql)
         )
       )
         return false;
@@ -799,23 +918,24 @@ function RenterLabours() {
       if (maxCharges !== Infinity && l.dailyCharges > maxCharges) return false;
       if (minRating && l.rating < minRating) return false;
       if (availableOnly && !l.availability) return false;
+      if (maxDistance !== null && l._distance != null && l._distance > maxDistance) return false;
       return true;
     });
 
     if (sort === "highest-rated") list.sort((a, b) => b.rating - a.rating);
     if (sort === "lowest-charges") list.sort((a, b) => a.dailyCharges - b.dailyCharges);
     if (sort === "most-experienced") list.sort((a, b) => b.experience - a.experience);
-    // "newest" — the backend is assumed to return newest-first; no created-at
-    // field exists on Labour, so we keep the original API order as-is.
+    if (sort === "distance-low") list.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
     return list;
-  }, [labours, q, skill, maxExperience, maxCharges, minRating, availableOnly, sort]);
+  }, [labours, q, skill, maxExperience, maxCharges, minRating, availableOnly, maxDistance, userLocation, sort]);
 
   const activeFilterCount =
     (skill ? 1 : 0) +
     (maxExperience < 30 ? 1 : 0) +
     (maxCharges < dataMaxCharges ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
-    (availableOnly ? 1 : 0);
+    (availableOnly ? 1 : 0) +
+    (maxDistance !== null ? 1 : 0);
 
   const clearAll = () => {
     setSkill("");
@@ -823,6 +943,7 @@ function RenterLabours() {
     setMaxCharges(dataMaxCharges);
     setMinRating(0);
     setAvailableOnly(false);
+    setMaxDistance(null);
   };
 
   /* Shared sidebar props */
@@ -842,6 +963,11 @@ function RenterLabours() {
     setAvailableOnly,
     sort,
     setSort,
+    maxDistance,
+    setMaxDistance,
+    userLocation,
+    handleGetLocation,
+    locatingUser,
     activeFilterCount,
     clearAll,
   };
@@ -861,7 +987,7 @@ function RenterLabours() {
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Search labour, skill, village or district…"
+                placeholder="Search by name, skill, or location…"
                 className="flex-1 bg-transparent outline-none text-sm min-w-0"
               />
               {q && (
@@ -876,7 +1002,13 @@ function RenterLabours() {
                   <X className="h-4 w-4" />
                 </button>
               )}
-              <VoiceButton size="sm" onSpeechResult={(text) => { setQ(text); setShowSuggestions(false); }} />
+              <VoiceButton
+                size="sm"
+                onSpeechResult={(text) => {
+                  setQ(text);
+                  setShowSuggestions(false);
+                }}
+              />
             </div>
             <AnimatePresence>
               <SearchSuggestions
@@ -1009,6 +1141,20 @@ function RenterLabours() {
               )}
             </p>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={locatingUser}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                  userLocation
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                    : "border-border bg-card hover:bg-accent text-foreground"
+                }`}
+              >
+                <Navigation className={`h-3.5 w-3.5 ${locatingUser ? "animate-spin" : ""}`} />
+                {userLocation ? "Location Active ✓" : "Near Me"}
+              </button>
+
               <div className="relative">
                 <select
                   value={sort}
@@ -1019,12 +1165,13 @@ function RenterLabours() {
                   <option value="lowest-charges">Lowest Charges</option>
                   <option value="most-experienced">Most Experienced</option>
                   <option value="newest">Newest</option>
+                  <option value="distance-low">Nearest First 📍</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               </div>
               <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
-                {(["grid", "list"] as ViewMode[]).map((v) => {
-                  const Icon = v === "grid" ? Grid3x3 : List;
+                {(["grid", "list", "map"] as ViewMode[]).map((v) => {
+                  const Icon = v === "grid" ? Grid3x3 : v === "list" ? List : MapIcon;
                   return (
                     <button
                       key={v}
@@ -1060,6 +1207,12 @@ function RenterLabours() {
                 <Pill onClear={() => setAvailableOnly(false)}>
                   <Clock className="h-3 w-3" />
                   Available Only
+                </Pill>
+              )}
+              {maxDistance !== null && (
+                <Pill onClear={() => setMaxDistance(null)}>
+                  <Navigation className="h-3 w-3" />
+                  ≤ {maxDistance} km away
                 </Pill>
               )}
               <button
@@ -1103,8 +1256,8 @@ function RenterLabours() {
             </div>
           )}
 
-          {/* Results */}
-          {!loading && !error && filtered.length > 0 && (
+          {/* Results: Grid or List */}
+          {!loading && !error && filtered.length > 0 && view !== "map" && (
             <>
               {view === "grid" && (
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1121,6 +1274,29 @@ function RenterLabours() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Results: Map View */}
+          {!loading && !error && view === "map" && (
+            <div className="mt-5">
+              <EquipmentMap
+                items={filtered.map((l) => ({
+                  id: l._id,
+                  name: l.fullName,
+                  type: l.primarySkill,
+                  price: l.dailyCharges,
+                  priceUnit: "/day",
+                  location: l.location || `${l.village}, ${l.district}`,
+                  coordinates: l.coordinates,
+                  distance: l._distance,
+                  detailUrl: `/renter/labours/${l._id}`,
+                  image: l.profileImage,
+                  category: "labour",
+                }))}
+                userLocation={userLocation}
+                height="580px"
+              />
+            </div>
           )}
 
           {/* Empty */}

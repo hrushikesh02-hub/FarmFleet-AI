@@ -34,6 +34,14 @@ const addEquipment = async (req, res) => {
         uploadedImage.secure_url;
     }
 
+    let coordinates = { lat: 0, lng: 0 };
+    if (location) {
+      const geoResult = await geocodeLocation(location);
+      if (geoResult) {
+        coordinates = geoResult;
+      }
+    }
+
     const equipment =
       await Equipment.create({
         owner: req.owner._id,
@@ -42,6 +50,7 @@ const addEquipment = async (req, res) => {
         pricePerHour,
         pricePerDay,
         location,
+        coordinates,
         operatorIncluded,
         image: imageUrl,
       });
@@ -148,9 +157,13 @@ const updateEquipment = async (req, res) => {
       req.body.pricePerDay ||
       equipment.pricePerDay;
 
-    equipment.location =
-      req.body.location ||
-      equipment.location;
+    if (req.body.location) {
+      equipment.location = req.body.location;
+      const geoResult = await geocodeLocation(req.body.location);
+      if (geoResult) {
+        equipment.coordinates = geoResult;
+      }
+    }
 
     equipment.operatorIncluded =
       req.body.operatorIncluded ??

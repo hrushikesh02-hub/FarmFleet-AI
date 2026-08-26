@@ -750,7 +750,7 @@ function TabSwitcher({ active, onChange }: { active: Tab; onChange: (t: Tab) => 
 
 /* ─── Main Page ─────────────────────────────────────────────────── */
 
-export default function OwnerAuthPage() {
+function OwnerAuthPage() {
   const { t } = useTranslation();
   const nav = useNavigate();
   const [tab, setTab] = useState<Tab>("signin");
