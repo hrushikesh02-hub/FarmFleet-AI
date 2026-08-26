@@ -28,6 +28,7 @@ export function useVoiceRecognition({
   const shouldRestartRef = useRef(false);     // true while we want mic to stay alive
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastActivityRef = useRef<number>(0);  // timestamp of last speech activity
+  const cumulativeTranscriptRef = useRef(""); // keep track of full transcript across restarts
 
   // Use refs for callbacks to avoid recreation of startListening and infinite loops
   const onResultRef = useRef(onResult);
@@ -74,6 +75,7 @@ export function useVoiceRecognition({
   const startListening = useCallback(() => {
     setErrorMsg(null);
     setTranscript("");
+    cumulativeTranscriptRef.current = "";
     setInterimTranscript("");
     shouldRestartRef.current = true;
     lastActivityRef.current = Date.now();
@@ -111,26 +113,38 @@ export function useVoiceRecognition({
           lastActivityRef.current = Date.now(); // user spoke — reset silence countdown
           clearSilenceTimer();
 
-          let finalStr = "";
-          let interimStr = "";
+          let newFinals = "";
+          let currentInterims = "";
 
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             if (event.results[i].isFinal) {
-              finalStr += event.results[i][0].transcript;
+              newFinals += event.results[i][0].transcript;
             } else {
-              interimStr += event.results[i][0].transcript;
+              currentInterims += event.results[i][0].transcript;
             }
           }
 
-          if (interimStr) {
-            setInterimTranscript(interimStr);
-            if (onResultRef.current) onResultRef.current(interimStr, false);
+          if (newFinals) {
+            cumulativeTranscriptRef.current = cumulativeTranscriptRef.current 
+              ? cumulativeTranscriptRef.current + " " + newFinals.trim() 
+              : newFinals.trim();
           }
 
-          if (finalStr) {
-            setTranscript(finalStr);
-            setInterimTranscript("");
-            if (onResultRef.current) onResultRef.current(finalStr, true);
+          const fullTranscript = cumulativeTranscriptRef.current;
+          const displayInterim = currentInterims.trim();
+
+          setTranscript(fullTranscript);
+          setInterimTranscript(displayInterim);
+
+          if (onResultRef.current) {
+            if (newFinals) {
+              onResultRef.current(fullTranscript, true);
+            } else if (displayInterim) {
+              const fullTextWithInterim = fullTranscript 
+                ? fullTranscript + " " + displayInterim 
+                : displayInterim;
+              onResultRef.current(fullTextWithInterim, false);
+            }
           }
         };
 
