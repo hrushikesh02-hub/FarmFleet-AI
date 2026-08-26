@@ -26,7 +26,11 @@ import {
   Droplets,
   RefreshCw,
   Pencil,
+  Mic,
 } from "lucide-react";
+import { VoiceFormModal } from "@/components/VoiceFormModal";
+import type { ParsedFarmerVoice } from "@/lib/voiceParser";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/renter/ai/generate")({
   head: () => ({ meta: [{ title: "Generate Crop Plan — FarmFleet AI" }] }),
@@ -148,6 +152,7 @@ interface CropItineraryPayload {
   waterSource: string;
   budget: string;
   language?: string;
+  save?: boolean;
 }
 
 interface CropItineraryResponse {
@@ -530,6 +535,7 @@ function GenerateCropPlan() {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   const {
     control,
@@ -537,6 +543,7 @@ function GenerateCropPlan() {
     trigger,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CropPlanFormValues>({
     resolver: zodResolver(cropPlanSchema) as Resolver<CropPlanFormValues>,
@@ -559,9 +566,13 @@ function GenerateCropPlan() {
     mutationFn: generateCropItinerary,
     onSuccess: (data) => {
       const itineraryId = data.itineraryId ?? data._id ?? data.itinerary?._id ?? "";
-      // Route params are the existing app's convention for entity-specific
-      // pages (e.g. /renter/equipment/$id); the target processing route is
-      // fixed, so the generated id travels as a typed search param instead.
+      if (data.itinerary) {
+        try {
+          sessionStorage.setItem("temp_itinerary_" + itineraryId, JSON.stringify(data.itinerary));
+        } catch (e) {
+          console.warn("Could not cache temporary itinerary in sessionStorage:", e);
+        }
+      }
       navigate({
         to: "/renter/ai/processing",
         search: { itineraryId },
@@ -573,6 +584,55 @@ function GenerateCropPlan() {
     const fields = STEPS[currentStep - 1].fields as unknown as (keyof CropPlanFormValues)[];
     const valid = fields.length === 0 ? true : await trigger(fields);
     if (valid) setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  };
+
+  const handleVoiceApply = (data: ParsedFarmerVoice) => {
+    let filled = 0;
+    if (data.crop) {
+      const match = CROPS.find((c) => c.name.toLowerCase() === data.crop!.toLowerCase());
+      if (match) {
+        setValue("crop", match.name, { shouldValidate: true });
+        filled++;
+      }
+    }
+    if (data.state) {
+      const match = STATES.find((s) => s.toLowerCase() === data.state!.toLowerCase());
+      if (match) {
+        setValue("state", match, { shouldValidate: true });
+        filled++;
+      }
+    }
+    if (data.district) {
+      setValue("district", data.district, { shouldValidate: true });
+      filled++;
+    }
+    if (data.soilType) {
+      const match = SOIL_TYPES.find((s) => s.toLowerCase() === data.soilType!.toLowerCase());
+      if (match) {
+        setValue("soilType", match, { shouldValidate: true });
+        filled++;
+      }
+    }
+    if (data.waterSource) {
+      const match = WATER_SOURCES.find((w) => w.toLowerCase() === data.waterSource!.toLowerCase());
+      if (match) {
+        setValue("waterSource", match, { shouldValidate: true });
+        filled++;
+      }
+    }
+    if (data.landArea && data.landArea > 0) {
+      setValue("landArea", data.landArea, { shouldValidate: true });
+      filled++;
+    }
+    if (data.budget && data.budget >= MIN_BUDGET) {
+      setValue("budget", data.budget, { shouldValidate: true });
+      filled++;
+    }
+    if (filled > 0) {
+      toast.success(`✅ Auto-filled ${filled} field${filled > 1 ? "s" : ""} from voice input!`);
+      // Jump to last step that has data, or review step
+      setCurrentStep(Math.min(TOTAL_STEPS, 4));
+    }
   };
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 1));
@@ -587,6 +647,7 @@ function GenerateCropPlan() {
       waterSource: data.waterSource,
       budget: String(data.budget),
       language: i18n.language,
+      save: false,
     };
     mutation.mutate(payload);
   };
@@ -615,18 +676,39 @@ function GenerateCropPlan() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
-          <h1 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2.5">
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-sm">
-              <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
-            </span>
-            Generate AI Crop Plan
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-            Provide your farm details and FarmFleet AI will create a personalized crop itinerary using
-            AI, weather forecasts and agricultural recommendations.
-          </p>
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-sm">
+                <Sparkles className="h-4.5 w-4.5 text-primary-foreground" />
+              </span>
+              Generate AI Crop Plan
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
+              Provide your farm details and FarmFleet AI will create a personalized crop itinerary using
+              AI, weather forecasts and agricultural recommendations.
+            </p>
+          </div>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setVoiceModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-primary text-primary-foreground font-bold text-sm shadow-soft hover:shadow-elevated transition-all cursor-pointer shrink-0"
+          >
+            <Mic className="h-4.5 w-4.5" />
+            <span className="hidden sm:inline">Speak with AI Assistant</span>
+            <span className="sm:hidden">Voice</span>
+          </motion.button>
         </motion.div>
+
+        {/* Voice Assistant Modal */}
+        <VoiceFormModal
+          isOpen={voiceModalOpen}
+          onClose={() => setVoiceModalOpen(false)}
+          onApply={handleVoiceApply}
+        />
 
         {/* ── Wizard Card ───────────────────────────────────────── */}
         <motion.div

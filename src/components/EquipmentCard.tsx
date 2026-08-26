@@ -27,9 +27,13 @@ export function EquipmentCard({ e, index = 0 }: { e: Equipment; index?: number }
       <Link to="/renter/equipment/$id" params={{ id: e.id }} className="block">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img
-            src={e.image}
+            src={e.image || "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60"}
             alt={e.name}
             loading="lazy"
+            onError={(ev) => {
+              ev.currentTarget.onerror = null;
+              ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60";
+            }}
             className="h-full w-full object-cover group-hover:scale-105 transition duration-500"
           />
           <span className={`absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${avl.color}`}>

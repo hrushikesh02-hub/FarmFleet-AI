@@ -35,12 +35,7 @@ export function VoiceButton({ label, size = "md", onSpeechResult }: Props) {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setListening(true);
-      toast.info(t("voice.listening"));
-      setTimeout(() => {
-        setListening(false);
-        toast.info(t("voice.voiceHelpDesc"));
-      }, 2000);
+      toast.error("Voice input is not supported in this browser. Please use Chrome or Edge.");
       return;
     }
 

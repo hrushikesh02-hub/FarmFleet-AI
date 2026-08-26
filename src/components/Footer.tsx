@@ -10,7 +10,17 @@ function getProtectedLink(target: string) {
   return hasToken ? target : `/login-renter?redirect=${encodeURIComponent(target)}`;
 }
 
+function getHomeDestination() {
+  if (typeof window === "undefined") return "/";
+  if (localStorage.getItem("ownerToken")) return "/owner/dashboard";
+  if (localStorage.getItem("labourToken")) return "/labour/dashboard";
+  if (localStorage.getItem("renterToken") || localStorage.getItem("token") || localStorage.getItem("farmerToken")) return "/renter/dashboard";
+  return "/";
+}
+
 export function Footer() {
+  const homeDest = getHomeDestination();
+
   return (
     <footer className="border-t border-border bg-card/60 backdrop-blur-sm mt-16">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
@@ -20,7 +30,7 @@ export function Footer() {
           
           {/* Brand Col */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-4">
-            <Link to="/" className="inline-flex items-center gap-3 transition-transform hover:scale-[1.02]">
+            <Link to={homeDest} className="inline-flex items-center gap-3 transition-transform hover:scale-[1.02]">
               <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
                 <circle cx="24" cy="24" r="24" fill="#45B649" />
                 <path d="M24 30V21" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
@@ -74,6 +84,32 @@ export function Footer() {
             </ul>
           </div>
 
+          {/* Owners */}
+          <div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
+              Owners
+            </h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/owner/dashboard" className="transition hover:text-primary">Owner Dashboard</Link></li>
+              <li><Link to="/owner/equipment" className="transition hover:text-primary">My Equipment</Link></li>
+              <li><Link to="/owner/bookings" className="transition hover:text-primary">Rental Requests</Link></li>
+              <li><Link to="/owner-guide" className="transition hover:text-primary">Owner Guide</Link></li>
+            </ul>
+          </div>
+
+          {/* Labourers */}
+          <div>
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
+              Labourers
+            </h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/labour/dashboard" className="transition hover:text-primary">Labour Dashboard</Link></li>
+              <li><Link to="/labour/requests" className="transition hover:text-primary">Work Requests</Link></li>
+              <li><Link to="/labour/earnings" className="transition hover:text-primary">My Earnings</Link></li>
+              <li><Link to="/labour-guide" className="transition hover:text-primary">Labour Guide</Link></li>
+            </ul>
+          </div>
+
           {/* Resources & Company */}
           <div>
             <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">
@@ -83,7 +119,6 @@ export function Footer() {
               <li><Link to="/about" className="transition hover:text-primary">About FarmFleet AI</Link></li>
               <li><Link to="/ai-guide" className="transition hover:text-primary">AI Guide</Link></li>
               <li><Link to="/careers" className="transition hover:text-primary">Careers</Link></li>
-              <li><Link to="/press" className="transition hover:text-primary">Press</Link></li>
               <li><Link to="/contact" className="transition hover:text-primary">Contact</Link></li>
             </ul>
           </div>

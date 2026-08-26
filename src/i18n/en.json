@@ -29,6 +29,14 @@
     "selectLanguage": "Select Language",
     "speakNow": "Tap to speak"
   },
+  "system": {
+    "pageNotFound": "Page not found",
+    "pageNotFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go Home",
+    "genericError": "Something went wrong",
+    "genericErrorDescription": "An unexpected error occurred while loading this page.",
+    "tryAgain": "Try Again"
+  },
   "nav": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -42,8 +50,9 @@
     "availability": "Availability",
     "login": "Login",
     "logout": "Logout",
-    "register": "Get Started",
-    "requests": "Work Requests"
+    "requests": "Work Requests",
+    "labour": "Find Labour",
+    "aiPlanner": "AI Crop Planner"
   },
   "landing": {
     "nav": {

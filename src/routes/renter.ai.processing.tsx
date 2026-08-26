@@ -32,38 +32,38 @@ const API_BASE_URL =
   (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ??
   "http://localhost:5000";
 
-const POLL_INTERVAL_MS = 2500;
-const STEP_INTERVAL_MS = 550;
-const MESSAGE_INTERVAL_MS = 3200;
+const POLL_INTERVAL_MS = 2000;
+const MESSAGE_INTERVAL_MS = 3500;
 
 /* ============================================================================
  * PROCESSING STEPS & REASSURANCE COPY
- * Purely illustrative — this page never shows real cultivation data.
  * ==========================================================================
  */
 
 const PROCESSING_STEPS = [
-  "Understanding crop",
-  "Analysing soil type",
-  "Checking district conditions",
-  "Fetching live weather",
-  "Selecting suitable seed variety",
-  "Planning land preparation",
-  "Calculating fertilizer schedule",
-  "Calculating irrigation schedule",
-  "Estimating labour requirement",
-  "Selecting equipment",
-  "Estimating cultivation cost",
-  "Predicting yield",
-  "Calculating expected profit",
-  "Creating farming timeline",
-  "Preparing PDF",
+  "Understanding crop requirements",
+  "Analysing soil characteristics",
+  "Checking district agro-climatic conditions",
+  "Fetching live weather & rainfall forecasts",
+  "Selecting high-yield seed variety",
+  "Planning land preparation stages",
+  "Calculating precision fertilizer schedule",
+  "Calculating optimal irrigation cycles",
+  "Estimating labour requirements",
+  "Selecting compatible equipment",
+  "Estimating cultivation & input costs",
+  "Predicting expected yield & revenue",
+  "Calculating profit margins & ROI",
+  "Creating synchronized farming timeline",
+  "Finalizing comprehensive crop plan",
 ];
 
 const REASSURANCE_MESSAGES = [
-  "We're creating a plan specifically for your farm.",
-  "We're using live weather forecasts for better recommendations.",
-  "This usually takes less than 10 seconds.",
+  "Consulting regional agronomy datasets for your district...",
+  "Analyzing live weather forecasts for optimal planting windows...",
+  "Calculating precise fertilizer dosages and timeline...",
+  "Optimizing equipment and labour recommendations...",
+  "Synthesizing your personalized smart crop itinerary...",
 ];
 
 const SATELLITES = [
@@ -92,6 +92,22 @@ interface AIReportStatusResponse {
 // Points at the report/status endpoint — adjust the path here if the
 // backend exposes generation status under a different route.
 async function fetchReportStatus(itineraryId: string): Promise<AIReportStatusResponse> {
+  if (itineraryId.startsWith("temp_")) {
+    const raw = sessionStorage.getItem("temp_itinerary_" + itineraryId);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          status: "ready",
+          success: true,
+          itinerary: parsed,
+        };
+      } catch (e) {
+        console.warn("Error parsing temp itinerary from sessionStorage:", e);
+      }
+    }
+  }
+
   const { data } = await axios.get<AIReportStatusResponse>(
     `${API_BASE_URL}/api/ai/itinerary/${itineraryId}`,
     {
@@ -311,14 +327,25 @@ function AIProcessing() {
   const status: GenerationStatus = itineraryId ? deriveStatus(reportQuery.data) : "failed";
   const hasFailed = status === "failed" || reportQuery.isError;
 
-  // Advance the illustrative step list on its own timer, independent of the
-  // real backend timing, and hold on the final step until the plan is ready.
+  // Advance the illustrative step list on dynamically scaled timers so it smoothly spans
+  // the full generation time without prematurely completing or freezing.
   useEffect(() => {
-    if (hasFailed || !itineraryId) return;
+    if (hasFailed || !itineraryId || status === "ready") return;
     if (stepIndex >= PROCESSING_STEPS.length - 1) return;
-    const timer = setTimeout(() => setStepIndex((i) => i + 1), STEP_INTERVAL_MS);
+    
+    // Dynamic interval: earlier steps move quickly, later steps take longer
+    const stepDuration =
+      stepIndex < 4
+        ? 1100
+        : stepIndex < 8
+        ? 1400
+        : stepIndex < 12
+        ? 1800
+        : 2400;
+
+    const timer = setTimeout(() => setStepIndex((i) => i + 1), stepDuration);
     return () => clearTimeout(timer);
-  }, [stepIndex, hasFailed, itineraryId]);
+  }, [stepIndex, hasFailed, itineraryId, status]);
 
   // Cross-fade the reassurance message every few seconds.
   useEffect(() => {
@@ -334,19 +361,20 @@ function AIProcessing() {
     stepRefs.current[stepIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [stepIndex]);
 
-  // Once the backend reports the plan is ready, briefly show 100% and then
-  // move the farmer straight to their report — no button required.
+  // Once the backend reports the plan is ready, smoothly hit 100% and move to the report.
   useEffect(() => {
     if (status !== "ready") return;
     const reportId = reportQuery.data?.itinerary?._id || itineraryId;
     const timeout = setTimeout(() => {
       navigate({ to: "/renter/ai/report/$id", params: { id: reportId } });
-    }, 700);
+    }, 800);
     return () => clearTimeout(timeout);
   }, [status, reportQuery.data, itineraryId, navigate]);
 
-  const progress =
-    status === "ready" ? 100 : Math.min(((stepIndex + 1) / PROCESSING_STEPS.length) * 96, 96);
+  // Progress stays alive and caps at 93% until backend confirms completion
+  const currentStepProgress = ((stepIndex + 1) / PROCESSING_STEPS.length) * 92;
+  const progress = status === "ready" ? 100 : Math.min(Math.max(8, currentStepProgress), 93);
+  const isReady = status === "ready";
 
   // No id was passed in — nothing to poll for.
   if (!itineraryId) {
@@ -378,11 +406,12 @@ function AIProcessing() {
           <AIOrb />
 
           <h1 className="font-display text-2xl sm:text-3xl font-bold">
-            Creating Your Smart Crop Plan
+            {isReady ? "Your Smart Crop Plan is Ready!" : "Creating Your Smart Crop Plan"}
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            FarmFleet AI is analysing your farm details and preparing a personalized cultivation
-            roadmap.
+            {isReady
+              ? "Your personalized agricultural itinerary has been generated. Opening report..."
+              : "FarmFleet AI is analysing your farm details and preparing a personalized cultivation roadmap."}
           </p>
 
           {/* Progress bar */}
@@ -391,21 +420,24 @@ function AIProcessing() {
               <motion.div
                 className="h-full rounded-full bg-gradient-primary"
                 animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: isReady ? 0.4 : 0.8, ease: [0.25, 0.1, 0.25, 1] }}
               />
             </div>
-            <p className="mt-1.5 text-right text-xs font-semibold text-muted-foreground">
-              {Math.round(progress)}%
-            </p>
+            <div className="mt-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+              <span className="text-primary font-medium">
+                {isReady ? "Complete!" : stepIndex >= PROCESSING_STEPS.length - 1 ? "Deep analysis & report compilation..." : "Analyzing..."}
+              </span>
+              <span>{Math.round(progress)}%</span>
+            </div>
           </div>
 
           {/* Processing steps */}
-          <div className="mt-2 max-h-64 space-y-0.5 overflow-y-auto rounded-xl border border-border/60 bg-light/30 p-2 text-left">
+          <div className="mt-4 max-h-64 space-y-0.5 overflow-y-auto rounded-xl border border-border/60 bg-light/30 p-2 text-left">
             {PROCESSING_STEPS.map((label, i) => (
               <div key={label} ref={(el) => { stepRefs.current[i] = el; }}>
                 <StepRow
                   label={label}
-                  state={i < stepIndex ? "done" : i === stepIndex ? "active" : "pending"}
+                  state={isReady || i < stepIndex ? "done" : i === stepIndex ? "active" : "pending"}
                 />
               </div>
             ))}

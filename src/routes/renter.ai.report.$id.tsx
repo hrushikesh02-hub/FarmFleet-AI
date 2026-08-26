@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -114,6 +114,7 @@ interface CropItinerary {
   _id: string;
   crop: string;
   status?: string;
+  isTemporary?: boolean;
   location?: Location;
   soilType?: string;
   landArea?: string | number;
@@ -146,6 +147,18 @@ interface ItineraryApiResponse {
 }
 
 async function fetchItinerary(id: string): Promise<CropItinerary> {
+  if (id.startsWith("temp_")) {
+    const raw = sessionStorage.getItem("temp_itinerary_" + id);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as CropItinerary;
+        return { ...parsed, _id: id, isTemporary: true };
+      } catch (e) {
+        console.warn("Could not parse temp itinerary:", e);
+      }
+    }
+    throw new Error("Temporary report not found. It may have expired.");
+  }
   const { data } = await axios.get<ItineraryApiResponse | CropItinerary>(
     `${API_BASE_URL}/api/ai/itinerary/${id}`,
     {
@@ -212,6 +225,19 @@ function getLandPrepItems(it: CropItinerary): string[] {
 }
 function getLabourWorkers(e: LabourEntry) { return e.workers ?? e.workersRequired; }
 function getLabourDays(e: LabourEntry) { return e.days ?? e.estimatedDays; }
+function formatBudget(val?: string | number | null): string | undefined {
+  if (val === undefined || val === null || val === "") return undefined;
+  if (typeof val === "number") {
+    return isNaN(val) ? undefined : `₹${val.toLocaleString("en-IN")}`;
+  }
+  const cleanStr = String(val).trim();
+  const numericOnly = cleanStr.replace(/[^0-9.]/g, "");
+  const num = Number(numericOnly);
+  if (!isNaN(num) && numericOnly !== "") {
+    return `₹${num.toLocaleString("en-IN")}`;
+  }
+  return cleanStr.startsWith("₹") ? cleanStr : `₹${cleanStr}`;
+}
 
 // Stage emojis
 const EMOJIS: [string, string][] = [
@@ -426,11 +452,15 @@ const Header = memo(function Header({
   onPdf,
   onPrint,
   onBack,
+  onSave,
+  isSaving,
 }: {
   it: CropItinerary;
   onPdf: () => void;
   onPrint: () => void;
   onBack: () => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }) {
   const district = it.location?.district;
   const state = it.location?.state;
@@ -443,6 +473,30 @@ const Header = memo(function Header({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-card"
     >
+      {/* Temporary banner */}
+      {it.isTemporary && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20 px-4 py-3">
+          <span className="text-lg">📋</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Preview Mode — Not Saved Yet</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">This report is temporary. Save it to access it later from your Reports history.</p>
+          </div>
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition disabled:opacity-60"
+            >
+              {isSaving ? (
+                <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" /> Saving...</>
+              ) : (
+                <><FileText className="h-3.5 w-3.5" /> Save Report</>
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Identity */}
         <div className="flex items-start gap-4">
@@ -464,24 +518,43 @@ const Header = memo(function Header({
                   Generated {generated}
                 </span>
               )}
-              {it.status && (
+              {it.isTemporary ? (
+                <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  Preview
+                </span>
+              ) : it.status ? (
                 <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   {it.status}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="no-print flex flex-wrap items-center gap-2">
-          <button
-            onClick={onPdf}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition shadow-sm"
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
-          </button>
+          {!it.isTemporary && (
+            <button
+              onClick={onPdf}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition shadow-sm"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </button>
+          )}
+          {it.isTemporary && onSave && (
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition shadow-sm disabled:opacity-60"
+            >
+              {isSaving ? (
+                <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" /> Saving...</>
+              ) : (
+                <><FileText className="h-4 w-4" /> Save Report</>
+              )}
+            </button>
+          )}
           <button
             onClick={onPrint}
             className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-muted transition"
@@ -519,9 +592,7 @@ const FarmInfo = memo(function FarmInfo({ it }: { it: CropItinerary }) {
     {
       icon: IndianRupee,
       label: "Budget",
-      value: has(it.budget)
-        ? `₹${Number(it.budget).toLocaleString("en-IN")}`
-        : undefined,
+      value: formatBudget(it.budget),
     },
     { icon: Clock, label: "Crop Duration", value: getCropDuration(it) },
     { icon: Sun, label: "Best Season", value: getBestSeason(it) },
@@ -1021,7 +1092,9 @@ const TodaysFocus = memo(function TodaysFocus({ it }: { it: CropItinerary }) {
 
 function AIReportPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const { msg, show } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: it, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["ai-itinerary", id],
@@ -1037,6 +1110,29 @@ function AIReportPage() {
 
   const handlePrint = () => window.print();
   const handleBack = () => window.history.back();
+
+  const handleSave = async () => {
+    if (!it || isSaving) return;
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("farmerToken") || localStorage.getItem("token") || "";
+      const res = await axios.post(
+        `${API_BASE_URL}/api/ai/save-itinerary`,
+        { itineraryData: it },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const savedId = res.data?.itineraryId || res.data?.itinerary?._id;
+      sessionStorage.removeItem("temp_itinerary_" + id);
+      show("✅ Report saved to your history!");
+      if (savedId) {
+        setTimeout(() => navigate({ to: "/renter/ai/report/$id", params: { id: savedId } }), 1200);
+      }
+    } catch (err: any) {
+      show(err?.response?.data?.message || "Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -1099,7 +1195,7 @@ function AIReportPage() {
         </nav>
 
         {/* Header */}
-        <Header it={it} onPdf={handlePdf} onPrint={handlePrint} onBack={handleBack} />
+        <Header it={it} onPdf={handlePdf} onPrint={handlePrint} onBack={handleBack} onSave={handleSave} isSaving={isSaving} />
 
         {/* Section 1: Farm Info */}
         <FarmInfo it={it} />

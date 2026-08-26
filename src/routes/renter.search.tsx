@@ -120,6 +120,10 @@ function EquipmentGridCard({ e, index }: { e: Equipment; index: number }) {
             src={e.image}
             alt={e.name}
             loading="lazy"
+            onError={(ev) => {
+              ev.currentTarget.onerror = null;
+              ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60";
+            }}
             className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
@@ -183,7 +187,16 @@ function EquipmentListCard({ e, index }: { e: Equipment; index: number }) {
     >
       <div className="relative h-44 sm:h-auto sm:w-44 bg-muted shrink-0 overflow-hidden">
         {e.image ? (
-          <img src={e.image} alt={e.name} loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={e.image}
+            alt={e.name}
+            loading="lazy"
+            onError={(ev) => {
+              ev.currentTarget.onerror = null;
+              ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60";
+            }}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/40">
             <span className="text-4xl opacity-20">🚜</span>
@@ -772,7 +785,7 @@ export default function RenterSearch() {
                   <X className="h-4 w-4" />
                 </button>
               )}
-              <VoiceButton size="sm" />
+              <VoiceButton size="sm" onSpeechResult={(text) => { setQ(text); setShowSuggestions(false); }} />
             </div>
             <AnimatePresence>
               <SearchSuggestions
@@ -1028,18 +1041,20 @@ export default function RenterSearch() {
                 <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">
                   {equipments.length === 0
                     ? "Equipment added by owners will appear here automatically."
-                    : "Try adjusting your search or removing some filters."}
+                    : "Try adjusting your search query or clearing all applied filters."}
                 </p>
               </div>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold shadow-soft"
-                >
-                  Clear all filters
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  clearAll();
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold shadow-soft hover:shadow-elevated transition"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset Filters & Search
+              </button>
             </div>
           )}
 

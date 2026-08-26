@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -67,33 +68,7 @@ function authHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
 
-interface ToastMessage {
-  id: string;
-  text: string;
-}
-
-function ToastStack({ toasts }: { toasts: ToastMessage[] }) {
-  return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, y: -12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 shadow-elevated"
-          >
-            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-            <span className="text-sm font-medium">{toast.text}</span>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ─── Animated counter ─────────────────────────────────────────────────────────
 
@@ -531,15 +506,6 @@ function LabourRequests() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [q, setQ] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
-  const pushToast = useCallback((text: string) => {
-    const id = `${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, text }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  }, []);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchRequests = useCallback(async () => {
@@ -583,13 +549,14 @@ function LabourRequests() {
       });
       await fetchRequests();
       const messages: Record<typeof action, string> = {
-        accept: "Request accepted",
+        accept: "Request accepted successfully",
         reject: "Request rejected",
         complete: "Request marked as completed",
       };
-      pushToast(messages[action]);
+      toast.success(messages[action]);
     } catch (error) {
       console.error(`Failed to ${action} request:`, error);
+      toast.error(`Failed to ${action} request`);
 
       if (axios.isAxiosError(error)) {
         console.error(error.response?.data);
@@ -607,7 +574,7 @@ function LabourRequests() {
         { transactionId: id },
         { headers: authHeaders() }
       );
-      pushToast("Cash payment marked as received!");
+      toast.success("Cash payment marked as received!");
       await fetchRequests();
     } catch (err) {
       console.error("Failed to mark cash received:", err);
@@ -654,7 +621,6 @@ function LabourRequests() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <AppShell>
-      <ToastStack toasts={toasts} />
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
 
         {/* Header — matches Owner Bookings page */}

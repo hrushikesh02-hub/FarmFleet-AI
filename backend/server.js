@@ -70,7 +70,21 @@ const app = express();
    CONNECT DATABASE
 ========================== */
 
-connectDB();
+connectDB().then(async () => {
+   try {
+      const Equipment = require("./models/Equipment");
+      const count = await Equipment.countDocuments();
+      if (count === 0) {
+         console.log("Empty database detected. Seeding data...");
+         const { seedData } = require("./seed");
+         await seedData();
+      } else {
+         console.log(`ℹ️ Database already has ${count} equipment listings. Skipping seed.`);
+      }
+   } catch (seedErr) {
+      console.error("❌ Auto-seeder failed:", seedErr.message);
+   }
+});
 
 /* ==========================
    MIDDLEWARE

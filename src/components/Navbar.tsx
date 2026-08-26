@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
   Menu,
@@ -9,10 +9,12 @@ import {
   Calendar,
   Heart,
   User,
+  Users,
   IndianRupee,
   ClipboardList,
   LogOut,
   Tractor,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -36,6 +38,8 @@ const OWNER_LINKS: NavLink[] = [
 const RENTER_LINKS: NavLink[] = [
   { to: "/renter/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { to: "/renter/search", labelKey: "nav.search", icon: Search },
+  { to: "/renter/labours", labelKey: "nav.labour", icon: Users },
+  { to: "/renter/ai/generate", labelKey: "nav.aiPlanner", icon: Sparkles },
   { to: "/renter/bookings", labelKey: "nav.bookings", icon: ClipboardList },
   { to: "/renter/profile", labelKey: "nav.profile", icon: User },
 ];
@@ -50,11 +54,23 @@ const LABOUR_LINKS: NavLink[] = [
 
 export function Navbar() {
   const { t } = useTranslation();
+  const nav = useNavigate();
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   });
 
   const [open, setOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("renterToken");
+    localStorage.removeItem("ownerToken");
+    localStorage.removeItem("labourToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("owner");
+    localStorage.removeItem("labour");
+    nav({ to: "/" });
+  };
 
   const isOwner = pathname.startsWith("/owner");
   const isRenter =
@@ -62,6 +78,20 @@ export function Navbar() {
   const isLabour = pathname.startsWith("/labour");
 
   const isApp = isOwner || isRenter || isLabour;
+
+  const getLogoDestination = (): string => {
+    if (isOwner) return "/owner/dashboard";
+    if (isLabour) return "/labour/dashboard";
+    if (isRenter) return "/renter/dashboard";
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("ownerToken")) return "/owner/dashboard";
+      if (localStorage.getItem("labourToken")) return "/labour/dashboard";
+      if (localStorage.getItem("renterToken") || localStorage.getItem("token")) return "/renter/dashboard";
+    }
+    return "/";
+  };
+
+  const logoDestination = getLogoDestination();
 
   const links = isOwner
     ? OWNER_LINKS
@@ -77,7 +107,7 @@ export function Navbar() {
         
         {/* Logo */}
         <Link
-          to="/"
+          to={logoDestination}
           className="flex items-center gap-3 transition-transform hover:scale-[1.02]"
         >
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -178,17 +208,29 @@ export function Navbar() {
           )}
 
           {isApp && (
-            <button
-              aria-label="Menu"
-              onClick={() => setOpen((o) => !o)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border lg:hidden"
-            >
-              {open ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/15 transition"
+                title="Log out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{t("nav.logout") || "Logout"}</span>
+              </button>
+
+              <button
+                aria-label="Menu"
+                onClick={() => setOpen((o) => !o)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border lg:hidden"
+              >
+                {open ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -224,14 +266,17 @@ export function Navbar() {
                 );
               })}
 
-              <Link
-                to="/"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  handleLogout();
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-5 w-5" />
                 {t("nav.logout")}
-              </Link>
+              </button>
             </div>
           </motion.nav>
         )}
