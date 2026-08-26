@@ -130,10 +130,7 @@ const cropPlanSchema = z.object({
     .positive("Enter a valid land area, greater than 0 acres")
     .max(10000, "That land area looks too large — please check the value"),
   waterSource: z.string().min(1, "Please select a water source"),
-  budget: z.coerce
-    .number()
-    .min(MIN_BUDGET, `Budget must be at least ₹${MIN_BUDGET.toLocaleString("en-IN")}`)
-    .max(MAX_BUDGET, `Budget must be under ₹${MAX_BUDGET.toLocaleString("en-IN")}`),
+  budget: z.coerce.number().optional(),
 });
 
 type CropPlanFormValues = z.infer<typeof cropPlanSchema>;
@@ -150,7 +147,7 @@ interface CropItineraryPayload {
   soilType: string;
   landArea: string;
   waterSource: string;
-  budget: string;
+  budget?: string;
   language?: string;
   save?: boolean;
 }
@@ -184,8 +181,7 @@ const STEPS = [
   { id: 1, label: "Crop", icon: Sprout, fields: ["crop"] as const },
   { id: 2, label: "Location", icon: MapPin, fields: ["state", "district"] as const },
   { id: 3, label: "Farm Details", icon: Layers, fields: ["soilType", "landArea", "waterSource"] as const },
-  { id: 4, label: "Budget", icon: Wallet, fields: ["budget"] as const },
-  { id: 5, label: "Review", icon: ClipboardCheck, fields: [] as const },
+  { id: 4, label: "Review", icon: ClipboardCheck, fields: [] as const },
 ];
 
 const TOTAL_STEPS = STEPS.length;
@@ -624,10 +620,6 @@ function GenerateCropPlan() {
       setValue("landArea", data.landArea, { shouldValidate: true });
       filled++;
     }
-    if (data.budget && data.budget >= MIN_BUDGET) {
-      setValue("budget", data.budget, { shouldValidate: true });
-      filled++;
-    }
     if (filled > 0) {
       toast.success(`✅ Auto-filled ${filled} field${filled > 1 ? "s" : ""} from voice input!`);
       // Jump to last step that has data, or review step
@@ -645,7 +637,7 @@ function GenerateCropPlan() {
       soilType: data.soilType,
       landArea: String(data.landArea),
       waterSource: data.waterSource,
-      budget: String(data.budget),
+      budget: data.budget ? String(data.budget) : undefined,
       language: i18n.language,
       save: false,
     };
@@ -933,73 +925,10 @@ function GenerateCropPlan() {
                 )}
 
                 {/* ── STEP 4: BUDGET ─────────────────────────────── */}
+                {/* ── STEP 4: REVIEW ─────────────────────────────── */}
                 {currentStep === 4 && (
                   <motion.div
                     key="step-4"
-                    initial={{ opacity: 0, x: 24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -24 }}
-                    transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-                  >
-                    <h2 className="font-display text-lg font-bold mb-1">Budget</h2>
-                    <p className="text-xs text-muted-foreground mb-5">
-                      Set your estimated budget for this crop cycle, in Indian Rupees.
-                    </p>
-
-                    <Controller
-                      control={control}
-                      name="budget"
-                      render={({ field }) => (
-                        <FormField label="Estimated Budget" htmlFor="budget" error={errors.budget?.message}>
-                          <div className="rounded-2xl border border-border bg-light/50 p-5 sm:p-6">
-                            <div className="flex items-center justify-center gap-2 mb-6">
-                              <IndianRupee className="h-6 w-6 text-primary" />
-                              <span className="font-display text-3xl font-bold text-foreground">
-                                {formatINR(field.value || 0).replace("₹", "")}
-                              </span>
-                            </div>
-
-                            <input
-                              id="budget"
-                              type="range"
-                              min={MIN_BUDGET}
-                              max={MAX_BUDGET}
-                              step={BUDGET_STEP}
-                              value={field.value || DEFAULT_BUDGET}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              disabled={isSubmitting}
-                              className="w-full accent-primary cursor-pointer disabled:cursor-not-allowed"
-                            />
-
-                            <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground font-medium">
-                              <span>{formatINR(MIN_BUDGET)}</span>
-                              <span>{formatINR(MAX_BUDGET)}</span>
-                            </div>
-
-                            <div className="mt-5">
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min={MIN_BUDGET}
-                                max={MAX_BUDGET}
-                                step={BUDGET_STEP}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                                disabled={isSubmitting}
-                                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-                              />
-                            </div>
-                          </div>
-                        </FormField>
-                      )}
-                    />
-                  </motion.div>
-                )}
-
-                {/* ── STEP 5: REVIEW ─────────────────────────────── */}
-                {currentStep === 5 && (
-                  <motion.div
-                    key="step-5"
                     initial={{ opacity: 0, x: 24 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -24 }}
@@ -1029,10 +958,10 @@ function GenerateCropPlan() {
                       <SummaryRow label="Water Source" value={values.waterSource} />
                     </SummaryCard>
 
-                    <SummaryCard icon={Wallet} title="Budget" onEdit={() => setCurrentStep(4)}>
+                    <SummaryCard icon={Wallet} title="AI Estimated Budget" onEdit={() => {}}>
                       <SummaryRow
                         label="Estimated Budget"
-                        value={values.budget ? formatINR(values.budget) : ""}
+                        value="✨ Auto-Calculated by FarmFleet AI per acre"
                       />
                     </SummaryCard>
                   </motion.div>

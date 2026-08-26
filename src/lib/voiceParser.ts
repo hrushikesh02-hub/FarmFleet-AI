@@ -14,167 +14,374 @@ export interface ParsedFarmerVoice {
   crop?: string;
   state?: string;
   district?: string;
+  village?: string;
   soilType?: string;
   landArea?: number;
   waterSource?: string;
-  budget?: number;
   rawText: string;
   matchedEntities: { key: string; label: string; value: string }[];
 }
 
-// ─── CROP MAP ─────────────────────────────────────────────────────────────────
-// Key = any spoken word/phrase (lowercase), Value = canonical crop name
-// NOTE: Entries are sorted longest-first inside matchCrop() to avoid partial hits
-
+// ─── CROP MAP (Devanagari, Marathi, Phonetic, English) ─────────────────────────
 const CROP_MAP: Record<string, string> = {
-  // Wheat
+  // Grains & Cereals
   wheat: "Wheat",
   gehu: "Wheat",
   gehun: "Wheat",
-  gahu: "Wheat",           // Marathi
-  "gehun ki": "Wheat",
+  gahu: "Wheat",
+  गहू: "Wheat",
+  गेहूं: "Wheat",
+  "gahu pik": "Wheat",
   "wheat crop": "Wheat",
-  "wheat farming": "Wheat",
 
-  // Sugarcane
-  sugarcane: "Sugarcane",
-  "sugar cane": "Sugarcane",
-  ganna: "Sugarcane",
-  ganne: "Sugarcane",
-  ub: "Sugarcane",         // short Marathi "ubs"
-  ubs: "Sugarcane",
-  "us ki": "Sugarcane",
-  oos: "Sugarcane",        // Marathi phonetic
-
-  // Cotton
-  cotton: "Cotton",
-  kapas: "Cotton",
-  kapaas: "Cotton",
-  karpas: "Cotton",
-  "bt cotton": "Cotton",
-
-  // Rice / Paddy
   rice: "Rice",
   paddy: "Rice",
   chawal: "Rice",
   dhan: "Rice",
-  "bhat": "Rice",          // Marathi for cooked rice, sometimes used
-  "tandul": "Rice",        // Marathi for raw rice
+  bhat: "Rice",
+  tandul: "Rice",
+  तांदूळ: "Rice",
+  भात: "Rice",
+  चावल: "Rice",
 
-  // Maize / Corn
+  jowar: "Jowar",
+  sorghum: "Jowar",
+  jwari: "Jowar",
+  ज्वारी: "Jowar",
+  ज्वार: "Jowar",
+
+  bajra: "Bajra",
+  bajri: "Bajra",
+  बाजरी: "Bajra",
+  बाजरा: "Bajra",
+  "pearl millet": "Bajra",
+
   maize: "Maize",
   corn: "Maize",
   makka: "Maize",
   maka: "Maize",
-  "makka makki": "Maize",
   makki: "Maize",
-  "corn crop": "Maize",
+  मका: "Maize",
+  मक्का: "Maize",
 
-  // Soybean
+  ragi: "Ragi",
+  nachni: "Ragi",
+  नाचणी: "Ragi",
+
+  // Pulses / Dal / Legumes
+  tur: "Tur Dal",
+  "tur dal": "Tur Dal",
+  arhar: "Tur Dal",
+  तूर: "Tur Dal",
+  तूरडाळ: "Tur Dal",
+
+  chana: "Gram",
+  gram: "Gram",
+  harbhara: "Gram",
+  chickpea: "Gram",
+  हरभरा: "Gram",
+  चना: "Gram",
+
+  moong: "Moong",
+  mung: "Moong",
+  मूग: "Moong",
+  मूंगा: "Moong",
+
+  urad: "Urad",
+  udid: "Urad",
+  उडीद: "Urad",
+
+  matki: "Matki",
+  मटकी: "Matki",
+
+  masoor: "Masoor",
+  मसूर: "Masoor",
+
   soybean: "Soybean",
   soyabean: "Soybean",
   soya: "Soybean",
-  soi: "Soybean",
-  "soy bean": "Soybean",
-  soyabin: "Soybean",       // common mispronunciation
-  "soybeans": "Soybean",
+  soyabin: "Soybean",
+  सोयाबीन: "Soybean",
 
-  // Groundnut / Peanut
   groundnut: "Groundnut",
   peanut: "Groundnut",
   mungfali: "Groundnut",
   shengdana: "Groundnut",
-  "ground nut": "Groundnut",
+  bhuimug: "Groundnut",
+  भुईमूग: "Groundnut",
+  शेंगदाणा: "Groundnut",
 
-  // Tomato
-  tomato: "Tomato",
-  tamatar: "Tomato",
-  tamater: "Tomato",
-  tomatoes: "Tomato",
-  "tamatar ki": "Tomato",
-
-  // Onion
+  // Vegetables
   onion: "Onion",
   pyaz: "Onion",
   kanda: "Onion",
-  onions: "Onion",
-  "pyaz ki": "Onion",
+  कांदा: "Onion",
+  प्याज़: "Onion",
 
-  // Potato
   potato: "Potato",
   aloo: "Potato",
   batata: "Potato",
-  potatoes: "Potato",
-  "aloo ki": "Potato",
+  बटाटा: "Potato",
+  आलू: "Potato",
 
-  // Banana
-  banana: "Banana",
-  kela: "Banana",
-  keli: "Banana",          // Marathi plural
-  bananas: "Banana",
+  tomato: "Tomato",
+  tamatar: "Tomato",
+  tomatoes: "Tomato",
+  टमाट: "Tomato",
+  टोमॅटो: "Tomato",
+  टमाटर: "Tomato",
 
-  // Mango
-  mango: "Mango",
-  aam: "Mango",
-  amba: "Mango",           // Marathi
-  mangoes: "Mango",
+  brinjal: "Brinjal",
+  eggplant: "Brinjal",
+  vangi: "Brinjal",
+  baingan: "Brinjal",
+  वांगी: "Brinjal",
+  बैंगन: "Brinjal",
 
-  // Turmeric
-  turmeric: "Turmeric",
-  haldi: "Turmeric",
-  halad: "Turmeric",       // Marathi
+  okra: "Okra",
+  ladyfinger: "Okra",
+  bhendi: "Okra",
+  bhindi: "Okra",
+  भेंडी: "Okra",
+  भिंडी: "Okra",
 
-  // Chilli / Pepper
+  gavar: "Cluster Bean",
+  "cluster bean": "Cluster Bean",
+  गवार: "Cluster Bean",
+
+  cauliflower: "Cauliflower",
+  flower: "Cauliflower",
+  phoolkobi: "Cauliflower",
+  फ्लॉवर: "Cauliflower",
+  फूलगोभी: "Cauliflower",
+
+  cabbage: "Cabbage",
+  kobi: "Cabbage",
+  pattakobi: "Cabbage",
+  कोबी: "Cabbage",
+  पत्तागोभी: "Cabbage",
+
+  capsicum: "Capsicum",
+  "dhobli mirchi": "Capsicum",
+  "simla mirchi": "Capsicum",
+  "ढोबळी मिरची": "Capsicum",
+  "शिमला मिर्च": "Capsicum",
+
   chilli: "Chilli",
   chili: "Chilli",
   mirchi: "Chilli",
-  "red chilli": "Chilli",
-  "green chilli": "Chilli",
-  pepper: "Chilli",
+  मिरची: "Chilli",
 
-  // Jowar / Sorghum
-  jowar: "Jowar",
-  sorghum: "Jowar",
-  jwari: "Jowar",         // Marathi
-
-  // Bajra / Pearl Millet
-  bajra: "Bajra",
-  "pearl millet": "Bajra",
-  bajri: "Bajra",         // Marathi
-
-  // Gram / Chickpea
-  chickpea: "Chickpea",
-  gram: "Gram",
-  chana: "Gram",
-  harbhara: "Gram",       // Marathi
-  "bengal gram": "Gram",
-  "chick pea": "Chickpea",
-
-  // Tur Dal / Pigeon Pea
-  tur: "Tur Dal",
-  "tur dal": "Tur Dal",
-  arhar: "Tur Dal",
-  "pigeon pea": "Tur Dal",
-
-  // Cucumber / Kakdi
   cucumber: "Cucumber",
   kakdi: "Cucumber",
+  काकडी: "Cucumber",
+  खीरा: "Cucumber",
 
-  // Watermelon
-  watermelon: "Watermelon",
-  kalingad: "Watermelon",  // Marathi
-  tarbuz: "Watermelon",
+  "bottle gourd": "Bottle Gourd",
+  dudhi: "Bottle Gourd",
+  lauki: "Bottle Gourd",
+  दुधी: "Bottle Gourd",
+  लौकी: "Bottle Gourd",
 
-  // Grapes
+  "bitter gourd": "Bitter Gourd",
+  karela: "Bitter Gourd",
+  karle: "Bitter Gourd",
+  कारले: "Bitter Gourd",
+  करेला: "Bitter Gourd",
+
+  dodka: "Ridge Gourd",
+  दोडका: "Ridge Gourd",
+
+  pumpkin: "Pumpkin",
+  bhopla: "Pumpkin",
+  kaddoo: "Pumpkin",
+  भोपळा: "Pumpkin",
+  कद्दू: "Pumpkin",
+
+  drumstick: "Drumstick",
+  shevga: "Drumstick",
+  शेवगा: "Drumstick",
+
+  fenugreek: "Fenugreek",
+  methi: "Fenugreek",
+  मेथी: "Fenugreek",
+
+  spinach: "Spinach",
+  palak: "Spinach",
+  पालक: "Spinach",
+
+  coriander: "Coriander",
+  kothimbir: "Coriander",
+  dhania: "Coriander",
+  कोथिंबीर: "Coriander",
+  धनिया: "Coriander",
+
+  radish: "Radish",
+  mula: "Radish",
+  मुळा: "Radish",
+
+  carrot: "Carrot",
+  gajar: "Carrot",
+  गाजर: "Carrot",
+
+  beetroot: "Beetroot",
+  beet: "Beetroot",
+  बीट: "Beetroot",
+
+  // Fruits
+  mango: "Mango",
+  aam: "Mango",
+  amba: "Mango",
+  आंबा: "Mango",
+  आम: "Mango",
+
+  banana: "Banana",
+  kela: "Banana",
+  keli: "Banana",
+  केळी: "Banana",
+  केला: "Banana",
+
   grapes: "Grapes",
   grape: "Grapes",
-  draksh: "Grapes",        // Marathi
+  draksh: "Grapes",
+  draksha: "Grapes",
   angur: "Grapes",
+  द्राक्षे: "Grapes",
+  अंगूर: "Grapes",
 
-  // Pomegranate
   pomegranate: "Pomegranate",
-  dalimb: "Pomegranate",   // Marathi
+  dalimb: "Pomegranate",
   anar: "Pomegranate",
+  डाळिंब: "Pomegranate",
+  अनार: "Pomegranate",
+
+  guava: "Guava",
+  peru: "Guava",
+  amrood: "Guava",
+  पेरू: "Guava",
+  अमरूद: "Guava",
+
+  papaya: "Papaya",
+  popai: "Papaya",
+  पपई: "Papaya",
+  पपीता: "Papaya",
+
+  "custard apple": "Custard Apple",
+  sitaphal: "Custard Apple",
+  सीताफळ: "Custard Apple",
+
+  chiku: "Sapota",
+  chikoo: "Sapota",
+  चीकू: "Sapota",
+
+  orange: "Orange",
+  santra: "Orange",
+  संतरी: "Orange",
+  संतरा: "Orange",
+
+  mosambi: "Sweet Lime",
+  "sweet lime": "Sweet Lime",
+  मोसंबी: "Sweet Lime",
+
+  lemon: "Lemon",
+  limbu: "Lemon",
+  nimbu: "Lemon",
+  लिंबू: "Lemon",
+  नींबू: "Lemon",
+
+  watermelon: "Watermelon",
+  kalingad: "Watermelon",
+  tarbuz: "Watermelon",
+  कलिंगड: "Watermelon",
+  तरबूज: "Watermelon",
+
+  muskmelon: "Muskmelon",
+  kharbuj: "Muskmelon",
+  खरबूज: "Muskmelon",
+
+  pineapple: "Pineapple",
+  ananas: "Pineapple",
+  अननस: "Pineapple",
+
+  coconut: "Coconut",
+  naral: "Coconut",
+  nariyal: "Coconut",
+  नाारळ: "Coconut",
+  नारियल: "Coconut",
+
+  strawberry: "Strawberry",
+  स्ट्रॉबेरी: "Strawberry",
+
+  "dragon fruit": "Dragon Fruit",
+  "ड्रॅगन फ्रुट": "Dragon Fruit",
+
+  jackfruit: "Jackfruit",
+  phanas: "Jackfruit",
+  फणस: "Jackfruit",
+
+  amla: "Amla",
+  आवळा: "Amla",
+
+  // Cash Crops & Spices
+  cotton: "Cotton",
+  kapas: "Cotton",
+  kapaas: "Cotton",
+  karpas: "Cotton",
+  kapus: "Cotton",
+  कापूस: "Cotton",
+  कपास: "Cotton",
+
+  sugarcane: "Sugarcane",
+  ganna: "Sugarcane",
+  ganne: "Sugarcane",
+  us: "Sugarcane",
+  ubs: "Sugarcane",
+  oos: "Sugarcane",
+  ऊस: "Sugarcane",
+  गन्ना: "Sugarcane",
+
+  turmeric: "Turmeric",
+  haldi: "Turmeric",
+  halad: "Turmeric",
+  हळद: "Turmeric",
+  हल्दी: "Turmeric",
+
+  ginger: "Ginger",
+  ale: "Ginger",
+  adrak: "Ginger",
+  आले: "Ginger",
+  अद्रक: "Ginger",
+
+  garlic: "Garlic",
+  lasan: "Garlic",
+  lahsun: "Garlic",
+  लसूण: "Garlic",
+  लहसुन: "Garlic",
+
+  tobacco: "Tobacco",
+  tambaku: "Tobacco",
+  तंबाखू: "Tobacco",
+
+  arecanut: "Arecanut",
+  supari: "Arecanut",
+  सुपारी: "Arecanut",
+
+  // Floriculture (Flowers)
+  marigold: "Marigold",
+  zendu: "Marigold",
+  झेंडू: "Marigold",
+
+  rose: "Rose",
+  gulab: "Rose",
+  गुलाब: "Rose",
+
+  chrysanthemum: "Chrysanthemum",
+  shevanti: "Chrysanthemum",
+  शेवंती: "Chrysanthemum",
+
+  jasmine: "Jasmine",
+  mogra: "Jasmine",
+  मोगरा: "Jasmine",
 };
 
 const SOIL_MAP: Record<string, string> = {
@@ -182,9 +389,11 @@ const SOIL_MAP: Record<string, string> = {
   black: "Black Soil",
   kali: "Black Soil",
   kaali: "Black Soil",
+  काळी: "Black Soil",
   "red soil": "Red Soil",
   red: "Red Soil",
   lal: "Red Soil",
+  लाल: "Red Soil",
   "alluvial soil": "Alluvial Soil",
   alluvial: "Alluvial Soil",
   "laterite soil": "Laterite Soil",
@@ -206,235 +415,349 @@ const WATER_MAP: Record<string, string> = {
   bore: "Borewell",
   tubewell: "Borewell",
   "tube well": "Borewell",
+  बोअरवेल: "Borewell",
   canal: "Canal",
   nehar: "Canal",
   nahar: "Canal",
+  कालवा: "Canal",
   river: "River",
   nadi: "River",
+  नदी: "River",
   "drip irrigation": "Drip Irrigation",
   drip: "Drip Irrigation",
+  ठिबक: "Drip Irrigation",
   sprinkler: "Sprinkler",
+  तुषार: "Sprinkler",
   rainfed: "Rainfed",
   "rain fed": "Rainfed",
   baarish: "Rainfed",
   rain: "Rainfed",
+  पाऊस: "Rainfed",
   well: "Well",
   vihar: "Well",
+  विहीर: "Well",
 };
 
-const MAHARASHTRA_DISTRICTS = [
-  "Ahmednagar",
-  "Pune",
-  "Nashik",
-  "Solapur",
-  "Nagpur",
-  "Satara",
-  "Kolhapur",
-  "Aurangabad",
-  "Chhatrapati Sambhajinagar",
-  "Jalgaon",
-  "Amravati",
-  "Nanded",
-  "Sangli",
-  "Latur",
-  "Akola",
-  "Dhule",
-  "Buldhana",
-  "Beed",
-  "Parbhani",
-  "Yavatmal",
-  "Osmanabad",
-  "Dharashiv",
-  "Wardha",
-  "Chandrapur",
-  "Bhandara",
-  "Gondia",
-  "Gadchiroli",
-  "Hingoli",
-  "Washim",
-  "Ratnagiri",
-  "Sindhudurg",
-  "Raigad",
-  "Thane",
-  "Palghar",
-];
+const MAHARASHTRA_DISTRICTS: Record<string, string> = {
+  ahmednagar: "Ahmednagar",
+  ahmadnagar: "Ahmednagar",
+  नगर: "Ahmednagar",
+  अहमदनगर: "Ahmednagar",
+  pune: "Pune",
+  poona: "Pune",
+  पुणे: "Pune",
+  nashik: "Nashik",
+  nasik: "Nashik",
+  नाशिक: "Nashik",
+  solapur: "Solapur",
+  sholapur: "Solapur",
+  सोलापूर: "Solapur",
+  nagpur: "Nagpur",
+  नागपूर: "Nagpur",
+  satara: "Satara",
+  सातारा: "Satara",
+  kolhapur: "Kolhapur",
+  कोल्हापूर: "Kolhapur",
+  aurangabad: "Chhatrapati Sambhajinagar",
+  "chhatrapati sambhajinagar": "Chhatrapati Sambhajinagar",
+  "sambhajinagar": "Chhatrapati Sambhajinagar",
+  औरंगाबाद: "Chhatrapati Sambhajinagar",
+  संभाजीनगर: "Chhatrapati Sambhajinagar",
+  jalgaon: "Jalgaon",
+  जळगाव: "Jalgaon",
+  amravati: "Amravati",
+  अमरावती: "Amravati",
+  nanded: "Nanded",
+  नांदेड: "Nanded",
+  sangli: "Sangli",
+  सांगली: "Sangli",
+  latur: "Latur",
+  लातूर: "Latur",
+  akola: "Akola",
+  अकोला: "Akola",
+  dhule: "Dhule",
+  धुळे: "Dhule",
+  buldhana: "Buldhana",
+  buldana: "Buldhana",
+  बुलढाणा: "Buldhana",
+  beed: "Beed",
+  bid: "Beed",
+  बीड: "Beed",
+  parbhani: "Parbhani",
+  परभणी: "Parbhani",
+  yavatmal: "Yavatmal",
+  यवतमाळ: "Yavatmal",
+  osmanabad: "Dharashiv",
+  dharashiv: "Dharashiv",
+  उस्मानाबाद: "Dharashiv",
+  धाराशिव: "Dharashiv",
+  wardha: "Wardha",
+  वर्धा: "Wardha",
+  chandrapur: "Chandrapur",
+  चंद्रपूर: "Chandrapur",
+  bhandara: "Bhandara",
+  भंडारा: "Bhandara",
+  gondia: "Gondia",
+  गोंदिया: "Gondia",
+  gadchiroli: "Gadchiroli",
+  गडचिरोली: "Gadchiroli",
+  hingoli: "Hingoli",
+  हिंगोली: "Hingoli",
+  washim: "Washim",
+  वाशिम: "Washim",
+  ratnagiri: "Ratnagiri",
+  रत्नागिरी: "Ratnagiri",
+  sindhudurg: "Sindhudurg",
+  सिंधुदुर्ग: "Sindhudurg",
+  raigad: "Raigad",
+  रायगड: "Raigad",
+  thane: "Thane",
+  ठाणे: "Thane",
+  palghar: "Palghar",
+  पालघर: "Palghar",
+};
 
-// Mapping common agricultural villages/talukas to their respective district & state
+// Comprehensive Marathi Towns/Villages/Talukas mapped to District & State
 const VILLAGE_TO_DISTRICT_MAP: Record<string, { district: string; state: string }> = {
-  // Ahmednagar
-  karanji: { district: "Ahmednagar", state: "Maharashtra" },
-  sangamner: { district: "Ahmednagar", state: "Maharashtra" },
-  kopergaon: { district: "Ahmednagar", state: "Maharashtra" },
+  // Ahmednagar District
   kopargaon: { district: "Ahmednagar", state: "Maharashtra" },
+  kopergaon: { district: "Ahmednagar", state: "Maharashtra" },
+  kopargav: { district: "Ahmednagar", state: "Maharashtra" },
+  कोपरगाव: { district: "Ahmednagar", state: "Maharashtra" },
+  sangamner: { district: "Ahmednagar", state: "Maharashtra" },
+  संगमनेर: { district: "Ahmednagar", state: "Maharashtra" },
   shrirampur: { district: "Ahmednagar", state: "Maharashtra" },
+  श्रीरामपूर: { district: "Ahmednagar", state: "Maharashtra" },
   rahata: { district: "Ahmednagar", state: "Maharashtra" },
+  राहता: { district: "Ahmednagar", state: "Maharashtra" },
   shirdi: { district: "Ahmednagar", state: "Maharashtra" },
+  शिर्डी: { district: "Ahmednagar", state: "Maharashtra" },
+  karanji: { district: "Ahmednagar", state: "Maharashtra" },
+  करंजी: { district: "Ahmednagar", state: "Maharashtra" },
   akole: { district: "Ahmednagar", state: "Maharashtra" },
+  अकोले: { district: "Ahmednagar", state: "Maharashtra" },
   parner: { district: "Ahmednagar", state: "Maharashtra" },
+  पारनेर: { district: "Ahmednagar", state: "Maharashtra" },
   pathardi: { district: "Ahmednagar", state: "Maharashtra" },
+  पाथर्डी: { district: "Ahmednagar", state: "Maharashtra" },
   shevgaon: { district: "Ahmednagar", state: "Maharashtra" },
+  शेवगाव: { district: "Ahmednagar", state: "Maharashtra" },
   shrigonda: { district: "Ahmednagar", state: "Maharashtra" },
+  श्रीगोंदा: { district: "Ahmednagar", state: "Maharashtra" },
   karjat: { district: "Ahmednagar", state: "Maharashtra" },
+  कर्जत: { district: "Ahmednagar", state: "Maharashtra" },
   jamkhed: { district: "Ahmednagar", state: "Maharashtra" },
+  जामखेड: { district: "Ahmednagar", state: "Maharashtra" },
   rahuri: { district: "Ahmednagar", state: "Maharashtra" },
+  राहुरी: { district: "Ahmednagar", state: "Maharashtra" },
   newasa: { district: "Ahmednagar", state: "Maharashtra" },
   nevasa: { district: "Ahmednagar", state: "Maharashtra" },
+  नेवासा: { district: "Ahmednagar", state: "Maharashtra" },
 
-  // Pune
-  hadapsar: { district: "Pune", state: "Maharashtra" },
-  baramati: { district: "Pune", state: "Maharashtra" },
-  indapur: { district: "Pune", state: "Maharashtra" },
-  daund: { district: "Pune", state: "Maharashtra" },
-  shirur: { district: "Pune", state: "Maharashtra" },
-  junnar: { district: "Pune", state: "Maharashtra" },
-  khed: { district: "Pune", state: "Maharashtra" },
-  ambegaon: { district: "Pune", state: "Maharashtra" },
-  maval: { district: "Pune", state: "Maharashtra" },
-  mulshi: { district: "Pune", state: "Maharashtra" },
-  velhe: { district: "Pune", state: "Maharashtra" },
-  bhor: { district: "Pune", state: "Maharashtra" },
-  purandar: { district: "Pune", state: "Maharashtra" },
-  haveli: { district: "Pune", state: "Maharashtra" },
-  chakan: { district: "Pune", state: "Maharashtra" },
-  manchar: { district: "Pune", state: "Maharashtra" },
-  lonavala: { district: "Pune", state: "Maharashtra" },
-
-  // Nashik
-  niphad: { district: "Nashik", state: "Maharashtra" },
-  sinnar: { district: "Nashik", state: "Maharashtra" },
+  // Nashik District
   yeola: { district: "Nashik", state: "Maharashtra" },
+  yewla: { district: "Nashik", state: "Maharashtra" },
+  येवला: { district: "Nashik", state: "Maharashtra" },
+  manmad: { district: "Nashik", state: "Maharashtra" },
+  मनमाड: { district: "Nashik", state: "Maharashtra" },
+  niphad: { district: "Nashik", state: "Maharashtra" },
+  निफाड: { district: "Nashik", state: "Maharashtra" },
+  sinnar: { district: "Nashik", state: "Maharashtra" },
+  सिन्नर: { district: "Nashik", state: "Maharashtra" },
   malegaon: { district: "Nashik", state: "Maharashtra" },
+  मालेगाव: { district: "Nashik", state: "Maharashtra" },
   satana: { district: "Nashik", state: "Maharashtra" },
+  सटाणा: { district: "Nashik", state: "Maharashtra" },
   kalwan: { district: "Nashik", state: "Maharashtra" },
+  कलवण: { district: "Nashik", state: "Maharashtra" },
   chandwad: { district: "Nashik", state: "Maharashtra" },
+  चांदवड: { district: "Nashik", state: "Maharashtra" },
   igatpuri: { district: "Nashik", state: "Maharashtra" },
+  इगतपुरी: { district: "Nashik", state: "Maharashtra" },
   trimbak: { district: "Nashik", state: "Maharashtra" },
   trimbakeshwar: { district: "Nashik", state: "Maharashtra" },
+  त्र्यंबकेश्वर: { district: "Nashik", state: "Maharashtra" },
   dindori: { district: "Nashik", state: "Maharashtra" },
+  दिंडोरी: { district: "Nashik", state: "Maharashtra" },
   deola: { district: "Nashik", state: "Maharashtra" },
+  देवळा: { district: "Nashik", state: "Maharashtra" },
   lasalgaon: { district: "Nashik", state: "Maharashtra" },
+  लासलगाव: { district: "Nashik", state: "Maharashtra" },
   pimpalgaon: { district: "Nashik", state: "Maharashtra" },
-
-  // Solapur
-  pandharpur: { district: "Solapur", state: "Maharashtra" },
-  barshi: { district: "Solapur", state: "Maharashtra" },
-  karmala: { district: "Solapur", state: "Maharashtra" },
-  madha: { district: "Solapur", state: "Maharashtra" },
-  mohol: { district: "Solapur", state: "Maharashtra" },
-  sangole: { district: "Solapur", state: "Maharashtra" },
-  sangola: { district: "Solapur", state: "Maharashtra" },
-  mangalwedha: { district: "Solapur", state: "Maharashtra" },
-  mangalvedhe: { district: "Solapur", state: "Maharashtra" },
-  malshiras: { district: "Solapur", state: "Maharashtra" },
-  akkalkot: { district: "Solapur", state: "Maharashtra" },
-  natepute: { district: "Solapur", state: "Maharashtra" },
-
-  // Kolhapur
-  karveer: { district: "Kolhapur", state: "Maharashtra" },
-  kagal: { district: "Kolhapur", state: "Maharashtra" },
-  hatkanangle: { district: "Kolhapur", state: "Maharashtra" },
-  shirol: { district: "Kolhapur", state: "Maharashtra" },
-  radhanagari: { district: "Kolhapur", state: "Maharashtra" },
-  panhala: { district: "Kolhapur", state: "Maharashtra" },
-  shahuwadi: { district: "Kolhapur", state: "Maharashtra" },
-  gadhinglaj: { district: "Kolhapur", state: "Maharashtra" },
-  ichalkaranji: { district: "Kolhapur", state: "Maharashtra" },
-
-  // Satara
-  karad: { district: "Satara", state: "Maharashtra" },
-  wai: { district: "Satara", state: "Maharashtra" },
-  phaltan: { district: "Satara", state: "Maharashtra" },
-  koregaon: { district: "Satara", state: "Maharashtra" },
-  khatav: { district: "Satara", state: "Maharashtra" },
-  patan: { district: "Satara", state: "Maharashtra" },
-  mahabaleshwar: { district: "Satara", state: "Maharashtra" },
-  dahiwadi: { district: "Satara", state: "Maharashtra" },
-
-  // Sangli
-  miraj: { district: "Sangli", state: "Maharashtra" },
-  tasgaon: { district: "Sangli", state: "Maharashtra" },
-  islampur: { district: "Sangli", state: "Maharashtra" },
-  walwa: { district: "Sangli", state: "Maharashtra" },
-  khanapur: { district: "Sangli", state: "Maharashtra" },
-  vita: { district: "Sangli", state: "Maharashtra" },
-  jat: { district: "Sangli", state: "Maharashtra" },
-  kavathemahankal: { district: "Sangli", state: "Maharashtra" },
+  पिंपळगाव: { district: "Nashik", state: "Maharashtra" },
 
   // Chhatrapati Sambhajinagar / Aurangabad
-  paithan: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
-  gangapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
   vaijapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  waijapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  वैजापूर: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  paithan: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  पैठण: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  gangapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  गंगापूर: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
   sillod: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
-  phulambri: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  सिल्लोड: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
   kannad: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  कन्नड: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  phulambri: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  फुलंब्री: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
 
-  // Jalgaon
+  // Pune District
+  hadapsar: { district: "Pune", state: "Maharashtra" },
+  हडपसर: { district: "Pune", state: "Maharashtra" },
+  baramati: { district: "Pune", state: "Maharashtra" },
+  बारामती: { district: "Pune", state: "Maharashtra" },
+  indapur: { district: "Pune", state: "Maharashtra" },
+  इंदापूर: { district: "Pune", state: "Maharashtra" },
+  daund: { district: "Pune", state: "Maharashtra" },
+  दौंड: { district: "Pune", state: "Maharashtra" },
+  shirur: { district: "Pune", state: "Maharashtra" },
+  शिरूर: { district: "Pune", state: "Maharashtra" },
+  junnar: { district: "Pune", state: "Maharashtra" },
+  जुन्नर: { district: "Pune", state: "Maharashtra" },
+  khed: { district: "Pune", state: "Maharashtra" },
+  खेड: { district: "Pune", state: "Maharashtra" },
+  ambegaon: { district: "Pune", state: "Maharashtra" },
+  आंबेगाव: { district: "Pune", state: "Maharashtra" },
+  maval: { district: "Pune", state: "Maharashtra" },
+  मावळ: { district: "Pune", state: "Maharashtra" },
+  mulshi: { district: "Pune", state: "Maharashtra" },
+  मुळशी: { district: "Pune", state: "Maharashtra" },
+  bhor: { district: "Pune", state: "Maharashtra" },
+  भोर: { district: "Pune", state: "Maharashtra" },
+  purandar: { district: "Pune", state: "Maharashtra" },
+  पुरंदर: { district: "Pune", state: "Maharashtra" },
+  chakan: { district: "Pune", state: "Maharashtra" },
+  चाकण: { district: "Pune", state: "Maharashtra" },
+  manchar: { district: "Pune", state: "Maharashtra" },
+  मंचर: { district: "Pune", state: "Maharashtra" },
+
+  // Solapur District
+  pandharpur: { district: "Solapur", state: "Maharashtra" },
+  पंढरपूर: { district: "Solapur", state: "Maharashtra" },
+  barshi: { district: "Solapur", state: "Maharashtra" },
+  बार्शी: { district: "Solapur", state: "Maharashtra" },
+  karmala: { district: "Solapur", state: "Maharashtra" },
+  करमाळा: { district: "Solapur", state: "Maharashtra" },
+  madha: { district: "Solapur", state: "Maharashtra" },
+  माढा: { district: "Solapur", state: "Maharashtra" },
+  mohol: { district: "Solapur", state: "Maharashtra" },
+  मोहूळ: { district: "Solapur", state: "Maharashtra" },
+  sangole: { district: "Solapur", state: "Maharashtra" },
+  sangola: { district: "Solapur", state: "Maharashtra" },
+  सांगोला: { district: "Solapur", state: "Maharashtra" },
+  mangalwedha: { district: "Solapur", state: "Maharashtra" },
+  मंगळवेढा: { district: "Solapur", state: "Maharashtra" },
+  malshiras: { district: "Solapur", state: "Maharashtra" },
+  माळशिरस: { district: "Solapur", state: "Maharashtra" },
+  akkalkot: { district: "Solapur", state: "Maharashtra" },
+  अक्कलकोट: { district: "Solapur", state: "Maharashtra" },
+
+  // Kolhapur District
+  karveer: { district: "Kolhapur", state: "Maharashtra" },
+  करवीर: { district: "Kolhapur", state: "Maharashtra" },
+  kagal: { district: "Kolhapur", state: "Maharashtra" },
+  कागल: { district: "Kolhapur", state: "Maharashtra" },
+  hatkanangle: { district: "Kolhapur", state: "Maharashtra" },
+  हातकणंगले: { district: "Kolhapur", state: "Maharashtra" },
+  shirol: { district: "Kolhapur", state: "Maharashtra" },
+  शिरोळ: { district: "Kolhapur", state: "Maharashtra" },
+  radhanagari: { district: "Kolhapur", state: "Maharashtra" },
+  राधानगरी: { district: "Kolhapur", state: "Maharashtra" },
+  panhala: { district: "Kolhapur", state: "Maharashtra" },
+  पन्हाळा: { district: "Kolhapur", state: "Maharashtra" },
+  gadhinglaj: { district: "Kolhapur", state: "Maharashtra" },
+  गडहिंग्लज: { district: "Kolhapur", state: "Maharashtra" },
+  ichalkaranji: { district: "Kolhapur", state: "Maharashtra" },
+  इचलकरंजी: { district: "Kolhapur", state: "Maharashtra" },
+
+  // Satara District
+  karad: { district: "Satara", state: "Maharashtra" },
+  कराड: { district: "Satara", state: "Maharashtra" },
+  wai: { district: "Satara", state: "Maharashtra" },
+  वाई: { district: "Satara", state: "Maharashtra" },
+  phaltan: { district: "Satara", state: "Maharashtra" },
+  फलटण: { district: "Satara", state: "Maharashtra" },
+  koregaon: { district: "Satara", state: "Maharashtra" },
+  कोरेगाव: { district: "Satara", state: "Maharashtra" },
+  khatav: { district: "Satara", state: "Maharashtra" },
+  खटाव: { district: "Satara", state: "Maharashtra" },
+  patan: { district: "Satara", state: "Maharashtra" },
+  पाटण: { district: "Satara", state: "Maharashtra" },
+  mahabaleshwar: { district: "Satara", state: "Maharashtra" },
+  महाबळेश्वर: { district: "Satara", state: "Maharashtra" },
+
+  // Sangli District
+  miraj: { district: "Sangli", state: "Maharashtra" },
+  मिरज: { district: "Sangli", state: "Maharashtra" },
+  tasgaon: { district: "Sangli", state: "Maharashtra" },
+  तासगाव: { district: "Sangli", state: "Maharashtra" },
+  islampur: { district: "Sangli", state: "Maharashtra" },
+  इस्लामपूर: { district: "Sangli", state: "Maharashtra" },
+  walwa: { district: "Sangli", state: "Maharashtra" },
+  वाळवा: { district: "Sangli", state: "Maharashtra" },
+
+  // Jalgaon District
   bhusawal: { district: "Jalgaon", state: "Maharashtra" },
+  भुसावळ: { district: "Jalgaon", state: "Maharashtra" },
   chalisgaon: { district: "Jalgaon", state: "Maharashtra" },
+  चाळीसगाव: { district: "Jalgaon", state: "Maharashtra" },
   chopda: { district: "Jalgaon", state: "Maharashtra" },
-  yawal: { district: "Jalgaon", state: "Maharashtra" },
-  raver: { district: "Jalgaon", state: "Maharashtra" },
-  pachora: { district: "Jalgaon", state: "Maharashtra" },
+  चोपडा: { district: "Jalgaon", state: "Maharashtra" },
 
-  // Nagpur
+  // Nagpur District
   saoner: { district: "Nagpur", state: "Maharashtra" },
+  सावनेर: { district: "Nagpur", state: "Maharashtra" },
   ramtek: { district: "Nagpur", state: "Maharashtra" },
+  रामटेक: { district: "Nagpur", state: "Maharashtra" },
   katol: { district: "Nagpur", state: "Maharashtra" },
-  narkhed: { district: "Nagpur", state: "Maharashtra" },
-  umred: { district: "Nagpur", state: "Maharashtra" },
-  hingna: { district: "Nagpur", state: "Maharashtra" },
+  काटोल: { district: "Nagpur", state: "Maharashtra" },
 };
 
 const OTHER_INDIAN_DISTRICTS: Record<string, string> = {
   ludhiana: "Punjab",
   amritsar: "Punjab",
-  patiala: "Punjab",
   karnal: "Haryana",
   hisar: "Haryana",
-  rohtak: "Haryana",
   jaipur: "Rajasthan",
   jodhpur: "Rajasthan",
-  udaipur: "Rajasthan",
   indore: "Madhya Pradesh",
   bhopal: "Madhya Pradesh",
-  ujjain: "Madhya Pradesh",
   surat: "Gujarat",
   rajkot: "Gujarat",
   ahmedabad: "Gujarat",
   lucknow: "Uttar Pradesh",
   kanpur: "Uttar Pradesh",
-  varanasi: "Uttar Pradesh",
   patna: "Bihar",
   coimbatore: "Tamil Nadu",
-  madurai: "Tamil Nadu",
   mysore: "Karnataka",
-  belagavi: "Karnataka",
 };
 
-// ─── INTENT PATTERNS ──────────────────────────────────────────────────────────
-// Match phrases like "I want to grow wheat", "plant sugarcane", "wheat farming", etc.
-// Returns the raw crop word found after the intent keyword, then we look it up in CROP_MAP
 const INTENT_PATTERNS = [
-  /(?:grow|plant|cultivate|ugao|lagao|bona|piku)\s+([a-z\s]+?)(?:\s+in|\s+at|\s+on|\s+with|\s+crop|$)/i,
-  /([a-z\s]+?)\s+(?:crop|farming|kheti|sheti|cultivation|ugvana|lagvana)/i,
-  /(?:i want|mujhe|mala|i need|i am growing|i grow)\s+(?:to\s+grow\s+)?([a-z\s]+?)(?:\s+in|\s+at|\s+on|$)/i,
+  /(?:grow|plant|cultivate|ugao|lagao|bona|piku|pikawava|pikayche)\s+([a-z\u0900-\u097F\s]+?)(?:\s+in|\s+at|\s+on|\s+with|\s+crop|\s+madhye|\s+yethe|$)/i,
+  /([a-z\u0900-\u097F\s]+?)\s+(?:crop|farming|kheti|sheti|cultivation|ugvana|lagvana|che pik|sathi)/i,
+  /(?:i want|mujhe|mala|i need|i am growing|i grow|aplyala)\s+(?:to\s+grow\s+)?([a-z\u0900-\u097F\s]+?)(?:\s+in|\s+at|\s+on|\s+madhye|$)/i,
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-/** Escape special regex chars in a string */
 function escapeRegex(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Try to match a crop from text, returning canonical name or undefined */
+/** Strip common Marathi/Hindi location suffixes like -at, -la, -madhye, -yethil, -gavat */
+function normalizeLocationString(text: string): string {
+  let cleaned = text;
+  // Remove suffixes attached to words (e.g. kopargaonmadhye -> kopargaon, yeolayat -> yeola, वैजापूरमध्ये -> वैजापूर)
+  cleaned = cleaned.replace(/(?:madhye|yethil|gavatun|gavacha|madhil|yethe|pasun|gavachi|gavala|at|la|मध्ये|येथील|येथे|गावात|गावाचा|गावातून)\b/gi, " ");
+  return cleaned;
+}
+
 function matchCrop(lower: string): string | undefined {
-  // Sort entries: longest key first to avoid partial matches (e.g. "tur dal" before "tur")
   const entries = Object.entries(CROP_MAP).sort((a, b) => b[0].length - a[0].length);
 
   for (const [key, val] of entries) {
-    // Use word boundary for single-word keys, substring for multi-word keys
-    const pattern = key.includes(" ")
+    const isNonAscii = /[^\x00-\x7F]/.test(key);
+    const pattern = (key.includes(" ") || isNonAscii)
       ? new RegExp(escapeRegex(key), "i")
       : new RegExp(`\\b${escapeRegex(key)}\\b`, "i");
     if (pattern.test(lower)) {
@@ -442,16 +765,13 @@ function matchCrop(lower: string): string | undefined {
     }
   }
 
-  // Try intent patterns to extract crop word, then look up
   for (const intentRe of INTENT_PATTERNS) {
     const m = lower.match(intentRe);
     if (m && m[1]) {
       const candidate = m[1].trim().toLowerCase();
-      // check each word of candidate against crop map
       for (const word of candidate.split(/\s+/)) {
         if (word in CROP_MAP) return CROP_MAP[word];
       }
-      // check full candidate phrase
       if (candidate in CROP_MAP) return CROP_MAP[candidate];
     }
   }
@@ -459,11 +779,11 @@ function matchCrop(lower: string): string | undefined {
   return undefined;
 }
 
-/** Match a map entry using word boundaries */
 function matchMap(lower: string, map: Record<string, string>): string | undefined {
   const entries = Object.entries(map).sort((a, b) => b[0].length - a[0].length);
   for (const [key, val] of entries) {
-    const pattern = key.includes(" ")
+    const isNonAscii = /[^\x00-\x7F]/.test(key);
+    const pattern = (key.includes(" ") || isNonAscii)
       ? new RegExp(escapeRegex(key), "i")
       : new RegExp(`\\b${escapeRegex(key)}\\b`, "i");
     if (pattern.test(lower)) return val;
@@ -474,29 +794,31 @@ function matchMap(lower: string, map: Record<string, string>): string | undefine
 // ─── MAIN PARSER ──────────────────────────────────────────────────────────────
 
 export function parseFarmerVoice(text: string): ParsedFarmerVoice {
-  const lower = text.toLowerCase().trim();
+  const rawLower = text.toLowerCase().trim();
+  const normalizedLower = normalizeLocationString(rawLower);
+
   const matchedEntities: { key: string; label: string; value: string }[] = [];
 
   let crop: string | undefined;
   let state: string | undefined = "Maharashtra";
   let district: string | undefined;
+  let village: string | undefined;
   let soilType: string | undefined;
   let landArea: number | undefined;
   let waterSource: string | undefined;
-  let budget: number | undefined;
 
   // ── 1. Crop ────────────────────────────────────────────────────────────────
-  crop = matchCrop(lower);
+  crop = matchCrop(rawLower);
   if (crop) {
     matchedEntities.push({ key: "crop", label: "Crop", value: crop });
   }
 
   // ── 2. District & Village Detection ────────────────────────────────────────
-  for (const d of MAHARASHTRA_DISTRICTS) {
-    if (lower.includes(d.toLowerCase())) {
-      district = d;
+  for (const [dKey, dName] of Object.entries(MAHARASHTRA_DISTRICTS)) {
+    if (normalizedLower.includes(dKey)) {
+      district = dName;
       state = "Maharashtra";
-      matchedEntities.push({ key: "district", label: "District", value: d });
+      matchedEntities.push({ key: "district", label: "District", value: dName });
       matchedEntities.push({ key: "state", label: "State", value: "Maharashtra" });
       break;
     }
@@ -504,7 +826,7 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
 
   if (!district) {
     for (const [dName, dState] of Object.entries(OTHER_INDIAN_DISTRICTS)) {
-      if (lower.includes(dName)) {
+      if (normalizedLower.includes(dName)) {
         district = dName.charAt(0).toUpperCase() + dName.slice(1);
         state = dState;
         matchedEntities.push({ key: "district", label: "District", value: district });
@@ -516,13 +838,13 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
 
   // Check village mapping if district not directly specified
   if (!district) {
-    for (const [vName, info] of Object.entries(VILLAGE_TO_DISTRICT_MAP)) {
-      const vPattern = new RegExp(`\\b${escapeRegex(vName)}\\b`, "i");
-      if (vPattern.test(lower)) {
+    for (const [vKey, info] of Object.entries(VILLAGE_TO_DISTRICT_MAP)) {
+      const vPattern = new RegExp(`\\b${escapeRegex(vKey)}\\b`, "i");
+      if (vPattern.test(normalizedLower) || normalizedLower.includes(vKey)) {
         district = info.district;
         state = info.state;
-        const formattedVillage = vName.charAt(0).toUpperCase() + vName.slice(1);
-        matchedEntities.push({ key: "village", label: "Village", value: formattedVillage });
+        village = vKey.charAt(0).toUpperCase() + vKey.slice(1);
+        matchedEntities.push({ key: "village", label: "Village / Town", value: village });
         matchedEntities.push({ key: "district", label: "District", value: district });
         matchedEntities.push({ key: "state", label: "State", value: state });
         break;
@@ -531,22 +853,22 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
   }
 
   // ── 3. Soil Type ───────────────────────────────────────────────────────────
-  soilType = matchMap(lower, SOIL_MAP);
+  soilType = matchMap(rawLower, SOIL_MAP);
   if (soilType) {
     matchedEntities.push({ key: "soilType", label: "Soil Type", value: soilType });
   }
 
   // ── 4. Water Source ────────────────────────────────────────────────────────
-  waterSource = matchMap(lower, WATER_MAP);
+  waterSource = matchMap(rawLower, WATER_MAP);
   if (waterSource) {
     matchedEntities.push({ key: "waterSource", label: "Water Source", value: waterSource });
   }
 
   // ── 5. Land Area ───────────────────────────────────────────────────────────
   const areaMatch =
-    lower.match(/(\d+(?:\.\d+)?)\s*(?:acre|acres|ekad|ekar|hec|hectare|bigha|guntha)/i) ||
-    lower.match(/land\s*(?:of|is|area)?\s*(\d+(?:\.\d+)?)/i) ||
-    lower.match(/(\d+(?:\.\d+)?)\s*(?:ekad|acres)/i);
+    rawLower.match(/(\d+(?:\.\d+)?)\s*(?:acre|acres|ekad|ekar|hec|hectare|bigha|guntha|एकर|एकड)/i) ||
+    rawLower.match(/land\s*(?:of|is|area)?\s*(\d+(?:\.\d+)?)/i) ||
+    rawLower.match(/(\d+(?:\.\d+)?)\s*(?:ekad|acres)/i);
 
   if (areaMatch) {
     const val = parseFloat(areaMatch[1]);
@@ -555,37 +877,10 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
       matchedEntities.push({ key: "landArea", label: "Land Area", value: `${val} Acres` });
     }
   } else {
-    const standaloneNum = lower.match(/\b([1-9]|[12][0-9]|30)\b\s*(?:acre|acres|land)/i);
+    const standaloneNum = rawLower.match(/\b([1-9]|[12][0-9]|30)\b\s*(?:acre|acres|land|ekad|ekar)/i);
     if (standaloneNum) {
       landArea = parseFloat(standaloneNum[1]);
       matchedEntities.push({ key: "landArea", label: "Land Area", value: `${landArea} Acres` });
-    }
-  }
-
-  // ── 6. Budget ──────────────────────────────────────────────────────────────
-  if (lower.includes("lakh") || lower.includes("lac")) {
-    const m = lower.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lac|lakhs)/i);
-    if (m) {
-      budget = Math.round(parseFloat(m[1]) * 100000);
-      matchedEntities.push({ key: "budget", label: "Budget", value: `₹${budget.toLocaleString("en-IN")}` });
-    }
-  } else if (lower.includes("thousand") || lower.includes("hazar")) {
-    const m = lower.match(/(\d+(?:\.\d+)?)\s*(?:thousand|hazar)/i);
-    if (m) {
-      budget = Math.round(parseFloat(m[1]) * 1000);
-      matchedEntities.push({ key: "budget", label: "Budget", value: `₹${budget.toLocaleString("en-IN")}` });
-    }
-  } else if (/\d+k\b/i.test(lower)) {
-    const m = lower.match(/(\d+(?:\.\d+)?)k\b/i);
-    if (m) {
-      budget = Math.round(parseFloat(m[1]) * 1000);
-      matchedEntities.push({ key: "budget", label: "Budget", value: `₹${budget.toLocaleString("en-IN")}` });
-    }
-  } else {
-    const m = lower.match(/(?:budget|rs\.?|rupees?|inr|cost)?\s*(\d{5,7})\b/i);
-    if (m) {
-      budget = parseInt(m[1], 10);
-      matchedEntities.push({ key: "budget", label: "Budget", value: `₹${budget.toLocaleString("en-IN")}` });
     }
   }
 
@@ -593,10 +888,10 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
     crop,
     state,
     district,
+    village,
     soilType,
     landArea,
     waterSource,
-    budget,
     rawText: text,
     matchedEntities,
   };

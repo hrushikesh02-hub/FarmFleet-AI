@@ -635,7 +635,7 @@ function generateFallbackItinerary({
   const startTime = Date.now();
 
   const numArea = parseFloat(landArea) > 0 ? parseFloat(landArea) : 1;
-  const numBudget = parseFloat(budget) > 0 ? parseFloat(budget) : 100000;
+  const numBudget = parseFloat(budget) > 0 ? parseFloat(budget) : Math.max(40000, Math.round(numArea * 25000));
 
   const cropKey = getNormalizedCropKey(crop);
   const template = CROP_KNOWLEDGE_BASE[cropKey] || CROP_KNOWLEDGE_BASE.wheat;

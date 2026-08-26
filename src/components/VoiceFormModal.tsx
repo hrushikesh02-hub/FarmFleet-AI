@@ -23,24 +23,24 @@ interface Props {
 
 const DEMO_PRESETS = [
   {
-    title: "🌾 Wheat in Ahmednagar",
-    subtitle: "3 Acres, Black Soil, Canal, ₹60,000",
-    text: "I want to grow Wheat in Ahmednagar with 3 acres land on Black Soil with Canal water and budget 60000",
+    title: "🌾 Wheat in Kopargaon",
+    subtitle: "3 Acres, Black Soil, Canal Water",
+    text: "I want to grow Wheat in Kopargaon with 3 acres land on Black Soil with Canal water",
   },
   {
-    title: "🎋 Sugarcane in Pune",
-    subtitle: "5 Acres, Black Soil, Drip, ₹1.5 Lakh",
-    text: "Sugarcane crop in Pune district, 5 acres farm, black soil, drip irrigation with 1.5 lakh budget",
+    title: "🎋 ऊस (Sugarcane) in Yeola",
+    subtitle: "5 Acres, Black Soil, Drip Irrigation",
+    text: "येवला मध्ये ५ एकर ऊस काळी जमीन ठिबक सिंचन",
   },
   {
-    title: "🥔 Potato in Nashik",
-    subtitle: "2 Acres, Red Soil, Borewell, ₹40,000",
-    text: "Potato farming in Nashik, 2 acres land, red soil, borewell water source, budget 40 thousand",
+    title: "🧅 कांदा (Onion) in Niphad",
+    subtitle: "2 Acres, Red Soil, Borewell",
+    text: "निफाड मध्ये २ एकर कांदा लाल माती बोअरवेल",
   },
   {
-    title: "🍅 Tomato in Solapur",
-    subtitle: "4 Acres, Alluvial Soil, River, ₹80,000",
-    text: "Tomato in Solapur, 4 acres land, alluvial soil, river water, budget 80000 rupees",
+    title: "🍅 टोमॅटो in Vaijapur",
+    subtitle: "4 Acres, Alluvial Soil, River Water",
+    text: "वैजापूर येथील ४ एकर टोमॅटो शेती नदीचे पाणी",
   },
 ];
 
@@ -190,7 +190,7 @@ export function VoiceFormModal({ isOpen, onClose, onApply }: Props) {
                 )}
               </p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Try: <em>"Wheat in Ahmednagar, 4 acres, black soil, 50 thousand budget"</em>
+                Try: <em>"कोपरगाव मध्ये ४ एकर गहू" or "Niphad 3 acres kanda black soil"</em>
               </p>
             </div>
 

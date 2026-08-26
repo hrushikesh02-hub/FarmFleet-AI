@@ -16,13 +16,17 @@ function buildCropPrompt({
     en: "English",
     hi: "Hindi (हिन्दी)",
     mr: "Marathi (मराठी)",
-    gu: "Gujarati (ગુજરાતી)",
+    gu: "Gujarati",
     ta: "Tamil (தமிழ்)",
     te: "Telugu (తెలుగు)",
     kn: "Kannada (ಕನ್ನಡ)",
     pa: "Punjabi (ਪੰਜਾਬੀ)",
   };
   const targetLanguage = langNameMap[language] || "English";
+
+  const budgetConstraint = budget && parseFloat(budget) > 0
+    ? `Budget Constraint: ₹${budget}`
+    : `Budget Constraint: Auto-calculate realistic minimum required budget, estimated total cost, expected gross income, and net profit per acre for ${crop} in ${district}, ${state} based on Indian market rates.`;
 
   return `
 You are FarmFleet AI, an expert agricultural consultant for Indian farming.
@@ -39,7 +43,7 @@ District: ${district}
 Soil Type: ${soilType}
 Land Area: ${landArea} Acres
 Water Source: ${waterSource}
-Budget: ₹${budget}
+${budgetConstraint}
 Preferred Output Language: ${targetLanguage}
 
 ==================================================
@@ -52,7 +56,7 @@ Generate recommendations suitable for:
 • Local climate
 • Soil type
 • Available water source
-• Budget
+• Realistic per-acre budget and financial projections
 • Sustainable farming
 
 CRITICAL LANGUAGE INSTRUCTION:
@@ -136,13 +140,13 @@ RETURN JSON (Example structure with field types)
   "soilType": "${soilType}",
   "landArea": "${landArea}",
   "waterSource": "${waterSource}",
-  "budget": "₹${budget}",
+  "budget": "₹${budget || '45,000'}",
   "cropDuration": "4 - 5 Months",
   "bestSeason": "Kharif (June - October)",
   "expectedYield": "25 - 30 Quintals per Acre",
-  "estimatedTotalCost": "₹${budget}",
-  "estimatedIncome": "₹${Number(budget) * 2}",
-  "estimatedProfit": "₹${Number(budget)}",
+  "estimatedTotalCost": "₹40,000",
+  "estimatedIncome": "₹95,000",
+  "estimatedProfit": "₹55,000",
   "landPreparation": [
     "Plough the land twice using a tractor rotavator to achieve a fine tilth.",
     "Apply 5-8 tonnes of well-decomposed Farmyard Manure (FYM) per acre."

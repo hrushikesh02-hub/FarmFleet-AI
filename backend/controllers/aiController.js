@@ -1,6 +1,7 @@
 const CropItinerary = require("../models/CropItinerary");
 const fs = require("fs");
 const path = require("path");
+const geocodeLocation = require("../utils/geocodeLocation");
 
 const { generateContent } = require("../services/ai/geminiService");
 const { buildCropPrompt } = require("../services/ai/promptBuilder");
@@ -61,7 +62,7 @@ exports.generateCropItinerary = async (req, res) => {
   try {
     const farmerId = req.farmer.id;
 
-    const {
+    let {
       crop,
       state,
       district,
@@ -79,20 +80,43 @@ exports.generateCropItinerary = async (req, res) => {
         ? req.farmer.preferredLanguage
         : "en");
 
-    if (
-      !crop ||
-      !state ||
-      !district ||
-      !soilType ||
-      !landArea ||
-      !waterSource ||
-      !budget
-    ) {
+    if (!crop || !soilType || !landArea || !waterSource) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields.",
+        message: "Please provide crop, soilType, landArea, and waterSource.",
       });
     }
+
+    // Geocoding fallback: If district/state missing or needs resolution, use geocodeLocation API
+    if (!district || !state) {
+      try {
+        const geoResult = await geocodeLocation(district || state || "Maharashtra");
+        if (geoResult && geoResult.display_name) {
+          const parts = geoResult.display_name.split(",").map((p) => p.trim());
+          if (parts.length >= 2) {
+            district = district || parts[parts.length - 3] || parts[0] || "Maharashtra";
+            state = state || parts[parts.length - 2] || "Maharashtra";
+          }
+        }
+      } catch (geoErr) {
+        console.warn("Geocode fallback warning:", geoErr.message);
+      }
+    }
+    state = state || "Maharashtra";
+    district = district || "Maharashtra";
+
+    // Budget Auto-Calculation if not supplied
+    const acres = parseFloat(landArea) || 1;
+    let computedBudgetNum = parseFloat(budget);
+    if (isNaN(computedBudgetNum) || computedBudgetNum <= 0) {
+      const lowerCrop = crop.toLowerCase();
+      let perAcreCost = 20000;
+      if (lowerCrop.includes("sugar") || lowerCrop.includes("us") || lowerCrop.includes("fruit") || lowerCrop.includes("grape") || lowerCrop.includes("pomegranate") || lowerCrop.includes("tomato") || lowerCrop.includes("onion") || lowerCrop.includes("kanda")) {
+        perAcreCost = 35000;
+      }
+      computedBudgetNum = Math.max(40000, Math.round(acres * perAcreCost));
+    }
+    budget = String(computedBudgetNum);
 
     // =========================================================
     // STEP 1: 24-Hour Cache Check
