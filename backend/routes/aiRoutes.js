@@ -6,6 +6,7 @@ const farmerAuth = require("../middleware/authMiddleware");
 const {
   testAI,
   generateCropItinerary,
+  saveCropItinerary,
   getItinerary,
   getMyItineraries,
   downloadItineraryPDF,
@@ -29,6 +30,16 @@ router.post(
   "/crop-itinerary",
   farmerAuth,
   generateCropItinerary
+);
+
+/* =====================================================
+   Save Temporary Crop Itinerary
+===================================================== */
+
+router.post(
+  "/save-itinerary",
+  farmerAuth,
+  saveCropItinerary
 );
 
 /* =====================================================

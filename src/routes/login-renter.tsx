@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login-renter")({
   component: RenterAuthPage,
@@ -67,65 +68,22 @@ const INDIAN_STATES = [
   "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
 ];
 
-/* ─── Toast System ──────────────────────────────────────────────── */
+/* ─── Toast System (Consolidated to Sonner) ────────────────────── */
 
-let toastIdCounter = 0;
-
-function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
-  return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence>
-        {toasts.map((toast) => {
-          const icons: Record<ToastType, React.ReactNode> = {
-            success: <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />,
-            error: <AlertCircle className="h-4 w-4 text-destructive shrink-0" />,
-            info: <Info className="h-4 w-4 text-primary shrink-0" />,
-          };
-          const borders: Record<ToastType, string> = {
-            success: "border-emerald-200",
-            error: "border-destructive/30",
-            info: "border-primary/30",
-          };
-          return (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className={`pointer-events-auto flex items-center gap-3 rounded-xl border bg-card shadow-elevated px-4 py-3 min-w-[280px] max-w-sm ${borders[toast.type]}`}
-            >
-              {icons[toast.type]}
-              <p className="text-sm font-medium flex-1">{toast.message}</p>
-              <button
-                onClick={() => onRemove(toast.id)}
-                className="text-muted-foreground hover:text-foreground transition-colors ml-1"
-                aria-label="Dismiss"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </div>
-  );
+function ToastContainer({ toasts: _t, onRemove: _r }: { toasts: Toast[]; onRemove: (id: number) => void }) {
+  return null;
 }
 
 function useToast() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
   const addToast = (type: ToastType, message: string) => {
-    const id = ++toastIdCounter;
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => removeToast(id), 4000);
+    if (type === "success") toast.success(message);
+    else if (type === "error") toast.error(message);
+    else toast.info(message);
   };
 
-  const removeToast = (id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  const removeToast = (_id: number) => {};
 
-  return { toasts, addToast, removeToast };
+  return { toasts: [] as Toast[], addToast, removeToast };
 }
 
 /* ─── Reusable input wrapper ────────────────────────────────────── */
@@ -994,6 +952,13 @@ export default function RenterAuthPage() {
                 </>
               )}
             </p>
+
+            {/* Other roles */}
+            <div className="mt-6 pt-5 border-t border-border flex items-center justify-center gap-2 sm:gap-3 text-xs text-muted-foreground flex-wrap">
+              <span>Equipment owner? <Link to="/login-owner" className="font-semibold text-foreground hover:text-primary transition-colors">Owner Login →</Link></span>
+              <span>•</span>
+              <span>Agricultural labour? <Link to="/login-labour" className="font-semibold text-foreground hover:text-primary transition-colors">Labour Login →</Link></span>
+            </div>
           </motion.div>
         </div>
       </div>

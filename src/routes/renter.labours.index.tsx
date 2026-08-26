@@ -876,7 +876,7 @@ function RenterLabours() {
                   <X className="h-4 w-4" />
                 </button>
               )}
-              <VoiceButton size="sm" />
+              <VoiceButton size="sm" onSpeechResult={(text) => { setQ(text); setShowSuggestions(false); }} />
             </div>
             <AnimatePresence>
               <SearchSuggestions
@@ -1134,18 +1134,20 @@ function RenterLabours() {
                 <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">
                   {labours.length === 0
                     ? "Verified labour profiles will appear here automatically."
-                    : "Try changing your search or filters."}
+                    : "Try adjusting your search keywords or clearing applied filters."}
                 </p>
               </div>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold shadow-soft"
-                >
-                  Clear all filters
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  clearAll();
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold shadow-soft hover:shadow-elevated transition"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset Filters & Search
+              </button>
             </div>
           )}
         </div>

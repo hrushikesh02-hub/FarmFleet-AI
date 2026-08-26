@@ -18,6 +18,10 @@ const {
 } = require("../services/weather/dateScheduler");
 
 
+const {
+  generateFallbackItinerary,
+} = require("../services/ai/fallbackEngine");
+
 /* =====================================================
    AI Test Endpoint
 ===================================================== */
@@ -90,29 +94,38 @@ exports.generateCropItinerary = async (req, res) => {
       });
     }
 
-    console.log("\n========================================");
-    console.log(`🌾 Generating Crop Itinerary (${language.toUpperCase()})`);
-    console.log("========================================");
+    // =========================================================
+    // STEP 1: 24-Hour Cache Check
+    // =========================================================
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const cachedItinerary = await CropItinerary.findOne({
+      farmer: farmerId,
+      createdAt: { $gte: twentyFourHoursAgo },
+      crop: { $regex: new RegExp(`^${crop.trim()}$`, "i") },
+      "location.district": { $regex: new RegExp(`^${district.trim()}$`, "i") },
+      soilType: { $regex: new RegExp(`^${soilType.trim()}$`, "i") },
+      landArea: String(landArea).trim(),
+      waterSource: { $regex: new RegExp(`^${waterSource.trim()}$`, "i") },
+      language: language,
+    }).sort({ createdAt: -1 });
 
-    // Build Prompt
-    const prompt = buildCropPrompt({
-      crop,
-      state,
-      district,
-      soilType,
-      landArea,
-      waterSource,
-      budget,
-      language,
-    });
+    if (cachedItinerary) {
+      console.log("\n========================================");
+      console.log("⚡ Returning Cached Crop Itinerary (< 24h old)");
+      console.log("========================================");
 
-    // Generate AI Response
-    const aiResponse = await generateContent(prompt);
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        message: "Crop itinerary returned from 24-hour cache.",
+        itineraryId: cachedItinerary._id,
+        itinerary: cachedItinerary,
+      });
+    }
 
-    // Parse JSON
-    const parsed = parseGeminiResponse(aiResponse);
-
-    // Fetch live weather snapshot for district so weather info is present immediately
+    // =========================================================
+    // STEP 2: Fetch Live Weather Snapshot Before Generation
+    // =========================================================
     let initialWeather = {};
     try {
       const weatherReport = await getSafeWeatherReport(district);
@@ -120,7 +133,47 @@ exports.generateCropItinerary = async (req, res) => {
         initialWeather = weatherReport.currentWeather;
       }
     } catch (weatherErr) {
-      console.warn("Weather fetch warning on itinerary generation:", weatherErr.message);
+      console.warn("Weather fetch warning prior to AI generation:", weatherErr.message);
+    }
+
+    // =========================================================
+    // STEP 3 & STEP 4: Call Gemini (8s timeout) or Fallback Engine
+    // =========================================================
+    let parsed;
+    let generationSource = "ai";
+
+    try {
+      console.log("\n========================================");
+      console.log(`🌾 Generating Crop Itinerary via Gemini (${language.toUpperCase()})`);
+      console.log("========================================");
+
+      const prompt = buildCropPrompt({
+        crop,
+        state,
+        district,
+        soilType,
+        landArea,
+        waterSource,
+        budget,
+        language,
+      });
+
+      const aiResponse = await generateContent(prompt);
+      parsed = parseGeminiResponse(aiResponse);
+    } catch (aiErr) {
+      console.warn(`\n⚠️  Gemini Generation Failed / Timed Out (${aiErr.message}). Switching to Fallback Engine...`);
+      generationSource = "fallback";
+
+      parsed = generateFallbackItinerary({
+        crop,
+        state,
+        district,
+        soilType,
+        landArea,
+        waterSource,
+        budget,
+        language,
+      });
     }
 
     // Build timeline items with scheduled dates
@@ -132,36 +185,98 @@ exports.generateCropItinerary = async (req, res) => {
     }));
     const scheduledTimeline = generateSchedule(rawTimeline, new Date());
 
+    // =========================================================
+    // STEP 5: Temporary Preview Check (if save === false)
+    // =========================================================
+    if (req.body.save === false) {
+      console.log("\n========================================");
+      console.log(`ℹ️ Temporary Preview Generated (Not Saved to DB yet)`);
+      console.log("========================================");
+
+      const tempItinerary = {
+        _id: "temp_" + Date.now(),
+        farmer: farmerId,
+        language,
+        source: generationSource,
+        isTemporary: true,
+        crop,
+        location: { state, district },
+        soilType,
+        landArea: String(landArea),
+        waterSource,
+        budget: String(budget),
+        cropDuration: parsed.cropDuration || "4-5 Months",
+        bestSeason: parsed.bestSeason || "Kharif",
+        expectedYield: parsed.expectedYield || "25-30 Quintals/Acre",
+        estimatedIncome: parsed.estimatedIncome || `₹${(Number(budget) * 2).toLocaleString("en-IN")}`,
+        estimatedProfit: parsed.estimatedProfit || `₹${(Number(budget) * 1.2).toLocaleString("en-IN")}`,
+        estimatedTotalCost: parsed.estimatedTotalCost || `₹${Number(budget).toLocaleString("en-IN")}`,
+        aiSummary: {
+          cropDuration: parsed.cropDuration,
+          expectedYield: parsed.expectedYield,
+          estimatedCost: parsed.estimatedTotalCost,
+          estimatedIncome: parsed.estimatedIncome,
+          estimatedProfit: parsed.estimatedProfit,
+          bestSowingSeason: parsed.bestSeason,
+          riskLevel: "Low Risk",
+          source: generationSource,
+        },
+        weather: initialWeather,
+        lastWeatherCheck: new Date(),
+        timeline: scheduledTimeline,
+        landPreparation: parsed.landPreparation || [],
+        seedRecommendation: parsed.seedRecommendation || {},
+        fertilizerSchedule: parsed.fertilizerSchedule || [],
+        irrigationSchedule: parsed.irrigationSchedule || [],
+        weedManagement: parsed.weedManagement || [],
+        pestAndDiseaseManagement: parsed.pestAndDiseaseManagement || [],
+        equipmentRequired: (parsed.equipmentRequired || []).map((item) => ({
+          name: item.name || item.equipment || "Tractor",
+          purpose: item.purpose || "Field Operations",
+          estimatedRent: item.estimatedRent || item.estimatedRentalCost || "₹1,200 / hour",
+        })),
+        labourRequirement: (parsed.labourRequirement || []).map((item) => ({
+          activity: item.activity || "Field Work",
+          workers: item.workers || item.workersRequired || "2 workers",
+          days: item.days || item.estimatedDays || "2 days",
+        })),
+        precautions: parsed.precautions || [],
+        governmentSchemes: parsed.governmentSchemes || [],
+        tips: parsed.tips || [],
+        aiResponse: parsed,
+      };
+
+      return res.status(200).json({
+        success: true,
+        source: generationSource,
+        isTemporary: true,
+        message: "Temporary crop itinerary generated for preview.",
+        itineraryId: tempItinerary._id,
+        itinerary: tempItinerary,
+      });
+    }
+
     // Save to MongoDB
     const itinerary = await CropItinerary.create({
       farmer: farmerId,
       language,
+      source: generationSource,
 
       crop,
-
       location: {
         state,
         district,
       },
-
       soilType,
-
-      landArea,
-
+      landArea: String(landArea),
       waterSource,
-
-      budget,
+      budget: String(budget),
 
       cropDuration: parsed.cropDuration || "4-5 Months",
-
       bestSeason: parsed.bestSeason || "Kharif",
-
       expectedYield: parsed.expectedYield || "25-30 Quintals/Acre",
-
       estimatedIncome: parsed.estimatedIncome || `₹${(Number(budget) * 2).toLocaleString("en-IN")}`,
-
       estimatedProfit: parsed.estimatedProfit || `₹${(Number(budget) * 1.2).toLocaleString("en-IN")}`,
-
       estimatedTotalCost: parsed.estimatedTotalCost || `₹${Number(budget).toLocaleString("en-IN")}`,
 
       aiSummary: {
@@ -172,87 +287,45 @@ exports.generateCropItinerary = async (req, res) => {
         estimatedProfit: parsed.estimatedProfit,
         bestSowingSeason: parsed.bestSeason,
         riskLevel: "Low Risk",
+        source: generationSource,
       },
 
       weather: initialWeather,
-
       lastWeatherCheck: new Date(),
-
       timeline: scheduledTimeline,
 
-      landPreparation:
-        parsed.landPreparation || [],
-
-      seedRecommendation:
-        parsed.seedRecommendation || {},
-
-      fertilizerSchedule:
-        parsed.fertilizerSchedule || [],
-
-      irrigationSchedule:
-        parsed.irrigationSchedule || [],
-
-      weedManagement:
-        parsed.weedManagement || [],
-
-      pestAndDiseaseManagement:
-        parsed.pestAndDiseaseManagement || [],
-
-      equipmentRequired:
-        (parsed.equipmentRequired || []).map(
-          (item) => ({
-            name:
-              item.name ||
-              item.equipment ||
-              "Tractor",
-
-            purpose:
-              item.purpose || "Field Operations",
-
-            estimatedRent:
-              item.estimatedRent ||
-              item.estimatedRentalCost ||
-              "₹1,200 / hour",
-          })
-        ),
-
-      labourRequirement:
-        (parsed.labourRequirement || []).map(
-          (item) => ({
-            activity:
-              item.activity || "Field Work",
-
-            workers:
-              item.workers ||
-              item.workersRequired ||
-              "2 workers",
-
-            days:
-              item.days ||
-              item.estimatedDays ||
-              "2 days",
-          })
-        ),
-
-      precautions:
-        parsed.precautions || [],
-
-      governmentSchemes:
-        parsed.governmentSchemes || [],
-
-      tips:
-        parsed.tips || [],
-
+      landPreparation: parsed.landPreparation || [],
+      seedRecommendation: parsed.seedRecommendation || {},
+      fertilizerSchedule: parsed.fertilizerSchedule || [],
+      irrigationSchedule: parsed.irrigationSchedule || [],
+      weedManagement: parsed.weedManagement || [],
+      pestAndDiseaseManagement: parsed.pestAndDiseaseManagement || [],
+      equipmentRequired: (parsed.equipmentRequired || []).map((item) => ({
+        name: item.name || item.equipment || "Tractor",
+        purpose: item.purpose || "Field Operations",
+        estimatedRent: item.estimatedRent || item.estimatedRentalCost || "₹1,200 / hour",
+      })),
+      labourRequirement: (parsed.labourRequirement || []).map((item) => ({
+        activity: item.activity || "Field Work",
+        workers: item.workers || item.workersRequired || "2 workers",
+        days: item.days || item.estimatedDays || "2 days",
+      })),
+      precautions: parsed.precautions || [],
+      governmentSchemes: parsed.governmentSchemes || [],
+      tips: parsed.tips || [],
       aiResponse: parsed,
     });
 
     console.log("\n========================================");
-    console.log("✅ Crop Itinerary Saved Successfully");
+    console.log(`✅ Crop Itinerary Saved Successfully (Source: ${generationSource})`);
     console.log("========================================");
 
     return res.status(201).json({
       success: true,
-      message: "Crop itinerary generated successfully.",
+      source: generationSource,
+      message: generationSource === "fallback"
+        ? "Crop itinerary generated via high-reliability fallback engine."
+        : "Crop itinerary generated successfully.",
       itineraryId: itinerary._id,
       itinerary,
     });
@@ -266,6 +339,51 @@ exports.generateCropItinerary = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+/* =====================================================
+   Save Crop Itinerary (Convert Temporary Preview to Saved)
+===================================================== */
+
+exports.saveCropItinerary = async (req, res) => {
+  try {
+    const farmerId = req.farmer.id;
+    const { itineraryData } = req.body;
+
+    if (!itineraryData) {
+      return res.status(400).json({
+        success: false,
+        message: "Itinerary data is required to save.",
+      });
+    }
+
+    // Strip temporary flags and IDs if present
+    const cleanData = { ...itineraryData };
+    delete cleanData._id;
+    delete cleanData.isTemporary;
+
+    const itinerary = await CropItinerary.create({
+      ...cleanData,
+      farmer: farmerId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    console.log(`✅ Temporary itinerary saved to DB with ID: ${itinerary._id}`);
+
+    return res.status(201).json({
+      success: true,
+      message: "Itinerary saved to your report history successfully.",
+      itineraryId: itinerary._id,
+      itinerary,
+    });
+  } catch (error) {
+    console.error("Save Itinerary Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save itinerary.",
     });
   }
 };

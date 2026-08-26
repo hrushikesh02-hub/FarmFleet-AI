@@ -180,42 +180,50 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
   if (activeIdx === -1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-0 flex-wrap px-4 py-4 border-b border-border/50 bg-muted/20">
-      {STEPPER_STEPS.map((step, i) => {
-        const isDone = i < activeIdx;
-        const isActive = i === activeIdx;
-        return (
-          <div key={step.key} className="flex items-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <motion.div
-                animate={{
-                  backgroundColor: isDone || isActive ? ACCENT : "transparent",
-                  borderColor: isDone || isActive ? ACCENT : "#e5e7eb",
-                  scale: isActive ? 1.15 : 1,
-                }}
-                transition={{ duration: 0.25 }}
-                className="h-7 w-7 rounded-full border-2 flex items-center justify-center text-xs font-bold"
-                style={{ color: isDone || isActive ? "#fff" : "#9ca3af" }}
-              >
-                {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
-              </motion.div>
-              <span
-                className={`text-[9px] font-bold uppercase tracking-wider transition-colors hidden sm:block ${
-                  isActive ? "text-primary" : isDone ? "text-primary/60" : "text-muted-foreground"
-                }`}
-              >
-                {step.label}
-              </span>
+    <div className="w-full border-b border-border/50 bg-muted/20 px-3 sm:px-6 py-3.5">
+      <div className="max-w-md mx-auto flex items-center justify-between">
+        {STEPPER_STEPS.map((step, i) => {
+          const isDone = i < activeIdx;
+          const isActive = i === activeIdx;
+          const isLast = i === STEPPER_STEPS.length - 1;
+          return (
+            <div key={step.key} className={`flex items-center ${isLast ? "" : "flex-1 min-w-0"}`}>
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <motion.div
+                  animate={{
+                    backgroundColor: isDone || isActive ? ACCENT : "transparent",
+                    borderColor: isDone || isActive ? ACCENT : "#e5e7eb",
+                    scale: isActive ? 1.12 : 1,
+                  }}
+                  transition={{ duration: 0.25 }}
+                  className="h-6 w-6 sm:h-7 sm:w-7 rounded-full border-2 flex items-center justify-center text-[11px] sm:text-xs font-bold"
+                  style={{ color: isDone || isActive ? "#fff" : "#9ca3af" }}
+                >
+                  {isDone ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : i + 1}
+                </motion.div>
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wider transition-colors hidden md:block ${
+                    isActive ? "text-primary" : isDone ? "text-primary/60" : "text-muted-foreground"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {!isLast && (
+                <div
+                  className="h-0.5 flex-1 mx-1 sm:mx-2 rounded transition-all duration-300 md:-mt-3.5"
+                  style={{ backgroundColor: isDone ? ACCENT : "#e5e7eb" }}
+                />
+              )}
             </div>
-            {i < STEPPER_STEPS.length - 1 && (
-              <div
-                className="mx-1.5 mb-4 h-0.5 w-5 sm:w-8 rounded transition-all duration-300"
-                style={{ backgroundColor: isDone ? ACCENT : "#e5e7eb" }}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="md:hidden mt-2 text-center">
+        <span className="text-xs font-semibold text-primary">
+          Step {activeIdx + 1} of {STEPPER_STEPS.length}: {STEPPER_STEPS[activeIdx]?.label}
+        </span>
+      </div>
     </div>
   );
 }

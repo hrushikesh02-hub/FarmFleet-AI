@@ -152,9 +152,15 @@ const cropItinerarySchema = new mongoose.Schema(
       default: "Active",
     },
 
+    source: {
+      type: String,
+      enum: ["ai", "fallback", "cache"],
+      default: "ai",
+    },
+
     language: {
       type: String,
-      enum: ["en", "hi", "mr"],
+      enum: ["en", "hi", "mr", "gu", "ta", "te", "kn", "pa"],
       default: "en",
     },
   },

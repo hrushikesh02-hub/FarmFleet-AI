@@ -311,42 +311,50 @@ function StepIndicator({ currentStep }: { currentStep: BookingStep }) {
   if (activeIdx === -1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-0 flex-wrap px-4 py-4 border-b border-border/50 bg-muted/20">
-      {STEPS.map((step, i) => {
-        const isDone = i < activeIdx;
-        const isActive = i === activeIdx;
-        return (
-          <div key={step.key} className="flex items-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <motion.div
-                animate={{
-                  backgroundColor: isDone ? "#22c55e" : isActive ? "#22c55e" : "transparent",
-                  borderColor: isDone || isActive ? "#22c55e" : "#e5e7eb",
-                  scale: isActive ? 1.15 : 1,
-                }}
-                transition={{ duration: 0.25 }}
-                className="h-7 w-7 rounded-full border-2 flex items-center justify-center text-xs font-bold"
-                style={{ color: isDone || isActive ? "#fff" : "#9ca3af" }}
-              >
-                {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
-              </motion.div>
-              <span
-                className={`text-[9px] font-bold uppercase tracking-wider transition-colors hidden sm:block ${
-                  isActive ? "text-primary" : isDone ? "text-primary/60" : "text-muted-foreground"
-                }`}
-              >
-                {step.label}
-              </span>
+    <div className="w-full border-b border-border/50 bg-muted/20 px-3 sm:px-6 py-3.5">
+      <div className="max-w-md mx-auto flex items-center justify-between">
+        {STEPS.map((step, i) => {
+          const isDone = i < activeIdx;
+          const isActive = i === activeIdx;
+          const isLast = i === STEPS.length - 1;
+          return (
+            <div key={step.key} className={`flex items-center ${isLast ? "" : "flex-1 min-w-0"}`}>
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <motion.div
+                  animate={{
+                    backgroundColor: isDone || isActive ? "#22c55e" : "transparent",
+                    borderColor: isDone || isActive ? "#22c55e" : "#e5e7eb",
+                    scale: isActive ? 1.12 : 1,
+                  }}
+                  transition={{ duration: 0.25 }}
+                  className="h-6 w-6 sm:h-7 sm:w-7 rounded-full border-2 flex items-center justify-center text-[11px] sm:text-xs font-bold"
+                  style={{ color: isDone || isActive ? "#fff" : "#9ca3af" }}
+                >
+                  {isDone ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : i + 1}
+                </motion.div>
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wider transition-colors hidden md:block ${
+                    isActive ? "text-primary" : isDone ? "text-primary/60" : "text-muted-foreground"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {!isLast && (
+                <div
+                  className="h-0.5 flex-1 mx-1 sm:mx-2 rounded transition-all duration-300 md:-mt-3.5"
+                  style={{ backgroundColor: isDone ? "#22c55e" : "#e5e7eb" }}
+                />
+              )}
             </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className="mx-1.5 mb-4 h-0.5 w-5 sm:w-8 rounded transition-all duration-300"
-                style={{ backgroundColor: isDone ? "#22c55e" : "#e5e7eb" }}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="md:hidden mt-2 text-center">
+        <span className="text-xs font-semibold text-primary">
+          Step {activeIdx + 1} of {STEPS.length}: {STEPS[activeIdx]?.label}
+        </span>
+      </div>
     </div>
   );
 }
@@ -410,8 +418,12 @@ function EquipmentGallery({
         <AnimatePresence mode="wait">
           <motion.img
             key={activeImg}
-            src={images[activeImg] ?? "/placeholder-equipment.jpg"}
+            src={images[activeImg] || "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=800&auto=format&fit=crop&q=80"}
             alt={name}
+            onError={(ev) => {
+              ev.currentTarget.onerror = null;
+              ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=800&auto=format&fit=crop&q=80";
+            }}
             className="h-full w-full object-cover"
             initial={{ opacity: 0, scale: 1.03 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -464,7 +476,15 @@ function EquipmentGallery({
               }`}
               style={{ width: 64, height: 56 }}
             >
-              <img src={img} alt="" className="h-full w-full object-cover" />
+              <img
+                src={img || "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60"}
+                alt=""
+                onError={(ev) => {
+                  ev.currentTarget.onerror = null;
+                  ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60";
+                }}
+                className="h-full w-full object-cover"
+              />
               {activeImg === i && (
                 <motion.div
                   layoutId="thumb-active"
@@ -780,9 +800,14 @@ function BookingWorkspace({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState("");
 
+  const [rentalType, setRentalType] = useState<"daily" | "hourly">("daily");
+  const [bookingHours, setBookingHours] = useState<number>(4);
+  const [selectedSlot, setSelectedSlot] = useState<string>("Morning (6:00 AM – 10:00 AM)");
+
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const totalDays = useMemo(() => {
+    if (rentalType === "hourly") return 1;
     if (!startDate || !endDate) return 0;
     return Math.max(
       1,
@@ -790,12 +815,20 @@ function BookingWorkspace({
         (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
       )
     );
-  }, [startDate, endDate]);
+  }, [rentalType, startDate, endDate]);
 
-  const totalAmount = useMemo(
-    () => (totalDays > 0 ? totalDays * equipment.pricePerDay : 0),
-    [totalDays, equipment.pricePerDay]
-  );
+  const effectiveHourlyRate = useMemo(() => {
+    return equipment.pricePerHour > 0
+      ? equipment.pricePerHour
+      : Math.round(equipment.pricePerDay / 8) || 300;
+  }, [equipment.pricePerHour, equipment.pricePerDay]);
+
+  const totalAmount = useMemo(() => {
+    if (rentalType === "hourly") {
+      return startDate ? bookingHours * effectiveHourlyRate : 0;
+    }
+    return totalDays > 0 ? totalDays * equipment.pricePerDay : 0;
+  }, [rentalType, startDate, bookingHours, effectiveHourlyRate, totalDays, equipment.pricePerDay]);
 
   const images = useMemo<string[]>(() => {
     if (equipment.images?.length) return equipment.images;
@@ -1004,54 +1037,167 @@ function BookingWorkspace({
                       <Calendar className="h-6 w-6" />
                     </div>
                     <div>
-                      <h2 className="font-display font-bold text-xl tracking-tight">Select Your Dates</h2>
-                      <p className="text-sm text-muted-foreground mt-1">Choose when you need the equipment</p>
+                      <h2 className="font-display font-bold text-xl tracking-tight">Select Rental Duration</h2>
+                      <p className="text-sm text-muted-foreground mt-1">Choose between flexible hourly tasks or full daily rentals</p>
                     </div>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                        Start Date <span className="text-red-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        <input
-                          type="date"
-                          min={today}
-                          value={startDate}
-                          onChange={(e) => {
-                            setStartDate(e.target.value);
-                            if (endDate && e.target.value > endDate) setEndDate("");
-                            setAvailabilityResult(null);
-                          }}
-                          className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                        End Date <span className="text-red-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        <input
-                          type="date"
-                          min={startDate || today}
-                          value={endDate}
-                          onChange={(e) => {
-                            setEndDate(e.target.value);
-                            setAvailabilityResult(null);
-                          }}
-                          disabled={!startDate}
-                          className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition disabled:opacity-50"
-                        />
-                      </div>
-                    </div>
+                  {/* Rental Mode Selector: Daily vs Hourly */}
+                  <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-muted/60 border border-border">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentalType("daily");
+                        setAvailabilityResult(null);
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                        rentalType === "daily"
+                          ? "bg-card text-foreground shadow-sm border border-border/80"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span>Daily Rental (Full Days)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentalType("hourly");
+                        if (startDate) setEndDate(startDate);
+                        setAvailabilityResult(null);
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                        rentalType === "hourly"
+                          ? "bg-card text-foreground shadow-sm border border-border/80"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <span>Hourly Rental (By Hour)</span>
+                    </button>
                   </div>
+
+                  {/* Daily Rental UI */}
+                  {rentalType === "daily" ? (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          Start Date <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="date"
+                            min={today}
+                            value={startDate}
+                            onChange={(e) => {
+                              setStartDate(e.target.value);
+                              if (endDate && e.target.value > endDate) setEndDate("");
+                              setAvailabilityResult(null);
+                            }}
+                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          End Date <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="date"
+                            min={startDate || today}
+                            value={endDate}
+                            onChange={(e) => {
+                              setEndDate(e.target.value);
+                              setAvailabilityResult(null);
+                            }}
+                            disabled={!startDate}
+                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition disabled:opacity-50"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Hourly Rental UI */
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          Date of Work <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="date"
+                            min={today}
+                            value={startDate}
+                            onChange={(e) => {
+                              setStartDate(e.target.value);
+                              setEndDate(e.target.value); // same day for hourly
+                              setAvailabilityResult(null);
+                            }}
+                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Number of hours selector */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          Required Hours (₹{effectiveHourlyRate}/hour)
+                        </label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[2, 4, 6, 8].map((h) => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setBookingHours(h)}
+                              className={`py-3 rounded-xl border text-xs sm:text-sm font-bold transition ${
+                                bookingHours === h
+                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
+                                  : "border-border bg-background hover:bg-accent text-foreground"
+                              }`}
+                            >
+                              {h} Hours
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Preferred Time Slot */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          Preferred Time Window
+                        </label>
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          {[
+                            "Morning (6:00 AM – 10:00 AM)",
+                            "Midday (10:00 AM – 2:00 PM)",
+                            "Afternoon (2:00 PM – 6:00 PM)",
+                            "Full Day (8:00 AM – 5:00 PM)",
+                          ].map((slot) => (
+                            <button
+                              key={slot}
+                              type="button"
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                                selectedSlot === slot
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-border bg-background hover:bg-accent text-foreground"
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <AnimatePresence>
-                    {totalDays > 0 && (
+                    {totalAmount > 0 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -1064,8 +1210,12 @@ function BookingWorkspace({
                               <Clock className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground font-medium">Duration</p>
-                              <p className="font-bold text-sm">{totalDays} day{totalDays > 1 ? "s" : ""}</p>
+                              <p className="text-xs text-muted-foreground font-medium">Rental Summary</p>
+                              <p className="font-bold text-sm">
+                                {rentalType === "hourly"
+                                  ? `${bookingHours} Hours • ₹${effectiveHourlyRate}/hr`
+                                  : `${totalDays} Day${totalDays > 1 ? "s" : ""} • ₹${equipment.pricePerDay}/day`}
+                              </p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -1081,7 +1231,7 @@ function BookingWorkspace({
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
-                      disabled={!startDate || !endDate}
+                      disabled={!startDate || (rentalType === "daily" && !endDate)}
                       onClick={checkAvailability}
                       className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-white font-semibold text-sm shadow-card hover:shadow-elevated transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                       style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
@@ -1319,7 +1469,15 @@ function BookingWorkspace({
                   {/* Equipment */}
                   <div className="rounded-2xl border border-border bg-background p-4 flex items-center gap-4">
                     <div className="h-16 w-16 rounded-xl overflow-hidden shrink-0 border border-border">
-                      <img src={images[0] ?? "/placeholder-equipment.jpg"} alt={equipment.name} className="h-full w-full object-cover" />
+                      <img
+                        src={images[0] || "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60"}
+                        alt={equipment.name}
+                        onError={(ev) => {
+                          ev.currentTarget.onerror = null;
+                          ev.currentTarget.src = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60";
+                        }}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] uppercase tracking-widest font-semibold text-primary">{equipment.type}</p>
@@ -1334,16 +1492,23 @@ function BookingWorkspace({
                   <div className="rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/5 p-4 space-y-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#16a34a]">Booking Details</p>
                     {[
-                      { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) },
-                      { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) },
-                      { label: "Total Days", value: `${totalDays} day${totalDays > 1 ? "s" : ""}` },
-                      { label: "Price Per Day", value: `₹${equipment.pricePerDay.toLocaleString("en-IN")}` },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-semibold">{value}</span>
-                      </div>
-                    ))}
+                      { label: "Rental Mode", value: rentalType === "hourly" ? "Hourly Rental (Quick Task)" : "Daily Rental (Full Days)" },
+                      rentalType === "hourly"
+                        ? { label: "Date & Slot", value: `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""} • ${selectedSlot}` }
+                        : { label: "Start Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" },
+                      rentalType === "daily"
+                        ? { label: "End Date", value: endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" }
+                        : null,
+                      { label: "Duration", value: rentalType === "hourly" ? `${bookingHours} hour${bookingHours > 1 ? "s" : ""}` : `${totalDays} day${totalDays > 1 ? "s" : ""}` },
+                      { label: "Rental Rate", value: rentalType === "hourly" ? `₹${effectiveHourlyRate.toLocaleString("en-IN")} / hour` : `₹${equipment.pricePerDay.toLocaleString("en-IN")} / day` },
+                    ]
+                      .filter(Boolean)
+                      .map((item) => (
+                        <div key={item!.label} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{item!.label}</span>
+                          <span className="font-semibold">{item!.value}</span>
+                        </div>
+                      ))}
                     <div className="h-px bg-[#22c55e]/20" />
                     <div className="flex justify-between text-base font-bold">
                       <span>Estimated Total</span>
@@ -1503,16 +1668,17 @@ function BookingWorkspace({
                       <span className="font-semibold truncate max-w-[180px]">{equipment.name}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Dates</span>
-                      <span className="font-semibold">
-                        {new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        {" – "}
-                        {new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                      </span>
+                      <span className="text-muted-foreground">Rental Mode</span>
+                      <span className="font-semibold">{rentalType === "hourly" ? `Hourly (${bookingHours} hrs)` : `Daily (${totalDays} days)`}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Duration</span>
-                      <span className="font-semibold">{totalDays} day{totalDays > 1 ? "s" : ""}</span>
+                      <span className="text-muted-foreground">{rentalType === "hourly" ? "Date & Window" : "Dates"}</span>
+                      <span className="font-semibold">
+                        {rentalType === "hourly"
+                          ? `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""} (${selectedSlot})`
+                          : `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""} – ${endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}`
+                        }
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Payment Method</span>
@@ -1638,7 +1804,24 @@ function EquipmentDetails() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
   const [activeImg, setActiveImg] = useState(0);
-  const [fav, setFav] = useState(false);
+  const [fav, setFav] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved: string[] = JSON.parse(localStorage.getItem("farmfleet_favorites") || "[]");
+      return saved.includes(id);
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleFav = (nextFav: boolean) => {
+    setFav(nextFav);
+    try {
+      const saved: string[] = JSON.parse(localStorage.getItem("farmfleet_favorites") || "[]");
+      const updated = nextFav ? [...new Set([...saved, id])] : saved.filter((x) => x !== id);
+      localStorage.setItem("farmfleet_favorites", JSON.stringify(updated));
+    } catch {}
+  };
 
   // View state: "details" | "booking"
   const [showBookingWorkspace, setShowBookingWorkspace] = useState(false);
@@ -1805,7 +1988,7 @@ function EquipmentDetails() {
                     avgRating={avgRating}
                     onBook={() => setShowBookingWorkspace(true)}
                     fav={fav}
-                    setFav={setFav}
+                    setFav={handleToggleFav}
                   />
                 )}
               </motion.div>
