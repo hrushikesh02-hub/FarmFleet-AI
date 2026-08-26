@@ -1,4 +1,5 @@
 const Labour = require("../models/Labour");
+const LabourReview = require("../models/labourReview");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../config/cloudinary");
@@ -623,6 +624,23 @@ const getPublicLabourById = async (req, res) => {
       });
     }
 
+    const rawReviews = await LabourReview.find({ labour: labour._id })
+      .populate("farmer", "fullName profileImage")
+      .sort({ createdAt: -1 });
+
+    const reviews = rawReviews.map((r) => ({
+      id: r._id.toString(),
+      reviewerName: r.farmer?.fullName || "Farmer",
+      reviewerAvatar: r.farmer?.profileImage || "",
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: new Date(r.createdAt).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    }));
+
     return res.status(200).json({
       success: true,
       labour: {
@@ -641,9 +659,10 @@ const getPublicLabourById = async (req, res) => {
         coordinates: labour.coordinates || { lat: 0, lng: 0 },
         availability: labour.availability,
         rating: labour.rating || 0,
-        totalReviews: labour.totalReviews || 0,
+        totalReviews: labour.totalReviews || reviews.length,
         bio: labour.bio || "",
         completedJobs: labour.completedJobs || 0,
+        reviews,
       },
     });
   } catch (error) {

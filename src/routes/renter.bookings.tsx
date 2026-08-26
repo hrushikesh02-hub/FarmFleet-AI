@@ -319,7 +319,7 @@ function ReviewModal({
     setSubmitting(true);
     setError(null);
     try {
-      const token = localStorage.getItem("farmerToken");
+      const token = localStorage.getItem("farmerToken") ?? localStorage.getItem("token") ?? "";
       const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
       const res = await fetch(`${API_BASE}/api/reviews/create`, {
         method: "POST",
@@ -520,7 +520,7 @@ function ReviewSection({
   booking: BookingRecord;
   onOpenModal: () => void;
 }) {
-  if (booking.status !== "completed") return null;
+  if (booking.status !== "completed" && booking.status !== "accepted") return null;
 
   const fmt = (d: string) =>
     new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -1232,7 +1232,7 @@ function LabourRequestCard({
           </div>
         </div>
 
-        {request.status === "completed" && (
+        {(request.status === "completed" || request.status === "accepted") && (
           <div className="px-5 pb-5">
             {request.reviewGiven ? (
               <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">

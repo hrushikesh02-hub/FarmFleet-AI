@@ -50,13 +50,13 @@ exports.createReview = async (
     }
 
     if (
-      booking.status !==
-      "completed"
+      booking.status !== "completed" &&
+      booking.status !== "accepted"
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Review can only be submitted after booking completion",
+          "Review can only be submitted for completed or accepted bookings",
       });
     }
 
@@ -84,6 +84,7 @@ exports.createReview = async (
         comment,
       });
 
+    booking.status = "completed";
     booking.reviewGiven = true;
     booking.reviewDate =
       new Date();

@@ -47,13 +47,13 @@ exports.createReview = async (req, res) => {
     }
 
     if (
-      request.status !==
-      "completed"
+      request.status !== "completed" &&
+      request.status !== "accepted"
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Review can only be submitted after job completion",
+          "Review can only be submitted for completed or accepted requests",
       });
     }
 
@@ -87,6 +87,7 @@ exports.createReview = async (req, res) => {
         comment,
       });
 
+    request.status = "completed";
     request.reviewGiven = true;
     request.reviewDate =
       new Date();
@@ -472,16 +473,40 @@ exports.getLabourReviewById =
         message:
           "Failed to fetch review",
       });
-    }
-  };
-
 /* ==========================
-   EXPORTS
+   GET REVIEWS BY LABOUR ID
 ========================== */
 
-// module.exports = {
-//   createReview,
-//   getLabourReviews,
-//   getPublicReviews,
-//   getLabourReviewById,
-// };
+exports.getReviewsByLabourId = async (req, res) => {
+  try {
+    const reviews = await LabourReview.find({
+      labour: req.params.id,
+    })
+      .populate("farmer", "fullName profileImage")
+      .sort({ createdAt: -1 });
+
+    const formattedReviews = reviews.map((r) => ({
+      id: r._id,
+      reviewerName: r.farmer?.fullName || "Farmer",
+      reviewerAvatar: r.farmer?.profileImage || "",
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: new Date(r.createdAt).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      reviews: formattedReviews,
+    });
+  } catch (error) {
+    console.error("Get Reviews By Labour ID Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch labour reviews",
+    });
+  }
+};

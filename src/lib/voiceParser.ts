@@ -259,6 +259,132 @@ const MAHARASHTRA_DISTRICTS = [
   "Palghar",
 ];
 
+// Mapping common agricultural villages/talukas to their respective district & state
+const VILLAGE_TO_DISTRICT_MAP: Record<string, { district: string; state: string }> = {
+  // Ahmednagar
+  karanji: { district: "Ahmednagar", state: "Maharashtra" },
+  sangamner: { district: "Ahmednagar", state: "Maharashtra" },
+  kopergaon: { district: "Ahmednagar", state: "Maharashtra" },
+  kopargaon: { district: "Ahmednagar", state: "Maharashtra" },
+  shrirampur: { district: "Ahmednagar", state: "Maharashtra" },
+  rahata: { district: "Ahmednagar", state: "Maharashtra" },
+  shirdi: { district: "Ahmednagar", state: "Maharashtra" },
+  akole: { district: "Ahmednagar", state: "Maharashtra" },
+  parner: { district: "Ahmednagar", state: "Maharashtra" },
+  pathardi: { district: "Ahmednagar", state: "Maharashtra" },
+  shevgaon: { district: "Ahmednagar", state: "Maharashtra" },
+  shrigonda: { district: "Ahmednagar", state: "Maharashtra" },
+  karjat: { district: "Ahmednagar", state: "Maharashtra" },
+  jamkhed: { district: "Ahmednagar", state: "Maharashtra" },
+  rahuri: { district: "Ahmednagar", state: "Maharashtra" },
+  newasa: { district: "Ahmednagar", state: "Maharashtra" },
+  nevasa: { district: "Ahmednagar", state: "Maharashtra" },
+
+  // Pune
+  hadapsar: { district: "Pune", state: "Maharashtra" },
+  baramati: { district: "Pune", state: "Maharashtra" },
+  indapur: { district: "Pune", state: "Maharashtra" },
+  daund: { district: "Pune", state: "Maharashtra" },
+  shirur: { district: "Pune", state: "Maharashtra" },
+  junnar: { district: "Pune", state: "Maharashtra" },
+  khed: { district: "Pune", state: "Maharashtra" },
+  ambegaon: { district: "Pune", state: "Maharashtra" },
+  maval: { district: "Pune", state: "Maharashtra" },
+  mulshi: { district: "Pune", state: "Maharashtra" },
+  velhe: { district: "Pune", state: "Maharashtra" },
+  bhor: { district: "Pune", state: "Maharashtra" },
+  purandar: { district: "Pune", state: "Maharashtra" },
+  haveli: { district: "Pune", state: "Maharashtra" },
+  chakan: { district: "Pune", state: "Maharashtra" },
+  manchar: { district: "Pune", state: "Maharashtra" },
+  lonavala: { district: "Pune", state: "Maharashtra" },
+
+  // Nashik
+  niphad: { district: "Nashik", state: "Maharashtra" },
+  sinnar: { district: "Nashik", state: "Maharashtra" },
+  yeola: { district: "Nashik", state: "Maharashtra" },
+  malegaon: { district: "Nashik", state: "Maharashtra" },
+  satana: { district: "Nashik", state: "Maharashtra" },
+  kalwan: { district: "Nashik", state: "Maharashtra" },
+  chandwad: { district: "Nashik", state: "Maharashtra" },
+  igatpuri: { district: "Nashik", state: "Maharashtra" },
+  trimbak: { district: "Nashik", state: "Maharashtra" },
+  trimbakeshwar: { district: "Nashik", state: "Maharashtra" },
+  dindori: { district: "Nashik", state: "Maharashtra" },
+  deola: { district: "Nashik", state: "Maharashtra" },
+  lasalgaon: { district: "Nashik", state: "Maharashtra" },
+  pimpalgaon: { district: "Nashik", state: "Maharashtra" },
+
+  // Solapur
+  pandharpur: { district: "Solapur", state: "Maharashtra" },
+  barshi: { district: "Solapur", state: "Maharashtra" },
+  karmala: { district: "Solapur", state: "Maharashtra" },
+  madha: { district: "Solapur", state: "Maharashtra" },
+  mohol: { district: "Solapur", state: "Maharashtra" },
+  sangole: { district: "Solapur", state: "Maharashtra" },
+  sangola: { district: "Solapur", state: "Maharashtra" },
+  mangalwedha: { district: "Solapur", state: "Maharashtra" },
+  mangalvedhe: { district: "Solapur", state: "Maharashtra" },
+  malshiras: { district: "Solapur", state: "Maharashtra" },
+  akkalkot: { district: "Solapur", state: "Maharashtra" },
+  natepute: { district: "Solapur", state: "Maharashtra" },
+
+  // Kolhapur
+  karveer: { district: "Kolhapur", state: "Maharashtra" },
+  kagal: { district: "Kolhapur", state: "Maharashtra" },
+  hatkanangle: { district: "Kolhapur", state: "Maharashtra" },
+  shirol: { district: "Kolhapur", state: "Maharashtra" },
+  radhanagari: { district: "Kolhapur", state: "Maharashtra" },
+  panhala: { district: "Kolhapur", state: "Maharashtra" },
+  shahuwadi: { district: "Kolhapur", state: "Maharashtra" },
+  gadhinglaj: { district: "Kolhapur", state: "Maharashtra" },
+  ichalkaranji: { district: "Kolhapur", state: "Maharashtra" },
+
+  // Satara
+  karad: { district: "Satara", state: "Maharashtra" },
+  wai: { district: "Satara", state: "Maharashtra" },
+  phaltan: { district: "Satara", state: "Maharashtra" },
+  koregaon: { district: "Satara", state: "Maharashtra" },
+  khatav: { district: "Satara", state: "Maharashtra" },
+  patan: { district: "Satara", state: "Maharashtra" },
+  mahabaleshwar: { district: "Satara", state: "Maharashtra" },
+  dahiwadi: { district: "Satara", state: "Maharashtra" },
+
+  // Sangli
+  miraj: { district: "Sangli", state: "Maharashtra" },
+  tasgaon: { district: "Sangli", state: "Maharashtra" },
+  islampur: { district: "Sangli", state: "Maharashtra" },
+  walwa: { district: "Sangli", state: "Maharashtra" },
+  khanapur: { district: "Sangli", state: "Maharashtra" },
+  vita: { district: "Sangli", state: "Maharashtra" },
+  jat: { district: "Sangli", state: "Maharashtra" },
+  kavathemahankal: { district: "Sangli", state: "Maharashtra" },
+
+  // Chhatrapati Sambhajinagar / Aurangabad
+  paithan: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  gangapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  vaijapur: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  sillod: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  phulambri: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+  kannad: { district: "Chhatrapati Sambhajinagar", state: "Maharashtra" },
+
+  // Jalgaon
+  bhusawal: { district: "Jalgaon", state: "Maharashtra" },
+  chalisgaon: { district: "Jalgaon", state: "Maharashtra" },
+  chopda: { district: "Jalgaon", state: "Maharashtra" },
+  yawal: { district: "Jalgaon", state: "Maharashtra" },
+  raver: { district: "Jalgaon", state: "Maharashtra" },
+  pachora: { district: "Jalgaon", state: "Maharashtra" },
+
+  // Nagpur
+  saoner: { district: "Nagpur", state: "Maharashtra" },
+  ramtek: { district: "Nagpur", state: "Maharashtra" },
+  katol: { district: "Nagpur", state: "Maharashtra" },
+  narkhed: { district: "Nagpur", state: "Maharashtra" },
+  umred: { district: "Nagpur", state: "Maharashtra" },
+  hingna: { district: "Nagpur", state: "Maharashtra" },
+};
+
 const OTHER_INDIAN_DISTRICTS: Record<string, string> = {
   ludhiana: "Punjab",
   amritsar: "Punjab",
@@ -365,7 +491,7 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
     matchedEntities.push({ key: "crop", label: "Crop", value: crop });
   }
 
-  // ── 2. District ────────────────────────────────────────────────────────────
+  // ── 2. District & Village Detection ────────────────────────────────────────
   for (const d of MAHARASHTRA_DISTRICTS) {
     if (lower.includes(d.toLowerCase())) {
       district = d;
@@ -381,6 +507,22 @@ export function parseFarmerVoice(text: string): ParsedFarmerVoice {
       if (lower.includes(dName)) {
         district = dName.charAt(0).toUpperCase() + dName.slice(1);
         state = dState;
+        matchedEntities.push({ key: "district", label: "District", value: district });
+        matchedEntities.push({ key: "state", label: "State", value: state });
+        break;
+      }
+    }
+  }
+
+  // Check village mapping if district not directly specified
+  if (!district) {
+    for (const [vName, info] of Object.entries(VILLAGE_TO_DISTRICT_MAP)) {
+      const vPattern = new RegExp(`\\b${escapeRegex(vName)}\\b`, "i");
+      if (vPattern.test(lower)) {
+        district = info.district;
+        state = info.state;
+        const formattedVillage = vName.charAt(0).toUpperCase() + vName.slice(1);
+        matchedEntities.push({ key: "village", label: "Village", value: formattedVillage });
         matchedEntities.push({ key: "district", label: "District", value: district });
         matchedEntities.push({ key: "state", label: "State", value: state });
         break;

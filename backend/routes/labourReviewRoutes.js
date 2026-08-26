@@ -9,6 +9,7 @@ const {
   getLabourReviews,
   getPublicReviews,
   getLabourReviewById,
+  getReviewsByLabourId,
 } = require("../controllers/labourReviewController");
 
 /* ==========================
@@ -41,6 +42,12 @@ router.get(
 router.get(
   "/public",
   getPublicReviews
+);
+
+// Reviews for specific labourer
+router.get(
+  "/labour/:id",
+  getReviewsByLabourId
 );
 
 // Single review
