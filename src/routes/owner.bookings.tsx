@@ -250,11 +250,11 @@ function BookingCard({
   const { equipment, renter, status, totalAmount, createdAt, startDate, endDate, rentalType, bookingHours, selectedSlot, _id } = booking;
   const isLoading = actionLoading === _id;
 
-  const imageSrc = equipment.image?.startsWith("http")
+  const imageSrc = equipment?.image?.startsWith("http")
     ? equipment.image
-    : equipment.image
+    : equipment?.image
     ? `${API_BASE}${equipment.image}`
-    : null;
+    : "https://images.unsplash.com/photo-1592982537447-6f2334208fb6?auto=format&fit=crop&q=80&w=1000";
 
   return (
     <motion.div
@@ -294,9 +294,9 @@ function BookingCard({
           {/* Title row */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="font-display font-bold text-base truncate">{equipment.name}</h3>
-              {equipment.equipmentType && (
-                <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide font-medium">
+              <h3 className="font-display font-bold text-base truncate">{equipment?.name || "Unknown Equipment"}</h3>
+              {equipment?.equipmentType && (
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
                   {equipment.equipmentType}
                 </p>
               )}
@@ -320,11 +320,11 @@ function BookingCard({
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                <span>{renter.mobile}</span>
+                <span>{renter?.mobile || "N/A"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                <span className="truncate max-w-[200px]">{renter.email}</span>
+                <span className="truncate max-w-[200px]">{renter?.email || "N/A"}</span>
               </div>
             </div>
 
