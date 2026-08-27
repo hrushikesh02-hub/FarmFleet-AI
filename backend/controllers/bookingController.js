@@ -21,12 +21,14 @@ const createBooking = async (req, res) => {
       selectedSlot,
     } = req.body;
 
-    console.log("[createBooking] Received payload →", JSON.stringify({
-      farmAddress,
-      rentalType,
-      bookingHours,
-      selectedSlot,
-    }));
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[createBooking] Received payload →", JSON.stringify({
+        farmAddress,
+        rentalType,
+        bookingHours,
+        selectedSlot,
+      }));
+    }
 
     if (
       !equipmentId ||
