@@ -983,7 +983,17 @@ function BookingWorkspace({
       );
       setBookingLoading(false);
     }
-  }, [equipment._id, equipment.name, startDate, endDate, paymentMethod]);
+  }, [
+    equipment._id,
+    equipment.name,
+    startDate,
+    endDate,
+    paymentMethod,
+    farmLocation,
+    rentalType,
+    bookingHours,
+    selectedSlot,
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
