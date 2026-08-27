@@ -47,6 +47,16 @@ const bookingSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    // Farm address where equipment will be used
+    farmAddress: {
+      address: { type: String, default: "" },
+      village: { type: String, default: "" },
+      taluka: { type: String, default: "" },
+      district: { type: String, default: "" },
+      state: { type: String, default: "" },
+      landmark: { type: String, default: "" },
+    },
+
     // Review tracking
     reviewGiven: {
       type: Boolean,

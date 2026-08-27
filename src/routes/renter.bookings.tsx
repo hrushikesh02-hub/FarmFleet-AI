@@ -32,6 +32,14 @@ interface BookingRecord {
     district?: string;
     state?: string;
   };
+  farmAddress?: {
+    address?: string;
+    village?: string;
+    taluka?: string;
+    district?: string;
+    state?: string;
+    landmark?: string;
+  };
   startDate: string;
   endDate: string;
   totalAmount: number;

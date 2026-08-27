@@ -15,6 +15,7 @@ const createBooking = async (req, res) => {
       equipmentId,
       startDate,
       endDate,
+      farmAddress,
     } = req.body;
 
     if (
@@ -72,6 +73,7 @@ const createBooking = async (req, res) => {
         endDate,
         totalAmount,
         status: "pending",
+        farmAddress: farmAddress || {},
       });
 
     try {
@@ -91,7 +93,11 @@ const createBooking = async (req, res) => {
             message: `Farmer <strong>${req.farmer.fullName || 'A farmer'}</strong> has submitted a booking request for your equipment.`,
             details: [
               { label: "Equipment Name", value: equipment.name },
-              { label: "Location", value: equipment.location },
+              { label: "Equipment Location", value: equipment.location },
+              { label: "Farm Address", value: farmAddress?.address || "—" },
+              { label: "Farm Village", value: farmAddress?.village || "—" },
+              { label: "Farm District", value: farmAddress?.district || "—" },
+              { label: "Farm State", value: farmAddress?.state || "—" },
               { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN") },
               { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN") },
               { label: "Total Amount", value: `₹${totalAmount}`, highlight: true },
@@ -194,6 +200,7 @@ const getOwnerBookings =
             "renter",
             "fullName mobile email village district state"
           )
+          .select("+farmAddress")
           .sort({
             createdAt: -1,
           });

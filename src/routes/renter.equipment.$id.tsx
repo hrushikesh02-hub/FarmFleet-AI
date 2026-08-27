@@ -876,7 +876,7 @@ function BookingWorkspace({
     try {
       const { data } = await axios.post<BookingResponse>(
         `${API_BASE}/api/booking/create`,
-        { equipmentId: equipment._id, startDate, endDate },
+        { equipmentId: equipment._id, startDate, endDate, farmAddress: farmLocation },
         { headers: authHeaders() }
       );
 

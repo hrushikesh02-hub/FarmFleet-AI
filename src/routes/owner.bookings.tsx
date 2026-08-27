@@ -51,6 +51,14 @@ interface Booking {
     pricePerDay: number;
     equipmentType?: string;
   };
+  farmAddress?: {
+    address?: string;
+    village?: string;
+    taluka?: string;
+    district?: string;
+    state?: string;
+    landmark?: string;
+  };
   totalAmount: number;
   status: "pending" | "accepted" | "rejected" | "completed";
   createdAt: string;
@@ -320,13 +328,29 @@ function BookingCard({
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                 Booking Details
               </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                <span className="truncate">
-                  {renter.village
-                    ? `${renter.village}, ${renter.district}`
-                    : equipment.location}
-                </span>
+              {/* Farm address — where equipment will be used */}
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-0.5">Farm Location</p>
+                  {booking.farmAddress?.village ? (
+                    <span className="truncate">
+                      {[
+                        booking.farmAddress.village,
+                        booking.farmAddress.taluka,
+                        booking.farmAddress.district,
+                        booking.farmAddress.state,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">Not specified</span>
+                  )}
+                  {booking.farmAddress?.address && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{booking.farmAddress.address}</p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarDays className="h-3.5 w-3.5 text-primary flex-shrink-0" />
