@@ -473,6 +473,9 @@ exports.getLabourReviewById =
         message:
           "Failed to fetch review",
       });
+    }
+  };
+
 /* ==========================
    GET REVIEWS BY LABOUR ID
 ========================== */
