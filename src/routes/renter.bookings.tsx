@@ -42,6 +42,9 @@ interface BookingRecord {
   };
   startDate: string;
   endDate: string;
+  rentalType?: "daily" | "hourly";
+  bookingHours?: number;
+  selectedSlot?: string;
   totalAmount: number;
   status: BackendStatus;
   createdAt: string;

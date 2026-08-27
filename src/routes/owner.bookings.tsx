@@ -59,6 +59,8 @@ interface Booking {
     state?: string;
     landmark?: string;
   };
+  startDate: string;
+  endDate: string;
   rentalType?: "daily" | "hourly";
   bookingHours?: number;
   selectedSlot?: string;
