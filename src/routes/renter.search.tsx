@@ -48,8 +48,10 @@ interface Equipment {
   _id: string;
   name: string;
   type: string;
-  pricePerHour: number;
+  pricePerAcre?: number;
   pricePerDay: number;
+  pricePerHour?: number;
+  pricingType?: string;
   location: string;
   image: string;
   operatorIncluded: boolean;
@@ -173,9 +175,13 @@ function EquipmentGridCard({ e, index }: { e: Equipment; index: number }) {
         </div>
         <div className="mt-auto pt-3 flex items-center justify-between">
           <div>
-            <span className="text-lg font-bold text-foreground">₹{e.pricePerHour}</span>
-            <span className="text-xs text-muted-foreground">/hr</span>
-            <p className="text-[11px] text-muted-foreground">₹{e.pricePerDay}/day</p>
+            <span className="text-lg font-bold text-foreground">
+              ₹{e.pricePerAcre ? e.pricePerAcre.toLocaleString("en-IN") : e.pricePerDay.toLocaleString("en-IN")}
+            </span>
+            <span className="text-xs text-muted-foreground">{e.pricePerAcre ? "/acre" : "/day"}</span>
+            {e.pricePerAcre && e.pricePerDay ? (
+              <p className="text-[11px] text-muted-foreground">₹{e.pricePerDay.toLocaleString("en-IN")}/day</p>
+            ) : null}
           </div>
           <button
             onClick={() => nav({ to: "/renter/equipment/$id", params: { id: e._id } })}
@@ -254,9 +260,12 @@ function EquipmentListCard({ e, index }: { e: Equipment; index: number }) {
           </div>
           <div className="text-right shrink-0">
             <p className="font-bold text-xl leading-tight">
-              ₹{e.pricePerHour}<span className="text-xs font-normal text-muted-foreground">/hr</span>
+              ₹{e.pricePerAcre ? e.pricePerAcre.toLocaleString("en-IN") : e.pricePerDay.toLocaleString("en-IN")}
+              <span className="text-xs font-normal text-muted-foreground">{e.pricePerAcre ? "/acre" : "/day"}</span>
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">₹{e.pricePerDay}/day</p>
+            {e.pricePerAcre && e.pricePerDay ? (
+              <p className="text-xs text-muted-foreground mt-0.5">₹{e.pricePerDay.toLocaleString("en-IN")}/day</p>
+            ) : null}
           </div>
         </div>
         <div className="mt-auto pt-3 flex items-center justify-between flex-wrap gap-2">
@@ -616,10 +625,10 @@ function SidebarFilters({
       </FilterSection>
 
       {/* Price Range */}
-      <FilterSection title="Price Range (₹/hr)">
+      <FilterSection title="Price Range (₹/acre)">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
           <span>₹0</span>
-          <span className="font-semibold text-foreground text-sm">≤ ₹{maxPrice}/hr</span>
+          <span className="font-semibold text-foreground text-sm">≤ ₹{maxPrice}/acre</span>
           <span>₹{dataMaxPrice}</span>
         </div>
         <input
@@ -759,7 +768,7 @@ function RenterSearch() {
         const data: Equipment[] = res.data.equipments ?? [];
         setEquipments(data);
         if (data.length > 0) {
-          setMaxPrice(Math.max(...data.map((e) => e.pricePerHour)));
+          setMaxPrice(Math.max(...data.map((e) => e.pricePerAcre || e.pricePerDay || 0)));
         }
       } else {
         setError("Failed to load equipment.");
@@ -790,7 +799,7 @@ function RenterSearch() {
     [equipments]
   );
   const dataMaxPrice = useMemo(
-    () => (equipments.length ? Math.max(...equipments.map((e) => e.pricePerHour)) : 5000),
+    () => (equipments.length ? Math.max(...equipments.map((e) => e.pricePerAcre || e.pricePerDay || 0)) : 5000),
     [equipments]
   );
   const allLocations = useMemo(
@@ -818,6 +827,7 @@ function RenterSearch() {
       }
       return { ...e, _distance: dist };
     }).filter((e) => {
+      const effPrice = e.pricePerAcre || e.pricePerDay || 0;
       if (
         ql &&
         !(
@@ -830,15 +840,15 @@ function RenterSearch() {
       )
         return false;
       if (type && e.type !== type) return false;
-      if (maxPrice !== Infinity && e.pricePerHour > maxPrice) return false;
+      if (maxPrice !== Infinity && effPrice > maxPrice) return false;
       if (locationFilter && e.location !== locationFilter) return false;
       if (operatorOnly && !e.operatorIncluded) return false;
       if (maxDistance !== null && e._distance != null && e._distance > maxDistance) return false;
       return true;
     });
 
-    if (sort === "price-low") list.sort((a, b) => a.pricePerHour - b.pricePerHour);
-    if (sort === "price-high") list.sort((a, b) => b.pricePerHour - a.pricePerHour);
+    if (sort === "price-low") list.sort((a, b) => (a.pricePerAcre || a.pricePerDay || 0) - (b.pricePerAcre || b.pricePerDay || 0));
+    if (sort === "price-high") list.sort((a, b) => (b.pricePerAcre || b.pricePerDay || 0) - (a.pricePerAcre || a.pricePerDay || 0));
     if (sort === "distance-low") list.sort((a, b) => (a._distance ?? Infinity) - (b._distance ?? Infinity));
     return list;
   }, [equipments, q, type, maxPrice, locationFilter, operatorOnly, maxDistance, userLocation, sort]);
@@ -1090,7 +1100,7 @@ function RenterSearch() {
             <div className="flex flex-wrap gap-2 mt-4">
               {type && <Pill onClear={() => setType("")}>{type}</Pill>}
               {maxPrice < dataMaxPrice && (
-                <Pill onClear={() => setMaxPrice(dataMaxPrice)}>≤ ₹{maxPrice}/hr</Pill>
+                <Pill onClear={() => setMaxPrice(dataMaxPrice)}>≤ ₹{maxPrice}/acre</Pill>
               )}
               {locationFilter && (
                 <Pill onClear={() => setLocationFilter("")}>
@@ -1177,8 +1187,8 @@ function RenterSearch() {
                   id: e._id,
                   name: e.name,
                   type: e.type,
-                  price: e.pricePerHour,
-                  priceUnit: "/hr",
+                  price: e.pricePerAcre || e.pricePerDay,
+                  priceUnit: e.pricePerAcre ? "/acre" : "/day",
                   location: e.location,
                   coordinates: e.coordinates,
                   distance: e._distance,

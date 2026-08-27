@@ -11,8 +11,10 @@ const addEquipment = async (req, res) => {
     const {
       name,
       type,
-      pricePerHour,
+      pricePerAcre,
       pricePerDay,
+      pricePerHour,
+      pricingType,
       location,
       operatorIncluded,
     } = req.body;
@@ -47,8 +49,10 @@ const addEquipment = async (req, res) => {
         owner: req.owner._id,
         name,
         type,
-        pricePerHour,
-        pricePerDay,
+        pricePerAcre: Number(pricePerAcre) || 0,
+        pricePerDay: Number(pricePerDay) || 0,
+        pricePerHour: Number(pricePerHour) || 0,
+        pricingType: pricingType || "both",
         location,
         coordinates,
         operatorIncluded,
@@ -149,13 +153,21 @@ const updateEquipment = async (req, res) => {
     equipment.type =
       req.body.type || equipment.type;
 
-    equipment.pricePerHour =
-      req.body.pricePerHour ||
-      equipment.pricePerHour;
+    if (req.body.pricePerAcre !== undefined) {
+      equipment.pricePerAcre = Number(req.body.pricePerAcre) || 0;
+    }
 
-    equipment.pricePerDay =
-      req.body.pricePerDay ||
-      equipment.pricePerDay;
+    if (req.body.pricePerDay !== undefined) {
+      equipment.pricePerDay = Number(req.body.pricePerDay) || 0;
+    }
+
+    if (req.body.pricePerHour !== undefined) {
+      equipment.pricePerHour = Number(req.body.pricePerHour) || 0;
+    }
+
+    if (req.body.pricingType !== undefined) {
+      equipment.pricingType = req.body.pricingType;
+    }
 
     if (req.body.location) {
       equipment.location = req.body.location;

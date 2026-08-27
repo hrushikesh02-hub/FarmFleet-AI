@@ -66,8 +66,10 @@ interface Equipment {
   name: string;
   type: string;
   location: string;
-  pricePerHour: number;
+  pricePerAcre?: number;
   pricePerDay: number;
+  pricePerHour?: number;
+  pricingType?: "both" | "daily" | "acres";
   operatorIncluded: boolean;
   images?: string[];
   image?: string;
@@ -550,18 +552,20 @@ function InfoPanel({
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex items-baseline gap-1">
           <span className="text-3xl font-bold font-display text-[#16a34a]">
-            ₹{equipment.pricePerDay.toLocaleString("en-IN")}
+            ₹{(equipment.pricePerAcre || equipment.pricePerDay || 0).toLocaleString("en-IN")}
           </span>
-          <span className="text-sm text-muted-foreground font-medium">/day</span>
+          <span className="text-sm text-muted-foreground font-medium">
+            {equipment.pricePerAcre ? "/acre" : "/day"}
+          </span>
         </div>
-        {equipment.pricePerHour > 0 && (
+        {equipment.pricePerAcre && equipment.pricePerDay ? (
           <div className="flex items-baseline gap-1 text-muted-foreground">
             <span className="text-base font-semibold">
-              ₹{equipment.pricePerHour.toLocaleString("en-IN")}
+              ₹{equipment.pricePerDay.toLocaleString("en-IN")}
             </span>
-            <span className="text-xs">/hour</span>
+            <span className="text-xs">/day</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="h-px bg-border" />
@@ -800,14 +804,13 @@ function BookingWorkspace({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState("");
 
-  const [rentalType, setRentalType] = useState<"daily" | "hourly">("daily");
-  const [bookingHours, setBookingHours] = useState<number>(4);
-  const [selectedSlot, setSelectedSlot] = useState<string>("Morning (6:00 AM – 10:00 AM)");
+  const [rentalType, setRentalType] = useState<"daily" | "acres">("acres");
+  const [acres, setAcres] = useState<number>(2);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const totalDays = useMemo(() => {
-    if (rentalType === "hourly") return 1;
+    if (rentalType === "acres") return 1;
     if (!startDate || !endDate) return 0;
     return Math.max(
       1,
@@ -817,18 +820,18 @@ function BookingWorkspace({
     );
   }, [rentalType, startDate, endDate]);
 
-  const effectiveHourlyRate = useMemo(() => {
-    return equipment.pricePerHour > 0
-      ? equipment.pricePerHour
-      : Math.round(equipment.pricePerDay / 8) || 300;
-  }, [equipment.pricePerHour, equipment.pricePerDay]);
+  const effectiveAcreRate = useMemo(() => {
+    return (equipment.pricePerAcre && equipment.pricePerAcre > 0)
+      ? equipment.pricePerAcre
+      : (Math.round(equipment.pricePerDay / 3) || 800);
+  }, [equipment.pricePerAcre, equipment.pricePerDay]);
 
   const totalAmount = useMemo(() => {
-    if (rentalType === "hourly") {
-      return startDate ? bookingHours * effectiveHourlyRate : 0;
+    if (rentalType === "acres") {
+      return (startDate && acres > 0) ? Math.round(acres * effectiveAcreRate) : 0;
     }
     return totalDays > 0 ? totalDays * equipment.pricePerDay : 0;
-  }, [rentalType, startDate, bookingHours, effectiveHourlyRate, totalDays, equipment.pricePerDay]);
+  }, [rentalType, startDate, acres, effectiveAcreRate, totalDays, equipment.pricePerDay]);
 
   const images = useMemo<string[]>(() => {
     if (equipment.images?.length) return equipment.images;
@@ -844,14 +847,15 @@ function BookingWorkspace({
     farmLocation.state.trim();
 
   const checkAvailability = useCallback(async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || (rentalType === "daily" && !endDate)) return;
+    const finalEnd = rentalType === "acres" ? startDate : endDate;
     setAvailabilityLoading(true);
     setAvailabilityResult(null);
     setBookingStep("availability");
     try {
       const { data } = await axios.post(
         `${API_BASE}/api/booking/check-availability`,
-        { equipmentId: equipment._id, startDate, endDate },
+        { equipmentId: equipment._id, startDate, endDate: finalEnd },
         { headers: authHeaders() }
       );
       const available =
@@ -867,10 +871,10 @@ function BookingWorkspace({
     } finally {
       setAvailabilityLoading(false);
     }
-  }, [equipment._id, startDate, endDate]);
+  }, [equipment._id, startDate, endDate, rentalType]);
 
   const handleBook = useCallback(async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || (rentalType === "daily" && !endDate)) return;
     setBookingLoading(true);
     setBookingError(null);
     try {
@@ -879,11 +883,10 @@ function BookingWorkspace({
         {
           equipmentId: equipment._id,
           startDate,
-          endDate,
+          endDate: rentalType === "acres" ? startDate : endDate,
           farmAddress: farmLocation,
           rentalType,
-          bookingHours: rentalType === "hourly" ? bookingHours : undefined,
-          selectedSlot: rentalType === "hourly" ? selectedSlot : undefined,
+          acres: rentalType === "acres" ? Number(acres) || 1 : undefined,
         },
         { headers: authHeaders() }
       );
@@ -991,8 +994,7 @@ function BookingWorkspace({
     paymentMethod,
     farmLocation,
     rentalType,
-    bookingHours,
-    selectedSlot,
+    acres,
   ]);
 
   return (
@@ -1055,13 +1057,30 @@ function BookingWorkspace({
                       <Calendar className="h-6 w-6" />
                     </div>
                     <div>
-                      <h2 className="font-display font-bold text-xl tracking-tight">Select Rental Duration</h2>
-                      <p className="text-sm text-muted-foreground mt-1">Choose between flexible hourly tasks or full daily rentals</p>
+                      <h2 className="font-display font-bold text-xl tracking-tight">Select Rental Mode & Details</h2>
+                      <p className="text-sm text-muted-foreground mt-1">Choose between agricultural area-based work (Acres) or full daily rentals (Days)</p>
                     </div>
                   </div>
 
-                  {/* Rental Mode Selector: Daily vs Hourly */}
+                  {/* Rental Mode Selector: Acres vs Daily */}
                   <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-muted/60 border border-border">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentalType("acres");
+                        if (startDate) setEndDate(startDate);
+                        setAvailabilityResult(null);
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                        rentalType === "acres"
+                          ? "bg-card text-foreground shadow-sm border border-border/80"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Tractor className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Acre-based Rental (By Area)</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -1077,27 +1096,78 @@ function BookingWorkspace({
                       <Calendar className="h-4 w-4 text-primary" />
                       <span>Daily Rental (Full Days)</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRentalType("hourly");
-                        if (startDate) setEndDate(startDate);
-                        setAvailabilityResult(null);
-                      }}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                        rentalType === "hourly"
-                          ? "bg-card text-foreground shadow-sm border border-border/80"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Clock className="h-4 w-4 text-amber-500" />
-                      <span>Hourly Rental (By Hour)</span>
-                    </button>
                   </div>
 
-                  {/* Daily Rental UI */}
-                  {rentalType === "daily" ? (
+                  {/* Acre-based Rental UI */}
+                  {rentalType === "acres" ? (
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          Scheduled Work Date <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="date"
+                            min={today}
+                            value={startDate}
+                            onChange={(e) => {
+                              setStartDate(e.target.value);
+                              setEndDate(e.target.value); // same day for single-day acre job
+                              setAvailabilityResult(null);
+                            }}
+                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Required Area (Acres) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Area (Acres) <span className="text-red-400">*</span>
+                          </label>
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            Rate: ₹{effectiveAcreRate.toLocaleString("en-IN")} / acre
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min={0.1}
+                            step={0.5}
+                            value={acres || ""}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              setAcres(isNaN(val) ? 0 : Math.max(0, val));
+                            }}
+                            placeholder="Enter required area in acres (e.g. 4)"
+                            className="w-full px-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                          />
+                        </div>
+
+                        {/* Quick Acre Chips */}
+                        <div className="mt-3 flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground font-medium mr-1">Quick Select:</span>
+                          {[1, 2, 4, 6, 10].map((a) => (
+                            <button
+                              key={a}
+                              type="button"
+                              onClick={() => setAcres(a)}
+                              className={`py-1.5 px-3 rounded-lg border text-xs font-bold transition ${
+                                acres === a
+                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
+                                  : "border-border bg-background hover:bg-accent text-foreground"
+                              }`}
+                            >
+                              {a} Acre{a > 1 ? "s" : ""}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Daily Rental UI */
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
@@ -1138,80 +1208,6 @@ function BookingWorkspace({
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    /* Hourly Rental UI */
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                          Date of Work <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                          <input
-                            type="date"
-                            min={today}
-                            value={startDate}
-                            onChange={(e) => {
-                              setStartDate(e.target.value);
-                              setEndDate(e.target.value); // same day for hourly
-                              setAvailabilityResult(null);
-                            }}
-                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Number of hours selector */}
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                          Required Hours (₹{effectiveHourlyRate}/hour)
-                        </label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {[2, 4, 6, 8].map((h) => (
-                            <button
-                              key={h}
-                              type="button"
-                              onClick={() => setBookingHours(h)}
-                              className={`py-3 rounded-xl border text-xs sm:text-sm font-bold transition ${
-                                bookingHours === h
-                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                                  : "border-border bg-background hover:bg-accent text-foreground"
-                              }`}
-                            >
-                              {h} Hours
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Preferred Time Slot */}
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                          Preferred Time Window
-                        </label>
-                        <div className="grid sm:grid-cols-2 gap-2">
-                          {[
-                            "Morning (6:00 AM – 10:00 AM)",
-                            "Midday (10:00 AM – 2:00 PM)",
-                            "Afternoon (2:00 PM – 6:00 PM)",
-                            "Full Day (8:00 AM – 5:00 PM)",
-                          ].map((slot) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedSlot(slot)}
-                              className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
-                                selectedSlot === slot
-                                  ? "border-primary bg-primary/5 text-primary"
-                                  : "border-border bg-background hover:bg-accent text-foreground"
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
                   )}
 
                   <AnimatePresence>
@@ -1225,19 +1221,19 @@ function BookingWorkspace({
                         <div className="rounded-2xl border border-[#22c55e]/25 bg-[#22c55e]/5 p-4 flex items-center justify-between flex-wrap gap-3">
                           <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#22c55e20", color: "#16a34a" }}>
-                              <Clock className="h-4 w-4" />
+                              <Tractor className="h-4 w-4" />
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground font-medium">Rental Summary</p>
                               <p className="font-bold text-sm">
-                                {rentalType === "hourly"
-                                  ? `${bookingHours} Hours • ₹${effectiveHourlyRate}/hr`
-                                  : `${totalDays} Day${totalDays > 1 ? "s" : ""} • ₹${equipment.pricePerDay}/day`}
+                                {rentalType === "acres"
+                                  ? `${acres} Acre${acres !== 1 ? "s" : ""} • ₹${effectiveAcreRate.toLocaleString("en-IN")}/acre`
+                                  : `${totalDays} Day${totalDays > 1 ? "s" : ""} • ₹${equipment.pricePerDay.toLocaleString("en-IN")}/day`}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs text-muted-foreground font-medium">Estimated Total</p>
+                            <p className="text-xs text-muted-foreground font-medium">Estimated Rental Cost</p>
                             <p className="font-bold text-base text-[#16a34a]">₹{totalAmount.toLocaleString("en-IN")}</p>
                           </div>
                         </div>
@@ -1249,7 +1245,7 @@ function BookingWorkspace({
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
-                      disabled={!startDate || (rentalType === "daily" && !endDate)}
+                      disabled={!startDate || (rentalType === "daily" && !endDate) || (rentalType === "acres" && (!acres || acres <= 0))}
                       onClick={checkAvailability}
                       className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-white font-semibold text-sm shadow-card hover:shadow-elevated transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                       style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
@@ -1510,15 +1506,17 @@ function BookingWorkspace({
                   <div className="rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/5 p-4 space-y-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#16a34a]">Booking Details</p>
                     {[
-                      { label: "Rental Mode", value: rentalType === "hourly" ? "Hourly Rental (Quick Task)" : "Daily Rental (Full Days)" },
-                      rentalType === "hourly"
-                        ? { label: "Date & Slot", value: `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""} • ${selectedSlot}` }
+                      { label: "Rental Mode", value: rentalType === "acres" ? "Acre-based Rental (By Area)" : "Daily Rental (Full Days)" },
+                      rentalType === "acres"
+                        ? { label: "Scheduled Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" }
                         : { label: "Start Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" },
                       rentalType === "daily"
                         ? { label: "End Date", value: endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" }
                         : null,
-                      { label: "Duration", value: rentalType === "hourly" ? `${bookingHours} hour${bookingHours > 1 ? "s" : ""}` : `${totalDays} day${totalDays > 1 ? "s" : ""}` },
-                      { label: "Rental Rate", value: rentalType === "hourly" ? `₹${effectiveHourlyRate.toLocaleString("en-IN")} / hour` : `₹${equipment.pricePerDay.toLocaleString("en-IN")} / day` },
+                      rentalType === "acres"
+                        ? { label: "Area (Acres)", value: `${acres} Acre${acres !== 1 ? "s" : ""}` }
+                        : { label: "Duration", value: `${totalDays} day${totalDays > 1 ? "s" : ""}` },
+                      { label: "Rental Rate", value: rentalType === "acres" ? `₹${effectiveAcreRate.toLocaleString("en-IN")} / acre` : `₹${equipment.pricePerDay.toLocaleString("en-IN")} / day` },
                     ]
                       .filter(Boolean)
                       .map((item) => (
@@ -1529,7 +1527,7 @@ function BookingWorkspace({
                       ))}
                     <div className="h-px bg-[#22c55e]/20" />
                     <div className="flex justify-between text-base font-bold">
-                      <span>Estimated Total</span>
+                      <span>Estimated Rental Cost</span>
                       <span className="text-[#16a34a]">₹{totalAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
@@ -1687,13 +1685,13 @@ function BookingWorkspace({
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Rental Mode</span>
-                      <span className="font-semibold">{rentalType === "hourly" ? `Hourly (${bookingHours} hrs)` : `Daily (${totalDays} days)`}</span>
+                      <span className="font-semibold">{rentalType === "acres" ? `Acre-based (${acres} acres)` : `Daily (${totalDays} days)`}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{rentalType === "hourly" ? "Date & Window" : "Dates"}</span>
+                      <span className="text-muted-foreground">{rentalType === "acres" ? "Scheduled Date" : "Dates"}</span>
                       <span className="font-semibold">
-                        {rentalType === "hourly"
-                          ? `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""} (${selectedSlot})`
+                        {rentalType === "acres"
+                          ? `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}`
                           : `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""} – ${endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}`
                         }
                       </span>
@@ -1710,7 +1708,7 @@ function BookingWorkspace({
                     </div>
                     <div className="h-px bg-border" />
                     <div className="flex items-center justify-between text-base font-bold">
-                      <span>Total Amount</span>
+                      <span>Estimated Rental Cost</span>
                       <span className="text-[#16a34a]">₹{totalAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>

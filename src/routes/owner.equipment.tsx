@@ -19,8 +19,10 @@ interface Equipment {
   _id: string;
   name: string;
   type: string;
-  pricePerHour: number;
+  pricePerAcre: number;
   pricePerDay: number;
+  pricePerHour?: number;
+  pricingType?: "both" | "daily" | "acres";
   location: string;
   coordinates?: {
     lat: number;
@@ -35,8 +37,9 @@ interface Equipment {
 interface EquipmentFormData {
   name: string;
   type: string;
-  pricePerHour: string;
+  pricePerAcre: string;
   pricePerDay: string;
+  pricingType: "both" | "daily" | "acres";
   location: string;
   operatorIncluded: boolean;
 }
@@ -316,10 +319,10 @@ function EquipmentCard({
         <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-2">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-              Per Hour
+              Per Acre
             </p>
-            <p className="font-bold text-sm mt-0.5">
-              ₹{item.pricePerHour.toLocaleString("en-IN")}
+            <p className="font-bold text-sm mt-0.5 text-emerald-600 dark:text-emerald-400">
+              ₹{(item.pricePerAcre || 0).toLocaleString("en-IN")}
             </p>
           </div>
           <div>
@@ -327,7 +330,7 @@ function EquipmentCard({
               Per Day
             </p>
             <p className="font-bold text-sm mt-0.5">
-              ₹{item.pricePerDay.toLocaleString("en-IN")}
+              ₹{(item.pricePerDay || 0).toLocaleString("en-IN")}
             </p>
           </div>
         </div>
@@ -689,19 +692,25 @@ function EquipmentFormModal({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<EquipmentFormData>({
     defaultValues: editing
       ? {
           name: editing.name,
           type: editing.type,
-          pricePerHour: String(editing.pricePerHour),
-          pricePerDay: String(editing.pricePerDay),
+          pricePerAcre: editing.pricePerAcre ? String(editing.pricePerAcre) : "",
+          pricePerDay: editing.pricePerDay ? String(editing.pricePerDay) : "",
+          pricingType: editing.pricingType || "both",
           location: editing.location,
           operatorIncluded: editing.operatorIncluded,
         }
-      : {},
+      : {
+          pricingType: "both",
+        },
   });
+
+  const selectedPricingType = watch("pricingType", "both");
 
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
@@ -716,8 +725,9 @@ function EquipmentFormModal({
       const fd = new FormData();
       fd.append("name", data.name);
       fd.append("type", data.type);
-      fd.append("pricePerHour", data.pricePerHour);
-      fd.append("pricePerDay", data.pricePerDay);
+      fd.append("pricePerAcre", data.pricePerAcre || "0");
+      fd.append("pricePerDay", data.pricePerDay || "0");
+      fd.append("pricingType", data.pricingType || "both");
       fd.append("location", data.location);
       fd.append("operatorIncluded", String(data.operatorIncluded));
       if (file) fd.append("image", file);
@@ -747,7 +757,7 @@ function EquipmentFormModal({
           <p className="text-sm text-muted-foreground mt-1">
             {editing
               ? "Update your equipment listing details."
-              : "List your equipment and start earning."}
+              : "List your agricultural equipment and start earning."}
           </p>
         </div>
 
@@ -789,23 +799,36 @@ function EquipmentFormModal({
                   </select>
                 </Field>
 
+                {/* Pricing Method Selection */}
+                <Field label="Rental Pricing Mode">
+                  <select {...register("pricingType")} className={inputCls}>
+                    <option value="both">Both (Days & Acres)</option>
+                    <option value="acres">Acres Only (Area-based)</option>
+                    <option value="daily">Days Only (Full Days)</option>
+                  </select>
+                </Field>
+
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Price per Hour (₹)">
+                  <Field label="Price per Acre (₹)" hint="Rate per agricultural acre">
                     <input
                       type="number"
                       min={0}
-                      {...register("pricePerHour", { required: true })}
+                      {...register("pricePerAcre", {
+                        required: selectedPricingType === "acres" || selectedPricingType === "both",
+                      })}
                       className={inputCls}
-                      placeholder="500"
+                      placeholder="e.g. 800"
                     />
                   </Field>
-                  <Field label="Price per Day (₹)">
+                  <Field label="Price per Day (₹)" hint="Rate per calendar day">
                     <input
                       type="number"
                       min={0}
-                      {...register("pricePerDay", { required: true })}
+                      {...register("pricePerDay", {
+                        required: selectedPricingType === "daily" || selectedPricingType === "both",
+                      })}
                       className={inputCls}
-                      placeholder="3500"
+                      placeholder="e.g. 3500"
                     />
                   </Field>
                 </div>

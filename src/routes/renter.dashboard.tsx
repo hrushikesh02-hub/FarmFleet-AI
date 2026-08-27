@@ -36,8 +36,10 @@ interface Equipment {
   _id: string;
   name: string;
   type: string;
-  pricePerHour: number;
+  pricePerAcre?: number;
   pricePerDay: number;
+  pricePerHour?: number;
+  pricingType?: string;
   location: string;
   image: string;
   operatorIncluded: boolean;
@@ -131,10 +133,12 @@ function EquipmentCard({ e, index }: { e: Equipment; index: number }) {
           <div className="mt-auto pt-3 flex items-center justify-between border-t border-border">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-base font-bold text-foreground">
-                ₹{e.pricePerHour}
-                <span className="text-xs text-muted-foreground font-normal">/hr</span>
+                ₹{e.pricePerAcre ? e.pricePerAcre.toLocaleString("en-IN") : e.pricePerDay.toLocaleString("en-IN")}
+                <span className="text-xs text-muted-foreground font-normal">{e.pricePerAcre ? "/acre" : "/day"}</span>
               </span>
-              <span className="text-xs text-muted-foreground">₹{e.pricePerDay}/day</span>
+              {e.pricePerAcre && e.pricePerDay ? (
+                <span className="text-xs text-muted-foreground">₹{e.pricePerDay.toLocaleString("en-IN")}/day</span>
+              ) : null}
             </div>
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-primary text-primary-foreground text-xs font-semibold group-hover:opacity-90 transition-opacity">
               View Details

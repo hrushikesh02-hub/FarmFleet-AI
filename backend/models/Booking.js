@@ -59,8 +59,13 @@ const bookingSchema = new mongoose.Schema(
 
     rentalType: {
       type: String,
-      enum: ["daily", "hourly"],
+      enum: ["daily", "acres", "hourly"],
       default: "daily",
+    },
+
+    acres: {
+      type: Number,
+      default: 0,
     },
 
     bookingHours: {

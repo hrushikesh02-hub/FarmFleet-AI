@@ -47,7 +47,8 @@ interface Booking {
     name: string;
     image: string;
     location: string;
-    pricePerHour: number;
+    pricePerAcre?: number;
+    pricePerHour?: number;
     pricePerDay: number;
     equipmentType?: string;
   };
@@ -61,7 +62,8 @@ interface Booking {
   };
   startDate: string;
   endDate: string;
-  rentalType?: "daily" | "hourly";
+  rentalType?: "daily" | "acres" | "hourly";
+  acres?: number;
   bookingHours?: number;
   selectedSlot?: string;
   totalAmount: number;
@@ -338,19 +340,30 @@ function BookingCard({
               <div className="space-y-1 text-sm bg-muted/40 border border-border/40 rounded-xl p-2.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                    rentalType === "hourly" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
+                    rentalType === "acres"
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : rentalType === "hourly"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
                   }`}>
-                    {rentalType === "hourly" ? "Hourly Rental" : "Daily Rental"}
+                    {rentalType === "acres" ? "Acre-based Rental" : rentalType === "hourly" ? "Hourly Rental" : "Daily Rental"}
                   </span>
                   <span className="font-bold text-foreground">
-                    {rentalType === "hourly" 
+                    {rentalType === "acres"
+                      ? `${booking.acres || 1} Acres`
+                      : rentalType === "hourly" 
                       ? `${bookingHours || 4} Hours`
                       : `${Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000))} Days`
                     }
                   </span>
                 </div>
 
-                {rentalType === "hourly" ? (
+                {rentalType === "acres" ? (
+                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
+                    <p><strong>Scheduled Work Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    <p><strong>Area:</strong> {booking.acres || 1} Acre{(booking.acres || 1) !== 1 ? "s" : ""}</p>
+                  </div>
+                ) : rentalType === "hourly" ? (
                   <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
                     <p><strong>Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                     <p><strong>Slot:</strong> {selectedSlot || "—"}</p>

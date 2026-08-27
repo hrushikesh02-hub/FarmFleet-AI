@@ -284,7 +284,7 @@ export function EquipmentMap({
                           ₹{item.price}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {item.priceUnit || (item.category === "labour" ? "/day" : "/hr")}
+                          {item.priceUnit || (item.category === "labour" ? "/day" : "/acre")}
                         </span>
                       </div>
 

@@ -20,6 +20,7 @@ interface BookingRecord {
     image?: string;
     location?: string;
     category?: string;
+    pricePerAcre?: number;
     pricePerDay?: number;
     pricePerHour?: number;
   };
@@ -42,7 +43,8 @@ interface BookingRecord {
   };
   startDate: string;
   endDate: string;
-  rentalType?: "daily" | "hourly";
+  rentalType?: "daily" | "acres" | "hourly";
+  acres?: number;
   bookingHours?: number;
   selectedSlot?: string;
   totalAmount: number;
@@ -651,7 +653,14 @@ function BookingRow({
               )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {booking.rentalType === "hourly" ? (
+              {booking.rentalType === "acres" ? (
+                <>
+                  {fmt(booking.startDate)}
+                  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                    Acre Rental ({booking.acres || 1} {booking.acres === 1 ? "acre" : "acres"})
+                  </span>
+                </>
+              ) : booking.rentalType === "hourly" ? (
                 <>
                   {fmt(booking.startDate)}
                   <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider">
@@ -813,12 +822,30 @@ function BookingRow({
                     <dl>
                       <InfoRow label="Booking ID" value={`#${booking._id.slice(-8).toUpperCase()}`} mono />
                       <InfoRow label="Requested On" value={fmt(booking.createdAt)} />
-                      {booking.rentalType === "hourly" ? (
+                      {booking.rentalType === "acres" ? (
+                        <>
+                          <InfoRow label="Rental Type" value="Acre-based Rental" />
+                          <InfoRow label="Scheduled Date" value={fmt(booking.startDate)} />
+                          <InfoRow label="Area (Acres)" value={`${booking.acres || 1} Acre${(booking.acres || 1) !== 1 ? "s" : ""}`} />
+                          {booking.equipment.pricePerAcre != null && (
+                            <InfoRow
+                              label="Rate / Acre"
+                              value={`₹${booking.equipment.pricePerAcre.toLocaleString("en-IN")}`}
+                            />
+                          )}
+                        </>
+                      ) : booking.rentalType === "hourly" ? (
                         <>
                           <InfoRow label="Rental Type" value="Hourly Rental" />
                           <InfoRow label="Booking Date" value={fmt(booking.startDate)} />
                           <InfoRow label="Duration" value={`${booking.bookingHours || 4} Hours`} />
                           <InfoRow label="Time Slot" value={booking.selectedSlot || "—"} />
+                          {booking.equipment.pricePerHour != null && (
+                            <InfoRow
+                              label="Price / Hour"
+                              value={`₹${booking.equipment.pricePerHour.toLocaleString("en-IN")}`}
+                            />
+                          )}
                         </>
                       ) : (
                         <>
@@ -826,6 +853,12 @@ function BookingRow({
                           <InfoRow label="Start Date" value={fmt(booking.startDate)} />
                           <InfoRow label="End Date" value={fmt(booking.endDate)} />
                           <InfoRow label="Duration" value={`${nights} day${nights !== 1 ? "s" : ""}`} />
+                          {booking.equipment.pricePerDay != null && (
+                            <InfoRow
+                              label="Price / Day"
+                              value={`₹${booking.equipment.pricePerDay.toLocaleString("en-IN")}`}
+                            />
+                          )}
                         </>
                       )}
                       {booking.farmAddress?.village && (
@@ -841,18 +874,6 @@ function BookingRow({
                       )}
                       {booking.farmAddress?.address && (
                         <InfoRow label="Farm Address" value={booking.farmAddress.address} />
-                      )}
-                      {booking.equipment.pricePerDay != null && booking.rentalType !== "hourly" && (
-                        <InfoRow
-                          label="Price / Day"
-                          value={`₹${booking.equipment.pricePerDay.toLocaleString("en-IN")}`}
-                        />
-                      )}
-                      {booking.equipment.pricePerHour != null && booking.rentalType === "hourly" && (
-                        <InfoRow
-                          label="Price / Hour"
-                          value={`₹${booking.equipment.pricePerHour.toLocaleString("en-IN")}`}
-                        />
                       )}
                       <InfoRow
                         label="Total Amount"

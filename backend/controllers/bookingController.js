@@ -16,7 +16,8 @@ const createBooking = async (req, res) => {
       startDate,
       endDate,
       farmAddress,
-      rentalType,
+      rentalType = "daily",
+      acres,
       bookingHours,
       selectedSlot,
     } = req.body;
@@ -25,6 +26,7 @@ const createBooking = async (req, res) => {
       console.log("[createBooking] Received payload →", JSON.stringify({
         farmAddress,
         rentalType,
+        acres,
         bookingHours,
         selectedSlot,
       }));
@@ -32,13 +34,12 @@ const createBooking = async (req, res) => {
 
     if (
       !equipmentId ||
-      !startDate ||
-      !endDate
+      !startDate
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Equipment ID, start date and end date are required",
+          "Equipment ID and start date are required",
       });
     }
 
@@ -56,9 +57,16 @@ const createBooking = async (req, res) => {
     }
 
     let totalAmount = 0;
+    const isAcres = rentalType === "acres";
     const isHourly = rentalType === "hourly";
+    const numAcres = isAcres ? (Number(acres) > 0 ? Number(acres) : 1) : 0;
     
-    if (isHourly) {
+    if (isAcres) {
+      const acreRate = equipment.pricePerAcre > 0
+        ? equipment.pricePerAcre
+        : (Math.round(equipment.pricePerDay / 3) || 800);
+      totalAmount = Math.round(numAcres * acreRate);
+    } else if (isHourly) {
       const hours = Number(bookingHours) || 4;
       const hourlyRate = equipment.pricePerHour > 0
         ? equipment.pricePerHour
@@ -66,7 +74,7 @@ const createBooking = async (req, res) => {
       totalAmount = hours * hourlyRate;
     } else {
       const start = new Date(startDate);
-      const end = new Date(endDate);
+      const end = new Date(endDate || startDate);
       const totalDays = Math.max(
         1,
         Math.ceil(
@@ -84,11 +92,12 @@ const createBooking = async (req, res) => {
         equipment:
           equipment._id,
         startDate,
-        endDate,
+        endDate: isAcres ? startDate : (endDate || startDate),
         totalAmount,
         status: "pending",
         farmAddress: farmAddress || {},
         rentalType: rentalType || "daily",
+        acres: numAcres,
         bookingHours: isHourly ? (Number(bookingHours) || 4) : 0,
         selectedSlot: isHourly ? (selectedSlot || "") : "",
       });
@@ -100,6 +109,12 @@ const createBooking = async (req, res) => {
         );
 
       if (owner?.email) {
+        const rentalTypeLabel = isAcres
+          ? "Acre-based Rental"
+          : isHourly
+          ? "Hourly Rental"
+          : "Daily Rental";
+
         const emailDetails = [
           { label: "Equipment Name", value: equipment.name },
           { label: "Equipment Location", value: equipment.location },
@@ -107,17 +122,24 @@ const createBooking = async (req, res) => {
           { label: "Farm Village", value: farmAddress?.village || "—" },
           { label: "Farm District", value: farmAddress?.district || "—" },
           { label: "Farm State", value: farmAddress?.state || "—" },
-          { label: "Rental Type", value: isHourly ? "Hourly Rental" : "Daily Rental" },
-          ...(isHourly
+          { label: "Rental Type", value: rentalTypeLabel },
+          ...(isAcres
+            ? [
+                { label: "Area (Acres)", value: `${numAcres} Acre${numAcres > 1 ? "s" : ""}` },
+                { label: "Rate per Acre", value: `₹${equipment.pricePerAcre || Math.round(equipment.pricePerDay / 3) || 800} / acre` },
+                { label: "Scheduled Work Date", value: new Date(startDate).toLocaleDateString("en-IN") },
+              ]
+            : isHourly
             ? [
                 { label: "Duration", value: `${bookingHours} Hours` },
                 { label: "Time Slot", value: selectedSlot || "—" },
+                { label: "Date", value: new Date(startDate).toLocaleDateString("en-IN") },
               ]
             : [
                 { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN") },
-                { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN") },
+                { label: "End Date", value: new Date(endDate || startDate).toLocaleDateString("en-IN") },
               ]),
-          { label: "Total Amount", value: `₹${totalAmount}`, highlight: true },
+          { label: "Total Amount", value: `₹${totalAmount.toLocaleString("en-IN")}`, highlight: true },
           { label: "Booking Status", value: "Pending Response", isStatus: true },
         ];
 
@@ -179,7 +201,7 @@ const getFarmerBookings =
         })
           .populate(
             "equipment",
-            "name image location pricePerHour pricePerDay"
+            "name image location pricePerAcre pricePerDay pricePerHour pricingType"
           )
           .populate(
             "owner",
@@ -221,7 +243,7 @@ const getOwnerBookings =
         })
           .populate(
             "equipment",
-            "name image location pricePerHour pricePerDay"
+            "name image location pricePerAcre pricePerDay pricePerHour pricingType"
           )
           .populate(
             "renter",
