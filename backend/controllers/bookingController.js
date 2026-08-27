@@ -16,6 +16,9 @@ const createBooking = async (req, res) => {
       startDate,
       endDate,
       farmAddress,
+      rentalType,
+      bookingHours,
+      selectedSlot,
     } = req.body;
 
     if (
@@ -43,25 +46,27 @@ const createBooking = async (req, res) => {
       });
     }
 
-    const start = new Date(
-      startDate
-    );
-
-    const end = new Date(
-      endDate
-    );
-
-    const totalDays = Math.max(
-      1,
-      Math.ceil(
-        (end - start) /
-          (1000 * 60 * 60 * 24)
-      )
-    );
-
-    const totalAmount =
-      totalDays *
-      equipment.pricePerDay;
+    let totalAmount = 0;
+    const isHourly = rentalType === "hourly";
+    
+    if (isHourly) {
+      const hours = Number(bookingHours) || 4;
+      const hourlyRate = equipment.pricePerHour > 0
+        ? equipment.pricePerHour
+        : Math.round(equipment.pricePerDay / 8) || 300;
+      totalAmount = hours * hourlyRate;
+    } else {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const totalDays = Math.max(
+        1,
+        Math.ceil(
+          (end - start) /
+            (1000 * 60 * 60 * 24)
+        )
+      );
+      totalAmount = totalDays * equipment.pricePerDay;
+    }
 
     const booking =
       await Booking.create({
@@ -74,6 +79,9 @@ const createBooking = async (req, res) => {
         totalAmount,
         status: "pending",
         farmAddress: farmAddress || {},
+        rentalType: rentalType || "daily",
+        bookingHours: isHourly ? (Number(bookingHours) || 4) : 0,
+        selectedSlot: isHourly ? (selectedSlot || "") : "",
       });
 
     try {
@@ -83,6 +91,27 @@ const createBooking = async (req, res) => {
         );
 
       if (owner?.email) {
+        const emailDetails = [
+          { label: "Equipment Name", value: equipment.name },
+          { label: "Equipment Location", value: equipment.location },
+          { label: "Farm Address", value: farmAddress?.address || "—" },
+          { label: "Farm Village", value: farmAddress?.village || "—" },
+          { label: "Farm District", value: farmAddress?.district || "—" },
+          { label: "Farm State", value: farmAddress?.state || "—" },
+          { label: "Rental Type", value: isHourly ? "Hourly Rental" : "Daily Rental" },
+          ...(isHourly
+            ? [
+                { label: "Duration", value: `${bookingHours} Hours` },
+                { label: "Time Slot", value: selectedSlot || "—" },
+              ]
+            : [
+                { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN") },
+                { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN") },
+              ]),
+          { label: "Total Amount", value: `₹${totalAmount}`, highlight: true },
+          { label: "Booking Status", value: "Pending Response", isStatus: true },
+        ];
+
         await sendEmail({
           to: owner.email,
           subject: "New Booking Request — FarmFleet AI",
@@ -91,18 +120,7 @@ const createBooking = async (req, res) => {
             headline: "New Equipment Booking Request",
             recipientName: owner.fullName,
             message: `Farmer <strong>${req.farmer.fullName || 'A farmer'}</strong> has submitted a booking request for your equipment.`,
-            details: [
-              { label: "Equipment Name", value: equipment.name },
-              { label: "Equipment Location", value: equipment.location },
-              { label: "Farm Address", value: farmAddress?.address || "—" },
-              { label: "Farm Village", value: farmAddress?.village || "—" },
-              { label: "Farm District", value: farmAddress?.district || "—" },
-              { label: "Farm State", value: farmAddress?.state || "—" },
-              { label: "Start Date", value: new Date(startDate).toLocaleDateString("en-IN") },
-              { label: "End Date", value: new Date(endDate).toLocaleDateString("en-IN") },
-              { label: "Total Amount", value: `₹${totalAmount}`, highlight: true },
-              { label: "Booking Status", value: "Pending Response", isStatus: true },
-            ],
+            details: emailDetails,
             cta: {
               text: "Review & Respond to Booking",
               url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/owner/login`,

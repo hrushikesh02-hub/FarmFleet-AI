@@ -876,7 +876,15 @@ function BookingWorkspace({
     try {
       const { data } = await axios.post<BookingResponse>(
         `${API_BASE}/api/booking/create`,
-        { equipmentId: equipment._id, startDate, endDate, farmAddress: farmLocation },
+        {
+          equipmentId: equipment._id,
+          startDate,
+          endDate,
+          farmAddress: farmLocation,
+          rentalType,
+          bookingHours: rentalType === "hourly" ? bookingHours : undefined,
+          selectedSlot: rentalType === "hourly" ? selectedSlot : undefined,
+        },
         { headers: authHeaders() }
       );
 

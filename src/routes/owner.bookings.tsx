@@ -59,6 +59,9 @@ interface Booking {
     state?: string;
     landmark?: string;
   };
+  rentalType?: "daily" | "hourly";
+  bookingHours?: number;
+  selectedSlot?: string;
   totalAmount: number;
   status: "pending" | "accepted" | "rejected" | "completed";
   createdAt: string;
@@ -242,7 +245,7 @@ function BookingCard({
   onMarkCashReceived?: (id: string) => void;
   actionLoading: string | null;
 }) {
-  const { equipment, renter, status, totalAmount, createdAt, _id } = booking;
+  const { equipment, renter, status, totalAmount, createdAt, startDate, endDate, rentalType, bookingHours, selectedSlot, _id } = booking;
   const isLoading = actionLoading === _id;
 
   const imageSrc = equipment.image?.startsWith("http")
@@ -324,17 +327,47 @@ function BookingCard({
             </div>
 
             {/* Booking info */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                 Booking Details
               </p>
+
+              {/* Rental Type / Duration details */}
+              <div className="space-y-1 text-sm bg-muted/40 border border-border/40 rounded-xl p-2.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                    rentalType === "hourly" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
+                  }`}>
+                    {rentalType === "hourly" ? "Hourly Rental" : "Daily Rental"}
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {rentalType === "hourly" 
+                      ? `${bookingHours || 4} Hours`
+                      : `${Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000))} Days`
+                    }
+                  </span>
+                </div>
+
+                {rentalType === "hourly" ? (
+                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
+                    <p><strong>Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    <p><strong>Slot:</strong> {selectedSlot || "—"}</p>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
+                    <p><strong>From:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    <p><strong>To:</strong> {new Date(endDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                )}
+              </div>
+
               {/* Farm address — where equipment will be used */}
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-0.5">Farm Location</p>
                   {booking.farmAddress?.village ? (
-                    <span className="truncate">
+                    <span className="truncate block font-medium">
                       {[
                         booking.farmAddress.village,
                         booking.farmAddress.taluka,
@@ -352,10 +385,11 @@ function BookingCard({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-t border-border/40 pt-1.5 mt-1">
+                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
                 <span>
-                  {new Date(createdAt).toLocaleDateString("en-IN", {
+                  Requested: {new Date(createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",

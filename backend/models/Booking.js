@@ -57,6 +57,22 @@ const bookingSchema = new mongoose.Schema(
       landmark: { type: String, default: "" },
     },
 
+    rentalType: {
+      type: String,
+      enum: ["daily", "hourly"],
+      default: "daily",
+    },
+
+    bookingHours: {
+      type: Number,
+      default: 0,
+    },
+
+    selectedSlot: {
+      type: String,
+      default: "",
+    },
+
     // Review tracking
     reviewGiven: {
       type: Boolean,

@@ -648,8 +648,20 @@ function BookingRow({
               )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {fmt(booking.startDate)} → {fmt(booking.endDate)}
-              <span className="ml-1.5 text-muted-foreground/70">({nights}d)</span>
+              {booking.rentalType === "hourly" ? (
+                <>
+                  {fmt(booking.startDate)}
+                  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                    Hourly ({booking.bookingHours || 4}h)
+                  </span>
+                  <span className="ml-1.5 text-muted-foreground/70">Slot: {booking.selectedSlot || "—"}</span>
+                </>
+              ) : (
+                <>
+                  {fmt(booking.startDate)} → {fmt(booking.endDate)}
+                  <span className="ml-1.5 text-muted-foreground/70">({nights}d)</span>
+                </>
+              )}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs font-medium">
@@ -798,13 +810,45 @@ function BookingRow({
                     <dl>
                       <InfoRow label="Booking ID" value={`#${booking._id.slice(-8).toUpperCase()}`} mono />
                       <InfoRow label="Requested On" value={fmt(booking.createdAt)} />
-                      <InfoRow label="Start Date" value={fmt(booking.startDate)} />
-                      <InfoRow label="End Date" value={fmt(booking.endDate)} />
-                      <InfoRow label="Duration" value={`${nights} day${nights !== 1 ? "s" : ""}`} />
-                      {booking.equipment.pricePerDay != null && (
+                      {booking.rentalType === "hourly" ? (
+                        <>
+                          <InfoRow label="Rental Type" value="Hourly Rental" />
+                          <InfoRow label="Booking Date" value={fmt(booking.startDate)} />
+                          <InfoRow label="Duration" value={`${booking.bookingHours || 4} Hours`} />
+                          <InfoRow label="Time Slot" value={booking.selectedSlot || "—"} />
+                        </>
+                      ) : (
+                        <>
+                          <InfoRow label="Rental Type" value="Daily Rental" />
+                          <InfoRow label="Start Date" value={fmt(booking.startDate)} />
+                          <InfoRow label="End Date" value={fmt(booking.endDate)} />
+                          <InfoRow label="Duration" value={`${nights} day${nights !== 1 ? "s" : ""}`} />
+                        </>
+                      )}
+                      {booking.farmAddress?.village && (
+                        <InfoRow
+                          label="Farm Location"
+                          value={[
+                            booking.farmAddress.village,
+                            booking.farmAddress.taluka,
+                            booking.farmAddress.district,
+                            booking.farmAddress.state,
+                          ].filter(Boolean).join(", ")}
+                        />
+                      )}
+                      {booking.farmAddress?.address && (
+                        <InfoRow label="Farm Address" value={booking.farmAddress.address} />
+                      )}
+                      {booking.equipment.pricePerDay != null && booking.rentalType !== "hourly" && (
                         <InfoRow
                           label="Price / Day"
                           value={`₹${booking.equipment.pricePerDay.toLocaleString("en-IN")}`}
+                        />
+                      )}
+                      {booking.equipment.pricePerHour != null && booking.rentalType === "hourly" && (
+                        <InfoRow
+                          label="Price / Hour"
+                          value={`₹${booking.equipment.pricePerHour.toLocaleString("en-IN")}`}
                         />
                       )}
                       <InfoRow
