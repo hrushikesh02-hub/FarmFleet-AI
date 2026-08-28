@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 
 function getProtectedLink(target: string) {
   if (typeof window === "undefined") return target;
@@ -10,16 +11,14 @@ function getProtectedLink(target: string) {
   return hasToken ? target : `/login-renter?redirect=${encodeURIComponent(target)}`;
 }
 
-function getHomeDestination() {
-  if (typeof window === "undefined") return "/";
-  if (localStorage.getItem("ownerToken")) return "/owner/dashboard";
-  if (localStorage.getItem("labourToken")) return "/labour/dashboard";
-  if (localStorage.getItem("renterToken") || localStorage.getItem("token") || localStorage.getItem("farmerToken")) return "/renter/dashboard";
-  return "/";
-}
-
 export function Footer() {
-  const homeDest = getHomeDestination();
+  const [homeDest, setHomeDest] = useState("/");
+
+  useEffect(() => {
+    if (localStorage.getItem("ownerToken")) setHomeDest("/owner/dashboard");
+    else if (localStorage.getItem("labourToken")) setHomeDest("/labour/dashboard");
+    else if (localStorage.getItem("renterToken") || localStorage.getItem("token") || localStorage.getItem("farmerToken")) setHomeDest("/renter/dashboard");
+  }, []);
 
   return (
     <footer className="border-t border-border bg-card/60 backdrop-blur-sm mt-16">

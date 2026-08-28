@@ -1,3 +1,5 @@
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -452,6 +454,32 @@ function LabourDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="labour-profile"]',
+        title: t("tour.labourDashboard.profileTitle"),
+        content: t("tour.labourDashboard.profileContent"),
+      },
+      {
+        target: '[data-tour="labour-stats"]',
+        title: t("tour.labourDashboard.statsTitle"),
+        content: t("tour.labourDashboard.statsContent"),
+      },
+      {
+        target: '[data-tour="labour-earnings-chart"]',
+        title: t("tour.labourDashboard.earningsChartTitle"),
+        content: t("tour.labourDashboard.earningsChartContent"),
+      },
+      {
+        target: '[data-tour="labour-requests"]',
+        title: t("tour.labourDashboard.requestsTitle"),
+        content: t("tour.labourDashboard.requestsContent"),
+      },
+    ],
+    [t]
+  );
+
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -534,10 +562,14 @@ function LabourDashboard() {
               Manage your labour requests, earnings and daily work.
             </p>
           </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_labour"
+            steps={tourSteps}
+          />
         </motion.div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div data-tour="labour-stats" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <AnimatePresence>
             {loading ? (
               <SkeletonStatCards />
@@ -600,76 +632,79 @@ function LabourDashboard() {
           <>
             {/* Earnings Chart + Labour Profile */}
             <div className="grid lg:grid-cols-3 gap-4">
-              <ChartCard
-                title="Labour Earnings"
-                subtitle="Revenue earned per month"
-                icon={<IndianRupee className="h-4 w-4" />}
-                accent="#22c55e"
-                delay={0.35}
-                className="lg:col-span-2"
-              >
-                {hasMonthlyData ? (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <AreaChart
-                      data={stats?.monthlyEarnings ?? []}
-                      margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="labourEarnGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
-                          <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        dataKey="month"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                      />
-                      <YAxis
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip content={<CustomTooltip prefix="₹" />} />
-                      <Area
-                        type="monotone"
-                        dataKey="earnings"
-                        stroke="#22c55e"
-                        strokeWidth={2.5}
-                        fill="url(#labourEarnGrad)"
-                        dot={false}
-                        activeDot={{ r: 5, fill: "#22c55e" }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyChartState label="No monthly earnings data yet" />
-                )}
-              </ChartCard>
+              <div data-tour="labour-earnings-chart" className="lg:col-span-2">
+                <ChartCard
+                  title="Labour Earnings"
+                  subtitle="Revenue earned per month"
+                  icon={<IndianRupee className="h-4 w-4" />}
+                  accent="#22c55e"
+                  delay={0.35}
+                >
+                  {hasMonthlyData ? (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <AreaChart
+                        data={stats?.monthlyEarnings ?? []}
+                        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="labourEarnGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
+                            <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="month"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                        />
+                        <YAxis
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                        />
+                        <Tooltip content={<CustomTooltip prefix="₹" />} />
+                        <Area
+                          type="monotone"
+                          dataKey="earnings"
+                          stroke="#22c55e"
+                          strokeWidth={2.5}
+                          fill="url(#labourEarnGrad)"
+                          dot={false}
+                          activeDot={{ r: 5, fill: "#22c55e" }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState label="No monthly earnings data yet" />
+                  )}
+                </ChartCard>
+              </div>
 
               {/* Labour Profile */}
-              <LabourProfileCard labour={safeLabour} delay={0.4} />
+              <div data-tour="labour-profile">
+                <LabourProfileCard labour={safeLabour} delay={0.4} />
+              </div>
             </div>
 
             {/* Recent Labour Requests + Insights */}
             <div className="grid lg:grid-cols-3 gap-4">
-              <ChartCard
-                title="Recent Requests"
-                subtitle="Latest job requests"
-                icon={<ClipboardList className="h-4 w-4" />}
-                accent="#a855f7"
-                delay={0.45}
-                className="lg:col-span-2"
-              >
+              <div data-tour="labour-requests" className="lg:col-span-2">
+                <ChartCard
+                  title="Recent Requests"
+                  subtitle="Latest job requests"
+                  icon={<ClipboardList className="h-4 w-4" />}
+                  accent="#a855f7"
+                  delay={0.45}
+                >
                 {hasRecentRequests ? (
                   <ul className="space-y-3 max-h-[280px] overflow-auto pr-1">
                     {(dashboard.recentRequests ?? []).map((r, i) => {
@@ -730,6 +765,7 @@ function LabourDashboard() {
                   <EmptyChartState label="No recent requests" />
                 )}
               </ChartCard>
+            </div>
 
               {/* Statistics / Insights */}
               <div className="grid gap-3 content-start">

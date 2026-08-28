@@ -1,5 +1,8 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -1091,10 +1094,37 @@ const TodaysFocus = memo(function TodaysFocus({ it }: { it: CropItinerary }) {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 function AIReportPage() {
+  const { t } = useTranslation();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { msg, show } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="report-schedule"]',
+        title: t("tour.renterAiReport.summaryTitle"),
+        content: t("tour.renterAiReport.summaryContent"),
+      },
+      {
+        target: '[data-tour="report-equipment"]',
+        title: t("tour.renterAiReport.timelineTitle"),
+        content: t("tour.renterAiReport.timelineContent"),
+      },
+      {
+        target: '[data-tour="report-costs"]',
+        title: t("tour.renterAiReport.schedulesTitle"),
+        content: t("tour.renterAiReport.schedulesContent"),
+      },
+      {
+        target: '[data-tour="report-actions"]',
+        title: t("tour.renterAiReport.actionsTitle"),
+        content: t("tour.renterAiReport.actionsContent"),
+      },
+    ],
+    [t]
+  );
 
   const { data: it, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["ai-itinerary", id],
@@ -1186,19 +1216,29 @@ function AIReportPage() {
         className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8 space-y-10"
       >
         {/* Breadcrumb */}
-        <nav className="no-print flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Link to="/renter/ai" className="hover:text-primary transition-colors">
-            AI Dashboard
-          </Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground">{it.crop} Guide</span>
-        </nav>
+        <div className="no-print flex items-center justify-between flex-wrap gap-2">
+          <nav className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Link to="/renter/ai" className="hover:text-primary transition-colors">
+              AI Dashboard
+            </Link>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-foreground">{it.crop} Guide</span>
+          </nav>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_renter_ai_report"
+            steps={tourSteps}
+          />
+        </div>
 
         {/* Header */}
-        <Header it={it} onPdf={handlePdf} onPrint={handlePrint} onBack={handleBack} onSave={handleSave} isSaving={isSaving} />
+        <div data-tour="report-actions">
+          <Header it={it} onPdf={handlePdf} onPrint={handlePrint} onBack={handleBack} onSave={handleSave} isSaving={isSaving} />
+        </div>
 
         {/* Section 1: Farm Info */}
-        <FarmInfo it={it} />
+        <div data-tour="report-costs">
+          <FarmInfo it={it} />
+        </div>
 
         {/* Today's focus (if backend provides) */}
         <TodaysFocus it={it} />
@@ -1207,7 +1247,9 @@ function AIReportPage() {
         <TaskCards it={it} />
 
         {/* Section 3: Farming Timeline */}
-        <FarmingTimeline it={it} />
+        <div data-tour="report-schedule">
+          <FarmingTimeline it={it} />
+        </div>
 
         {/* Section 4: Important Dates */}
         <ImportantDates it={it} />
@@ -1219,7 +1261,9 @@ function AIReportPage() {
         <FertilizerGuide it={it} />
 
         {/* Section 7: Equipment */}
-        <EquipmentNeeded it={it} />
+        <div data-tour="report-equipment">
+          <EquipmentNeeded it={it} />
+        </div>
 
         {/* Section 8: Labour */}
         <LabourReq it={it} />

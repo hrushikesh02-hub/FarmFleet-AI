@@ -7,12 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
-import "../i18n";
+import { initClientLanguage } from "../i18n";
 
 function NotFoundComponent() {
   const { t } = useTranslation();
@@ -164,12 +164,12 @@ function RootShell({
   children: ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
 
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -180,6 +180,10 @@ function RootShell({
 function RootComponent() {
   const { queryClient } =
     Route.useRouteContext();
+
+  useEffect(() => {
+    initClientLanguage();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

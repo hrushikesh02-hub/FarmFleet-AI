@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { AppShell } from "@/components/AppShell";
 import { StatCard } from "@/components/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -448,8 +451,35 @@ function TipCard({ tip, index }: { tip: FarmingTip; index: number }) {
 /* ─── Main AI Dashboard ───────────────────────────────────────────── */
 
 function AIDashboard() {
+  const { t } = useTranslation();
   const [itineraries, setItineraries] = useState<CropItinerary[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="ai-weather-widget"]',
+        title: t("tour.renterAiHub.weatherTitle"),
+        content: t("tour.renterAiHub.weatherContent"),
+      },
+      {
+        target: '[data-tour="ai-generate-cta"]',
+        title: t("tour.renterAiHub.generateCtaTitle"),
+        content: t("tour.renterAiHub.generateCtaContent"),
+      },
+      {
+        target: '[data-tour="ai-itineraries"]',
+        title: t("tour.renterAiHub.itinerariesTitle"),
+        content: t("tour.renterAiHub.itinerariesContent"),
+      },
+      {
+        target: '[data-tour="ai-insights"]',
+        title: t("tour.renterAiHub.insightsTitle"),
+        content: t("tour.renterAiHub.insightsContent"),
+      },
+    ],
+    [t]
+  );
 
 const fetchItineraries = useCallback(async () => {
   setLoadState("loading");
@@ -527,8 +557,16 @@ const fetchItineraries = useCallback(async () => {
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-10">
+      <div className="flex justify-end">
+        <OnboardingTour
+          tourKey="farmfleet_tour_seen_renter_ai"
+          steps={tourSteps}
+        />
+      </div>
+
       {/* ── Statistics ────────────────────────────────────────── */}
       <motion.div
+        data-tour="ai-insights"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05, duration: 0.35 }}
@@ -577,6 +615,7 @@ const fetchItineraries = useCallback(async () => {
 
       {/* ── Quick Actions ─────────────────────────────────────── */}
       <motion.div
+        data-tour="ai-generate-cta"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.35 }}
@@ -613,6 +652,7 @@ const fetchItineraries = useCallback(async () => {
 
       {/* ── Recent AI Reports ─────────────────────────────────── */}
       <motion.div
+        data-tour="ai-itineraries"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.35 }}

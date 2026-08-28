@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { AppShell } from "@/components/AppShell";
 import {
   Plus, Edit2, Trash2, MapPin, X, Upload, CheckCircle2,
@@ -20,9 +22,7 @@ interface Equipment {
   name: string;
   type: string;
   pricePerAcre: number;
-  pricePerDay: number;
-  pricePerHour?: number;
-  pricingType?: "both" | "daily" | "acres";
+
   location: string;
   coordinates?: {
     lat: number;
@@ -38,8 +38,7 @@ interface EquipmentFormData {
   name: string;
   type: string;
   pricePerAcre: string;
-  pricePerDay: string;
-  pricingType: "both" | "daily" | "acres";
+
   location: string;
   operatorIncluded: boolean;
 }
@@ -316,21 +315,13 @@ function EquipmentCard({
         </div>
 
         {/* Pricing */}
-        <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-2">
+        <div className="mt-3 pt-3 border-t border-border grid grid-cols-1 gap-2">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
               Per Acre
             </p>
             <p className="font-bold text-sm mt-0.5 text-emerald-600 dark:text-emerald-400">
               ₹{(item.pricePerAcre || 0).toLocaleString("en-IN")}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-              Per Day
-            </p>
-            <p className="font-bold text-sm mt-0.5">
-              ₹{(item.pricePerDay || 0).toLocaleString("en-IN")}
             </p>
           </div>
         </div>
@@ -700,17 +691,14 @@ function EquipmentFormModal({
           name: editing.name,
           type: editing.type,
           pricePerAcre: editing.pricePerAcre ? String(editing.pricePerAcre) : "",
-          pricePerDay: editing.pricePerDay ? String(editing.pricePerDay) : "",
-          pricingType: editing.pricingType || "both",
           location: editing.location,
           operatorIncluded: editing.operatorIncluded,
         }
       : {
-          pricingType: "both",
+          pricePerAcre: "",
         },
   });
 
-  const selectedPricingType = watch("pricingType", "both");
 
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
@@ -726,8 +714,7 @@ function EquipmentFormModal({
       fd.append("name", data.name);
       fd.append("type", data.type);
       fd.append("pricePerAcre", data.pricePerAcre || "0");
-      fd.append("pricePerDay", data.pricePerDay || "0");
-      fd.append("pricingType", data.pricingType || "both");
+
       fd.append("location", data.location);
       fd.append("operatorIncluded", String(data.operatorIncluded));
       if (file) fd.append("image", file);
@@ -799,39 +786,15 @@ function EquipmentFormModal({
                   </select>
                 </Field>
 
-                {/* Pricing Method Selection */}
-                <Field label="Rental Pricing Mode">
-                  <select {...register("pricingType")} className={inputCls}>
-                    <option value="both">Both (Days & Acres)</option>
-                    <option value="acres">Acres Only (Area-based)</option>
-                    <option value="daily">Days Only (Full Days)</option>
-                  </select>
+                <Field label="Price per Acre (₹)" hint="Rate per agricultural acre">
+                  <input
+                    type="number"
+                    min={0}
+                    {...register("pricePerAcre", { required: true })}
+                    className={inputCls}
+                    placeholder="e.g. 800"
+                  />
                 </Field>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Price per Acre (₹)" hint="Rate per agricultural acre">
-                    <input
-                      type="number"
-                      min={0}
-                      {...register("pricePerAcre", {
-                        required: selectedPricingType === "acres" || selectedPricingType === "both",
-                      })}
-                      className={inputCls}
-                      placeholder="e.g. 800"
-                    />
-                  </Field>
-                  <Field label="Price per Day (₹)" hint="Rate per calendar day">
-                    <input
-                      type="number"
-                      min={0}
-                      {...register("pricePerDay", {
-                        required: selectedPricingType === "daily" || selectedPricingType === "both",
-                      })}
-                      className={inputCls}
-                      placeholder="e.g. 3500"
-                    />
-                  </Field>
-                </div>
 
                 <Field label="Location" hint="Enter village, taluka or district name">
                   <input
@@ -939,6 +902,32 @@ function OwnerEquipment() {
   const [deleteItem, setDeleteItem] = useState<Equipment | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="owner-add-equipment"]',
+        title: t("tour.ownerEquipment.addTitle"),
+        content: t("tour.ownerEquipment.addContent"),
+      },
+      {
+        target: '[data-tour="owner-equipment-card"]',
+        title: t("tour.ownerEquipment.gridTitle"),
+        content: t("tour.ownerEquipment.gridContent"),
+      },
+      {
+        target: '[data-tour="owner-equipment-status"]',
+        title: t("tour.ownerEquipment.availabilityTitle"),
+        content: t("tour.ownerEquipment.availabilityContent"),
+      },
+      {
+        target: '[data-tour="owner-equipment-pricing"]',
+        title: t("tour.ownerEquipment.actionsTitle"),
+        content: t("tour.ownerEquipment.actionsContent"),
+      },
+    ],
+    [t]
+  );
+
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const showToast = useCallback(
     (msg: string, type: "success" | "error" = "success") => setToast({ msg, type }),
@@ -992,7 +981,7 @@ function OwnerEquipment() {
   const total = items.length;
   const active = items.filter((i) => i.status === "active").length;
   const maintenance = items.filter((i) => i.status === "maintenance").length;
-  const dailyValue = items.reduce((s, i) => s + (i.pricePerDay || 0), 0);
+  const dailyValue = items.reduce((s, i) => s + (i.pricePerAcre || 0), 0);
 
   return (
     <AppShell>
@@ -1015,39 +1004,46 @@ function OwnerEquipment() {
               Manage your fleet, track listings, and grow your rental income.
             </p>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft hover:shadow-elevated transition"
-          >
-            <Plus className="h-4 w-4" /> Add Equipment
-          </motion.button>
+          <div className="flex items-center gap-3">
+            <OnboardingTour
+              tourKey="farmfleet_tour_seen_owner_equipment"
+              steps={tourSteps}
+            />
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              data-tour="owner-add-equipment"
+              onClick={() => setAddOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft hover:shadow-elevated transition"
+            >
+              <Plus className="h-4 w-4" /> Add Equipment
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* ── Stats row ──────────────────────────────────────────────────── */}
-        {!loading && !fetchError && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard
-              icon={<Package className="h-5 w-5" />}
-              label="Total Equipment"
-              value={total}
-              accent="#22c55e"
-              delay={0.05}
-            />
-            <StatCard
-              icon={<Zap className="h-5 w-5" />}
-              label="Active Listings"
-              value={active}
-              accent="#3b82f6"
-              delay={0.1}
-            />
-            <StatCard
-              icon={<Wrench className="h-5 w-5" />}
-              label="Under Maintenance"
-              value={maintenance}
-              accent="#f59e0b"
-              delay={0.15}
-            />
+        <div data-tour="owner-equipment-status" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard
+            icon={<Package className="h-5 w-5" />}
+            label="Total Equipment"
+            value={total}
+            accent="#22c55e"
+            delay={0.05}
+          />
+          <StatCard
+            icon={<Zap className="h-5 w-5" />}
+            label="Active Listings"
+            value={active}
+            accent="#3b82f6"
+            delay={0.1}
+          />
+          <StatCard
+            icon={<Wrench className="h-5 w-5" />}
+            label="Under Maintenance"
+            value={maintenance}
+            accent="#f59e0b"
+            delay={0.15}
+          />
+          <div data-tour="owner-equipment-pricing">
             <StatCard
               icon={<IndianRupee className="h-5 w-5" />}
               label="Total Daily Value"
@@ -1057,7 +1053,7 @@ function OwnerEquipment() {
               prefix="₹"
             />
           </div>
-        )}
+        </div>
 
         {/* ── Fetch error ─────────────────────────────────────────────────── */}
         {fetchError && (
@@ -1074,7 +1070,7 @@ function OwnerEquipment() {
         )}
 
         {/* ── Equipment grid ──────────────────────────────────────────────── */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div data-tour="owner-equipment-card" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
           ) : !fetchError && items.length === 0 ? (

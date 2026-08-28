@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { AppShell } from "@/components/AppShell";
 import { VoiceButton } from "@/components/VoiceButton";
 import { EquipmentMap } from "@/components/EquipmentMap";
@@ -893,13 +895,39 @@ function RenterSearch() {
     clearAll,
   };
 
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="search-input"]',
+        title: t("tour.renterSearch.searchInputTitle"),
+        content: t("tour.renterSearch.searchInputContent"),
+      },
+      {
+        target: '[data-tour="near-me-filter"]',
+        title: t("tour.renterSearch.nearMeTitle"),
+        content: t("tour.renterSearch.nearMeContent"),
+      },
+      {
+        target: '[data-tour="view-toggle"]',
+        title: t("tour.renterSearch.viewToggleTitle"),
+        content: t("tour.renterSearch.viewToggleContent"),
+      },
+      {
+        target: '[data-tour="search-equipment-card"]',
+        title: t("tour.renterSearch.equipmentCardTitle"),
+        content: t("tour.renterSearch.equipmentCardContent"),
+      },
+    ],
+    [t]
+  );
+
   return (
     <AppShell>
       {/* ── Sticky search bar ─────────────────────────────────── */}
       <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-3">
           <div ref={searchRef} className="flex-1 relative">
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
+            <div data-tour="search-input" className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
               <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 value={q}
@@ -961,9 +989,15 @@ function RenterSearch() {
             </>
           )}
         </nav>
-        <h1 className="mt-2 font-display text-2xl sm:text-3xl font-bold">
-          {type || "All Equipment"}
-        </h1>
+        <div className="flex items-center justify-between flex-wrap gap-4 mt-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold">
+            {type || "All Equipment"}
+          </h1>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_renter_search"
+            steps={tourSteps}
+          />
+        </div>
       </div>
 
       {/* ── Main layout ───────────────────────────────────────── */}
@@ -1047,6 +1081,7 @@ function RenterSearch() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                data-tour="near-me-filter"
                 onClick={handleGetLocation}
                 disabled={locatingUser}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
@@ -1072,7 +1107,7 @@ function RenterSearch() {
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               </div>
-              <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+              <div data-tour="view-toggle" className="flex items-center rounded-lg border border-border bg-card p-0.5">
                 {(["grid", "list", "map"] as ViewMode[]).map((v) => {
                   const Icon = v === "grid" ? Grid3x3 : v === "list" ? List : MapIcon;
                   return (
@@ -1163,7 +1198,7 @@ function RenterSearch() {
           {!loading && !error && filtered.length > 0 && view !== "map" && (
             <>
               {view === "grid" && (
-                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div data-tour="search-equipment-card" className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filtered.map((e, i) => (
                     <EquipmentGridCard key={e._id} e={e} index={i} />
                   ))}

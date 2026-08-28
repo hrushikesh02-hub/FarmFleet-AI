@@ -1,6 +1,9 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { AppShell } from "@/components/AppShell";
 import { VoiceButton } from "@/components/VoiceButton";
 import { EquipmentMap } from "@/components/EquipmentMap";
@@ -331,6 +334,7 @@ function LabourListCard({ l, index }: { l: Labour; index: number }) {
           {/* Hire Labour */}
           <button
             type="button"
+            data-tour="labour-book-cta"
             onClick={() =>
               nav({
                 to: "/renter/labours/$id/hire",
@@ -789,6 +793,9 @@ function SidebarFilters({
 /* ─── Main Page ──────────────────────────────────────────────────── */
 
 function RenterLabours() {
+  const { t } = useTranslation();
+  const nav = useNavigate();
+
   /* Data */
   const [labours, setLabours] = useState<Labour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -812,6 +819,32 @@ function RenterLabours() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="labour-search-input"]',
+        title: t("tour.renterLabours.skillFilterTitle"),
+        content: t("tour.renterLabours.skillFilterContent"),
+      },
+      {
+        target: '[data-tour="labour-skill-filter"]',
+        title: t("tour.renterLabours.chargeFilterTitle"),
+        content: t("tour.renterLabours.chargeFilterContent"),
+      },
+      {
+        target: '[data-tour="labour-card"]',
+        title: t("tour.renterLabours.profileCardTitle"),
+        content: t("tour.renterLabours.profileCardContent"),
+      },
+      {
+        target: '[data-tour="labour-book-cta"]',
+        title: t("tour.renterLabours.hireTitle"),
+        content: t("tour.renterLabours.hireContent"),
+      },
+    ],
+    [t]
+  );
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -978,7 +1011,7 @@ function RenterLabours() {
       <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-3">
           <div ref={searchRef} className="flex-1 relative">
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
+            <div data-tour="labour-search-input" className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
               <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 value={q}
@@ -1059,15 +1092,23 @@ function RenterLabours() {
             </>
           )}
         </nav>
-        <h1 className="mt-2 font-display text-2xl sm:text-3xl font-bold">Find Labour</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Browse verified farm labour near you.</p>
+        <div className="flex items-center justify-between flex-wrap gap-4 mt-2">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold">Find Labour</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Browse verified farm labour near you.</p>
+          </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_renter_labour_search"
+            steps={tourSteps}
+          />
+        </div>
       </div>
 
       {/* ── Main layout ───────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-5 grid lg:grid-cols-[280px_1fr] gap-6">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block self-start">
-          <div className="sticky top-[69px] rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-5 shadow-card">
+          <div data-tour="labour-skill-filter" className="sticky top-[69px] rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-5 shadow-card">
             <SidebarFilters {...sidebarProps} />
           </div>
         </aside>
@@ -1121,7 +1162,7 @@ function RenterLabours() {
         </AnimatePresence>
 
         {/* ── Results column ─────────────────────────────────── */}
-        <div className="min-w-0">
+        <div data-tour="labour-card" className="min-w-0">
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border">
             <p className="text-sm">

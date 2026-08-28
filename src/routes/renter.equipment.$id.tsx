@@ -2,6 +2,9 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -552,20 +555,12 @@ function InfoPanel({
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex items-baseline gap-1">
           <span className="text-3xl font-bold font-display text-[#16a34a]">
-            ₹{(equipment.pricePerAcre || equipment.pricePerDay || 0).toLocaleString("en-IN")}
+            ₹{(equipment.pricePerAcre || 0).toLocaleString("en-IN")}
           </span>
           <span className="text-sm text-muted-foreground font-medium">
-            {equipment.pricePerAcre ? "/acre" : "/day"}
+            /acre
           </span>
         </div>
-        {equipment.pricePerAcre && equipment.pricePerDay ? (
-          <div className="flex items-baseline gap-1 text-muted-foreground">
-            <span className="text-base font-semibold">
-              ₹{equipment.pricePerDay.toLocaleString("en-IN")}
-            </span>
-            <span className="text-xs">/day</span>
-          </div>
-        ) : null}
       </div>
 
       <div className="h-px bg-border" />
@@ -804,34 +799,19 @@ function BookingWorkspace({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState("");
 
-  const [rentalType, setRentalType] = useState<"daily" | "acres">("acres");
   const [acres, setAcres] = useState<number>(2);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  const totalDays = useMemo(() => {
-    if (rentalType === "acres") return 1;
-    if (!startDate || !endDate) return 0;
-    return Math.max(
-      1,
-      Math.ceil(
-        (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
-      )
-    );
-  }, [rentalType, startDate, endDate]);
+  const totalDays = 1;
 
   const effectiveAcreRate = useMemo(() => {
-    return (equipment.pricePerAcre && equipment.pricePerAcre > 0)
-      ? equipment.pricePerAcre
-      : (Math.round(equipment.pricePerDay / 3) || 800);
-  }, [equipment.pricePerAcre, equipment.pricePerDay]);
+    return equipment.pricePerAcre && equipment.pricePerAcre > 0 ? equipment.pricePerAcre : 800;
+  }, [equipment.pricePerAcre]);
 
   const totalAmount = useMemo(() => {
-    if (rentalType === "acres") {
-      return (startDate && acres > 0) ? Math.round(acres * effectiveAcreRate) : 0;
-    }
-    return totalDays > 0 ? totalDays * equipment.pricePerDay : 0;
-  }, [rentalType, startDate, acres, effectiveAcreRate, totalDays, equipment.pricePerDay]);
+    return (startDate && acres > 0) ? Math.round(acres * effectiveAcreRate) : 0;
+  }, [startDate, acres, effectiveAcreRate]);
 
   const images = useMemo<string[]>(() => {
     if (equipment.images?.length) return equipment.images;
@@ -847,8 +827,8 @@ function BookingWorkspace({
     farmLocation.state.trim();
 
   const checkAvailability = useCallback(async () => {
-    if (!startDate || (rentalType === "daily" && !endDate)) return;
-    const finalEnd = rentalType === "acres" ? startDate : endDate;
+    if (!startDate) return;
+    const finalEnd = startDate;
     setAvailabilityLoading(true);
     setAvailabilityResult(null);
     setBookingStep("availability");
@@ -871,10 +851,10 @@ function BookingWorkspace({
     } finally {
       setAvailabilityLoading(false);
     }
-  }, [equipment._id, startDate, endDate, rentalType]);
+  }, [equipment._id, startDate]);
 
   const handleBook = useCallback(async () => {
-    if (!startDate || (rentalType === "daily" && !endDate)) return;
+    if (!startDate) return;
     setBookingLoading(true);
     setBookingError(null);
     try {
@@ -883,10 +863,9 @@ function BookingWorkspace({
         {
           equipmentId: equipment._id,
           startDate,
-          endDate: rentalType === "acres" ? startDate : endDate,
+          endDate: startDate,
           farmAddress: farmLocation,
-          rentalType,
-          acres: rentalType === "acres" ? Number(acres) || 1 : undefined,
+          acres: Number(acres) || 1,
         },
         { headers: authHeaders() }
       );
@@ -993,7 +972,6 @@ function BookingWorkspace({
     endDate,
     paymentMethod,
     farmLocation,
-    rentalType,
     acres,
   ]);
 
@@ -1062,45 +1040,13 @@ function BookingWorkspace({
                     </div>
                   </div>
 
-                  {/* Rental Mode Selector: Acres vs Daily */}
-                  <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-muted/60 border border-border">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRentalType("acres");
-                        if (startDate) setEndDate(startDate);
-                        setAvailabilityResult(null);
-                      }}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                        rentalType === "acres"
-                          ? "bg-card text-foreground shadow-sm border border-border/80"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
+                    <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-card text-foreground shadow-sm border border-border/80">
                       <Tractor className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       <span>Acre-based Rental (By Area)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRentalType("daily");
-                        setAvailabilityResult(null);
-                      }}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                        rentalType === "daily"
-                          ? "bg-card text-foreground shadow-sm border border-border/80"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span>Daily Rental (Full Days)</span>
-                    </button>
-                  </div>
+                    </div>
 
                   {/* Acre-based Rental UI */}
-                  {rentalType === "acres" ? (
-                    <div className="space-y-5">
+                  <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                           Scheduled Work Date <span className="text-red-400">*</span>
@@ -1166,49 +1112,6 @@ function BookingWorkspace({
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    /* Daily Rental UI */
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                          Start Date <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                          <input
-                            type="date"
-                            min={today}
-                            value={startDate}
-                            onChange={(e) => {
-                              setStartDate(e.target.value);
-                              if (endDate && e.target.value > endDate) setEndDate("");
-                              setAvailabilityResult(null);
-                            }}
-                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                          End Date <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                          <input
-                            type="date"
-                            min={startDate || today}
-                            value={endDate}
-                            onChange={(e) => {
-                              setEndDate(e.target.value);
-                              setAvailabilityResult(null);
-                            }}
-                            disabled={!startDate}
-                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition disabled:opacity-50"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <AnimatePresence>
                     {totalAmount > 0 && (
@@ -1225,11 +1128,7 @@ function BookingWorkspace({
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground font-medium">Rental Summary</p>
-                              <p className="font-bold text-sm">
-                                {rentalType === "acres"
-                                  ? `${acres} Acre${acres !== 1 ? "s" : ""} • ₹${effectiveAcreRate.toLocaleString("en-IN")}/acre`
-                                  : `${totalDays} Day${totalDays > 1 ? "s" : ""} • ₹${equipment.pricePerDay.toLocaleString("en-IN")}/day`}
-                              </p>
+                                {`${acres} Acre${acres !== 1 ? "s" : ""} • ₹${effectiveAcreRate.toLocaleString("en-IN")}/acre`}
                             </div>
                           </div>
                           <div className="text-right">
@@ -1245,7 +1144,7 @@ function BookingWorkspace({
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
-                      disabled={!startDate || (rentalType === "daily" && !endDate) || (rentalType === "acres" && (!acres || acres <= 0))}
+                      disabled={!startDate || (!acres || acres <= 0)}
                       onClick={checkAvailability}
                       className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-white font-semibold text-sm shadow-card hover:shadow-elevated transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                       style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
@@ -1311,8 +1210,8 @@ function BookingWorkspace({
                             <p className="text-sm text-muted-foreground mt-1">{equipment.name} is available for your dates</p>
                             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                               {[
-                                { label: "Duration", value: `${totalDays} day${totalDays > 1 ? "s" : ""}` },
-                                { label: "Per Day", value: `₹${equipment.pricePerDay.toLocaleString("en-IN")}` },
+                                { label: "Acres", value: `${acres} Acre${acres !== 1 ? "s" : ""}` },
+                                { label: "Per Acre", value: `₹${effectiveAcreRate.toLocaleString("en-IN")}` },
                                 { label: "Est. Total", value: `₹${totalAmount.toLocaleString("en-IN")}`, accent: true },
                               ].map(({ label, value, accent }) => (
                                 <div key={label} className="rounded-xl bg-white/60 dark:bg-card/60 border border-[#22c55e]/20 px-3 py-2.5 col-span-1 last:col-span-2 sm:last:col-span-1">
@@ -1506,17 +1405,10 @@ function BookingWorkspace({
                   <div className="rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/5 p-4 space-y-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#16a34a]">Booking Details</p>
                     {[
-                      { label: "Rental Mode", value: rentalType === "acres" ? "Acre-based Rental (By Area)" : "Daily Rental (Full Days)" },
-                      rentalType === "acres"
-                        ? { label: "Scheduled Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" }
-                        : { label: "Start Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" },
-                      rentalType === "daily"
-                        ? { label: "End Date", value: endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" }
-                        : null,
-                      rentalType === "acres"
-                        ? { label: "Area (Acres)", value: `${acres} Acre${acres !== 1 ? "s" : ""}` }
-                        : { label: "Duration", value: `${totalDays} day${totalDays > 1 ? "s" : ""}` },
-                      { label: "Rental Rate", value: rentalType === "acres" ? `₹${effectiveAcreRate.toLocaleString("en-IN")} / acre` : `₹${equipment.pricePerDay.toLocaleString("en-IN")} / day` },
+                      { label: "Rental Mode", value: "Acre-based Rental (By Area)" },
+                      { label: "Scheduled Date", value: startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "" },
+                      { label: "Area (Acres)", value: `${acres} Acre${acres !== 1 ? "s" : ""}` },
+                      { label: "Rental Rate", value: `₹${effectiveAcreRate.toLocaleString("en-IN")} / acre` },
                     ]
                       .filter(Boolean)
                       .map((item) => (
@@ -1685,15 +1577,12 @@ function BookingWorkspace({
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Rental Mode</span>
-                      <span className="font-semibold">{rentalType === "acres" ? `Acre-based (${acres} acres)` : `Daily (${totalDays} days)`}</span>
+                      <span className="font-semibold">{`Acre-based (${acres} acres)`}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{rentalType === "acres" ? "Scheduled Date" : "Dates"}</span>
+                      <span className="text-muted-foreground">Scheduled Date</span>
                       <span className="font-semibold">
-                        {rentalType === "acres"
-                          ? `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}`
-                          : `${startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""} – ${endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}`
-                        }
+                        {startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -1810,7 +1699,34 @@ function BookingWorkspace({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function EquipmentDetails() {
+  const { t } = useTranslation();
   const { id } = Route.useParams();
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="eq-overview"]',
+        title: t("tour.renterEquipmentDetail.overviewTitle"),
+        content: t("tour.renterEquipmentDetail.overviewContent"),
+      },
+      {
+        target: '[data-tour="eq-owner-card"]',
+        title: t("tour.renterEquipmentDetail.ownerCardTitle"),
+        content: t("tour.renterEquipmentDetail.ownerCardContent"),
+      },
+      {
+        target: '[data-tour="eq-location"]',
+        title: t("tour.renterEquipmentDetail.locationTitle"),
+        content: t("tour.renterEquipmentDetail.locationContent"),
+      },
+      {
+        target: '[data-tour="eq-booking-form"]',
+        title: t("tour.renterEquipmentDetail.bookingFormTitle"),
+        content: t("tour.renterEquipmentDetail.bookingFormContent"),
+      },
+    ],
+    [t]
+  );
 
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1956,15 +1872,21 @@ function EquipmentDetails() {
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Marketplace
               </Link>
-              {!loading && (
-                <div className="text-xs text-muted-foreground">
-                  <span className="text-muted-foreground/60">Equipment</span>
-                  <span className="mx-1.5">/</span>
-                  <span className="font-medium truncate max-w-[160px] inline-block align-middle">
-                    {equipment?.name}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-3">
+                {!loading && (
+                  <div className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground/60">Equipment</span>
+                    <span className="mx-1.5">/</span>
+                    <span className="font-medium truncate max-w-[160px] inline-block align-middle">
+                      {equipment?.name}
+                    </span>
+                  </div>
+                )}
+                <OnboardingTour
+                  tourKey="farmfleet_tour_seen_renter_equipment_detail"
+                  steps={tourSteps}
+                />
+              </div>
             </motion.div>
 
             {/* ── ABOVE THE FOLD: Gallery + Info Panel ──────────────────── */}
@@ -1972,7 +1894,8 @@ function EquipmentDetails() {
 
               {/* Gallery — left column */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                data-tour="eq-overview"
+                initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.4 }}
               >

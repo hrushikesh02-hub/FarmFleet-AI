@@ -16,7 +16,7 @@ import {
   Tractor,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -79,19 +79,19 @@ export function Navbar() {
 
   const isApp = isOwner || isRenter || isLabour;
 
-  const getLogoDestination = (): string => {
+  const [logoDestination, setLogoDestination] = useState(() => {
     if (isOwner) return "/owner/dashboard";
     if (isLabour) return "/labour/dashboard";
     if (isRenter) return "/renter/dashboard";
-    if (typeof window !== "undefined") {
-      if (localStorage.getItem("ownerToken")) return "/owner/dashboard";
-      if (localStorage.getItem("labourToken")) return "/labour/dashboard";
-      if (localStorage.getItem("renterToken") || localStorage.getItem("token")) return "/renter/dashboard";
-    }
     return "/";
-  };
+  });
 
-  const logoDestination = getLogoDestination();
+  useEffect(() => {
+    if (isOwner || isLabour || isRenter) return;
+    if (localStorage.getItem("ownerToken")) setLogoDestination("/owner/dashboard");
+    else if (localStorage.getItem("labourToken")) setLogoDestination("/labour/dashboard");
+    else if (localStorage.getItem("renterToken") || localStorage.getItem("token")) setLogoDestination("/renter/dashboard");
+  }, [isOwner, isLabour, isRenter]);
 
   const links = isOwner
     ? OWNER_LINKS

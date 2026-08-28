@@ -23,21 +23,6 @@ const equipmentSchema = new mongoose.Schema(
             default: 0,
         },
 
-        pricePerDay: {
-            type: Number,
-            default: 0,
-        },
-
-        pricePerHour: {
-            type: Number,
-            default: 0,
-        },
-
-        pricingType: {
-            type: String,
-            enum: ["both", "daily", "acres"],
-            default: "both",
-        },
 
         location: {
             type: String,

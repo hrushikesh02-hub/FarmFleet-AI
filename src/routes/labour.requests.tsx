@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import axios from "axios";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -500,12 +503,39 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 function LabourRequests() {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<LabourRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [q, setQ] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="labour-req-pending"]',
+        title: t("tour.labourRequests.requestsTitle"),
+        content: t("tour.labourRequests.requestsContent"),
+      },
+      {
+        target: '[data-tour="labour-req-actions"]',
+        title: t("tour.labourRequests.actionsTitle"),
+        content: t("tour.labourRequests.actionsContent"),
+      },
+      {
+        target: '[data-tour="labour-req-active"]',
+        title: t("tour.labourRequests.farmerCardTitle"),
+        content: t("tour.labourRequests.farmerCardContent"),
+      },
+      {
+        target: '[data-tour="labour-req-earnings"]',
+        title: t("tour.labourRequests.statusTitle"),
+        content: t("tour.labourRequests.statusTitleContent"),
+      },
+    ],
+    [t]
+  );
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchRequests = useCallback(async () => {
@@ -640,6 +670,10 @@ function LabourRequests() {
               Manage work requests received from farmers, accept jobs, complete work and track request status.
             </p>
           </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_labour_requests"
+            steps={tourSteps}
+          />
         </motion.div>
 
         {/* Stats row — identical to Owner Bookings page StatCard */}

@@ -222,6 +222,10 @@ function EquipmentGrid({
   );
 }
 
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { useMemo } from "react";
+
 /* ─── Quick Action Card ──────────────────────────────────────────── */
 
 function QuickAction({
@@ -230,16 +234,19 @@ function QuickAction({
   label,
   description,
   featured = false,
+  tourId,
 }: {
   to: string;
   icon: React.ElementType;
   label: string;
   description: string;
   featured?: boolean;
+  tourId?: string;
 }) {
   return (
     <Link
       to={to}
+      data-tour={tourId}
       className={`group relative flex items-center gap-4 rounded-2xl border ${
         featured ? "border-primary/30" : "border-border"
       } bg-card p-5 shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-200`}
@@ -289,8 +296,18 @@ function SectionHeader({
 function RenterDashboard() {
   const { t } = useTranslation();
 
-  const farmer = JSON.parse(localStorage.getItem("farmer") || "{}");
-  const farmerName: string = farmer.fullName ?? "Farmer";
+  const [farmerName, setFarmerName] = useState<string>("Farmer");
+
+  useEffect(() => {
+    try {
+      const farmer = JSON.parse(localStorage.getItem("farmer") || "{}");
+      if (farmer.fullName) {
+        setFarmerName(farmer.fullName);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -327,6 +344,48 @@ function RenterDashboard() {
   const recommended = allEquipment.slice(0, 4);
   const nearby = allEquipment.slice(4, 8);
 
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="renter-welcome"]',
+        title: t("tour.renterDashboard.welcomeTitle"),
+        content: t("tour.renterDashboard.welcomeContent"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-tour="renter-ai-planner"]',
+        title: t("tour.renterDashboard.aiPlannerTitle"),
+        content: t("tour.renterDashboard.aiPlannerContent"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-tour="renter-search-equipment"]',
+        title: t("tour.renterDashboard.searchEquipmentTitle"),
+        content: t("tour.renterDashboard.searchEquipmentContent"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-tour="renter-find-labour"]',
+        title: t("tour.renterDashboard.findLabourTitle"),
+        content: t("tour.renterDashboard.findLabourContent"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-tour="renter-my-bookings"]',
+        title: t("tour.renterDashboard.myBookingsTitle"),
+        content: t("tour.renterDashboard.myBookingsContent"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-tour="renter-recommended"]',
+        title: t("tour.renterDashboard.recommendedTitle"),
+        content: t("tour.renterDashboard.recommendedContent"),
+        placement: "top",
+      },
+    ],
+    [t]
+  );
+
   return (
     <AppShell>
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-10">
@@ -336,14 +395,22 @@ function RenterDashboard() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+          data-tour="renter-welcome"
+          className="flex flex-wrap items-end justify-between gap-4"
         >
-          <p className="text-sm text-muted-foreground font-medium">{today}</p>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold mt-1">
-            {getGreeting(farmerName)} 👋
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Ready to manage your farm operations today?
-          </p>
+          <div>
+            <p className="text-sm text-muted-foreground font-medium">{today}</p>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold mt-1">
+              {getGreeting(farmerName)} 👋
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Ready to manage your farm operations today?
+            </p>
+          </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_renter"
+            steps={tourSteps}
+          />
         </motion.div>
 
         {/* ── Quick Actions ─────────────────────────────────────── */}
@@ -359,24 +426,28 @@ function RenterDashboard() {
             label="AI Crop Planner"
             description="Generate AI-powered crop itineraries, farming schedules, weather insights and personalized cultivation plans."
             featured
+            tourId="renter-ai-planner"
           />
           <QuickAction
             to="/renter/search"
             icon={Search}
             label={t("renter.findEquipment")}
             description="Search available machinery near you"
+            tourId="renter-search-equipment"
           />
           <QuickAction
             to="/renter/labours"
             icon={Users}
             label={t("renter.findLabour")}
             description="Browse verified farm labour near you"
+            tourId="renter-find-labour"
           />
           <QuickAction
             to="/renter/bookings"
             icon={Calendar}
             label={t("renter.myBookings")}
             description="Track and manage your bookings"
+            tourId="renter-my-bookings"
           />
         </motion.div>
 
@@ -385,6 +456,7 @@ function RenterDashboard() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.35 }}
+          data-tour="renter-recommended"
         >
           <SectionHeader
             title={t("renter.recommended")}

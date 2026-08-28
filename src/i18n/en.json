@@ -444,5 +444,138 @@
     "completed": "Completed",
     "delayed": "Weather Delay",
     "skipped": "Skipped"
+  },
+  "tour": {
+    "takeTour": "Take a Tour",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "last": "Finish",
+    "renterDashboard": {
+      "welcomeTitle": "Welcome to FarmFleet AI! 👋",
+      "welcomeContent": "Your command center for renting farm equipment and hiring skilled labor.",
+      "aiPlannerTitle": "AI Crop Planner ✨",
+      "aiPlannerContent": "Get smart crop itineraries, weather forecasts, and customized farming advice.",
+      "searchEquipmentTitle": "Find Machinery 🚜",
+      "searchEquipmentContent": "Search and book nearby tractors, harvesters, and tools with per-acre rates.",
+      "findLabourTitle": "Hire Farm Labour 👥",
+      "findLabourContent": "Find verified drivers, operators, and field workers near your village.",
+      "myBookingsTitle": "Track Your Bookings 📅",
+      "myBookingsContent": "View active rentals, schedule dates, and monitor booking status updates.",
+      "recommendedTitle": "Recommended Equipment ⭐",
+      "recommendedContent": "Explore top-rated machinery tailored for your current farming season."
+    },
+    "ownerDashboard": {
+      "statsTitle": "Welcome Owner! 💰",
+      "statsContent": "Track your total revenue, equipment count, active rentals, and utilization rates.",
+      "earningsChartTitle": "Monthly Revenue Graph 📈",
+      "earningsChartContent": "Visualize month-over-month rental income and financial growth.",
+      "topEquipmentTitle": "Top Performing Machinery 🚜",
+      "topEquipmentContent": "See which of your machines generate the highest rental income.",
+      "equipmentUsageTitle": "Machine Operating Hours ⏱️",
+      "equipmentUsageContent": "Monitor active operating hours for maintenance schedules and productivity.",
+      "recentActivityTitle": "Real-Time Activity Feed ⚡",
+      "recentActivityContent": "Stay updated on recent booking requests and rental completions."
+    },
+    "labourDashboard": {
+      "profileTitle": "Labour Profile & Skills 🧑‍🌾",
+      "profileContent": "View and manage your verified profile, daily rates, and primary skills.",
+      "statsTitle": "Job Statistics 📊",
+      "statsContent": "Track total jobs, pending requests, rating, and overall earnings.",
+      "earningsChartTitle": "Monthly Earnings Graph 💵",
+      "earningsChartContent": "Analyze your monthly earnings and work performance trends.",
+      "requestsTitle": "Recent Work Requests 📋",
+      "requestsContent": "Review and respond to incoming labor requests from local farmers."
+    },
+    "renterSearch": {
+      "searchInputTitle": "Search & Filter Machinery 🔍",
+      "searchInputContent": "Type equipment names or select categories to filter nearby machinery.",
+      "nearMeTitle": "Radius & Distance Filter 📍",
+      "nearMeContent": "Filter machinery within your village or within a specific km radius.",
+      "viewToggleTitle": "Map & Grid Views 🗺️",
+      "viewToggleContent": "Switch between interactive map location view and detailed cards.",
+      "equipmentCardTitle": "Equipment Details & Booking 🚜",
+      "equipmentCardContent": "View acre rates, specs, ratings, and click to view full details or book."
+    },
+    "renterEquipmentDetail": {
+      "overviewTitle": "Equipment Overview & Specs 🚜",
+      "overviewContent": "Check detailed specifications, condition, power ratings, and acre pricing.",
+      "ownerCardTitle": "Verified Owner Information 👤",
+      "ownerCardContent": "See owner ratings, contact options, and verified badge.",
+      "locationTitle": "Location & Distance 📍",
+      "locationContent": "View precise village location and calculated distance from your farm.",
+      "bookingFormTitle": "Book by Acreage 📅",
+      "bookingFormContent": "Select your land area (acres), start date, and submit instant booking."
+    },
+    "renterBookings": {
+      "tabsTitle": "Filter Bookings by Status 📌",
+      "tabsContent": "Switch between Active, Completed, Pending, and Cancelled rentals.",
+      "bookingItemTitle": "Booking Overview 📋",
+      "bookingItemContent": "View booked equipment, dates, total cost (₹/acre), and current status.",
+      "statusBadgeTitle": "Live Status Updates ⚡",
+      "statusBadgeContent": "Check if your booking is pending owner approval, active, or completed.",
+      "actionsTitle": "Manage & Contact 📞",
+      "actionsContent": "Call the equipment owner directly, download receipts, or cancel requests."
+    },
+    "ownerBookings": {
+      "pendingTitle": "Pending Booking Requests ⏳",
+      "pendingContent": "Review incoming rental requests requiring your approval.",
+      "actionsTitle": "Accept or Decline Requests ✅",
+      "actionsContent": "Approve requests to schedule machinery or decline if unavailable.",
+      "activeTitle": "Active & Scheduled Rentals 🚜",
+      "activeContent": "Track equipment currently out on field jobs with farmers.",
+      "earningsTitle": "Rental Earnings Summary 💵",
+      "earningsContent": "View total revenue earned from approved and completed bookings."
+    },
+    "renterAiHub": {
+      "weatherTitle": "Live Weather Intelligence 🌤️",
+      "weatherContent": "Check real-time temperature, rainfall chance, and agricultural advisories.",
+      "generateCtaTitle": "Create New Crop Plan ✨",
+      "generateCtaContent": "Generate customized AI cultivation schedules for your crop and soil.",
+      "itinerariesTitle": "Your Active Crop Plans 📄",
+      "itinerariesContent": "Access saved AI itineraries with day-by-day farming activities.",
+      "insightsTitle": "AI Seasonal Advice 💡",
+      "insightsContent": "Receive proactive alerts for irrigation, fertilizers, and pest management."
+    },
+    "renterAiReport": {
+      "summaryTitle": "Crop Plan Summary 🌾",
+      "summaryContent": "Review crop variety, land area, estimated yield, and expected profit.",
+      "timelineTitle": "Cultivation Timeline 📅",
+      "timelineContent": "Follow step-by-step activities from land preparation to harvest.",
+      "schedulesTitle": "Fertilizer & Irrigation 💧",
+      "schedulesContent": "Check exact dosage recommendations and watering schedules.",
+      "actionsTitle": "Export & Print PDF 📥",
+      "actionsContent": "Download a clean PDF report to save or share with local agronomists."
+    },
+    "ownerEquipment": {
+      "addTitle": "List New Equipment ➕",
+      "addContent": "Add your tractors, harvesters, or implements to start earning.",
+      "gridTitle": "Your Equipment Fleet 🚜",
+      "gridContent": "View all your registered machinery, acre rates, and availability.",
+      "availabilityTitle": "Toggle Availability Switch 🟢",
+      "availabilityContent": "Mark equipment available or busy with a single click.",
+      "actionsTitle": "Edit or Manage Specs ⚙️",
+      "actionsContent": "Update rental rates per acre, photos, description, and specifications."
+    },
+    "renterLabours": {
+      "skillFilterTitle": "Filter by Primary Skill 🛠️",
+      "skillFilterContent": "Find tractor operators, harvester drivers, or general field workers.",
+      "chargeFilterTitle": "Daily Charge Range 💰",
+      "chargeFilterContent": "Filter workers matching your daily labor budget.",
+      "profileCardTitle": "Worker Profile & Experience 👨‍🌾",
+      "profileCardContent": "See ratings, village location, daily charges, and verified badges.",
+      "hireTitle": "Direct Hire Request 📞",
+      "hireContent": "Send a direct labor request or call the worker for farm jobs."
+    },
+    "labourRequests": {
+      "requestsTitle": "Incoming Job Requests 📩",
+      "requestsContent": "View work requests submitted by local farmers needing your skills.",
+      "farmerCardTitle": "Farmer & Job Details 📍",
+      "farmerCardContent": "Check farm location, work type, requested dates, and payment.",
+      "actionsTitle": "Accept or Decline Jobs 👍",
+      "actionsContent": "Accept job requests to confirm work or decline if busy.",
+      "statusTitle": "Request Status Filters 📋",
+      "statusTitleContent": "Filter requests by Pending, Accepted, Completed, or Declined."
+    }
   }
 }

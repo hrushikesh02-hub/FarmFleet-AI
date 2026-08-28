@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import axios from "axios";
 import { AppShell } from "@/components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
@@ -339,41 +341,18 @@ function BookingCard({
               {/* Rental Type / Duration details */}
               <div className="space-y-1 text-sm bg-muted/40 border border-border/40 rounded-xl p-2.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                    rentalType === "acres"
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      : rentalType === "hourly"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
-                  }`}>
-                    {rentalType === "acres" ? "Acre-based Rental" : rentalType === "hourly" ? "Hourly Rental" : "Daily Rental"}
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    Acre-based Rental
                   </span>
                   <span className="font-bold text-foreground">
-                    {rentalType === "acres"
-                      ? `${booking.acres || 1} Acres`
-                      : rentalType === "hourly" 
-                      ? `${bookingHours || 4} Hours`
-                      : `${Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000))} Days`
-                    }
+                    {booking.acres || 1} Acres
                   </span>
                 </div>
 
-                {rentalType === "acres" ? (
-                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
-                    <p><strong>Scheduled Work Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    <p><strong>Area:</strong> {booking.acres || 1} Acre{(booking.acres || 1) !== 1 ? "s" : ""}</p>
-                  </div>
-                ) : rentalType === "hourly" ? (
-                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
-                    <p><strong>Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    <p><strong>Slot:</strong> {selectedSlot || "—"}</p>
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
-                    <p><strong>From:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    <p><strong>To:</strong> {new Date(endDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                  </div>
-                )}
+                <div className="text-[11px] text-muted-foreground space-y-0.5 mt-1 border-t border-border/20 pt-1">
+                  <p><strong>Scheduled Work Date:</strong> {new Date(startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p><strong>Area:</strong> {booking.acres || 1} Acre{(booking.acres || 1) !== 1 ? "s" : ""}</p>
+                </div>
               </div>
 
               {/* Farm address — where equipment will be used */}
@@ -629,6 +608,32 @@ function OwnerBookings() {
     }
   }
 
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="owner-booking-pending"]',
+        title: t("tour.ownerBookings.pendingTitle"),
+        content: t("tour.ownerBookings.pendingContent"),
+      },
+      {
+        target: '[data-tour="owner-booking-actions"]',
+        title: t("tour.ownerBookings.actionsTitle"),
+        content: t("tour.ownerBookings.actionsContent"),
+      },
+      {
+        target: '[data-tour="owner-booking-active"]',
+        title: t("tour.ownerBookings.activeTitle"),
+        content: t("tour.ownerBookings.activeContent"),
+      },
+      {
+        target: '[data-tour="owner-booking-earnings"]',
+        title: t("tour.ownerBookings.earningsTitle"),
+        content: t("tour.ownerBookings.earningsContent"),
+      },
+    ],
+    [t]
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <AppShell>
@@ -651,6 +656,10 @@ function OwnerBookings() {
               {t("owner.manageBookings")}
             </p>
           </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_owner_bookings"
+            steps={tourSteps}
+          />
         </motion.div>
 
         {/* Stats row — identical to Equipment page StatCard */}

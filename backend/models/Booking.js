@@ -57,26 +57,12 @@ const bookingSchema = new mongoose.Schema(
       landmark: { type: String, default: "" },
     },
 
-    rentalType: {
-      type: String,
-      enum: ["daily", "acres", "hourly"],
-      default: "daily",
-    },
 
     acres: {
       type: Number,
       default: 0,
     },
 
-    bookingHours: {
-      type: Number,
-      default: 0,
-    },
-
-    selectedSlot: {
-      type: String,
-      default: "",
-    },
 
     // Review tracking
     reviewGiven: {

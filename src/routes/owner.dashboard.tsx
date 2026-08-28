@@ -374,6 +374,9 @@ function InsightCard({
   );
 }
 
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 function OwnerDashboard() {
@@ -381,6 +384,37 @@ function OwnerDashboard() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="owner-stats"]',
+        title: t("tour.ownerDashboard.statsTitle"),
+        content: t("tour.ownerDashboard.statsContent"),
+      },
+      {
+        target: '[data-tour="owner-earnings-chart"]',
+        title: t("tour.ownerDashboard.earningsChartTitle"),
+        content: t("tour.ownerDashboard.earningsChartContent"),
+      },
+      {
+        target: '[data-tour="owner-top-equipment"]',
+        title: t("tour.ownerDashboard.topEquipmentTitle"),
+        content: t("tour.ownerDashboard.topEquipmentContent"),
+      },
+      {
+        target: '[data-tour="owner-equipment-usage"]',
+        title: t("tour.ownerDashboard.equipmentUsageTitle"),
+        content: t("tour.ownerDashboard.equipmentUsageContent"),
+      },
+      {
+        target: '[data-tour="owner-recent-activity"]',
+        title: t("tour.ownerDashboard.recentActivityTitle"),
+        content: t("tour.ownerDashboard.recentActivityContent"),
+      },
+    ],
+    [t]
+  );
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -439,10 +473,14 @@ function OwnerDashboard() {
               Business overview and performance insights
             </p>
           </div>
+          <OnboardingTour
+            tourKey="farmfleet_tour_seen_owner"
+            steps={tourSteps}
+          />
         </motion.div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div data-tour="owner-stats" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <AnimatePresence>
             {loading ? (
               <SkeletonStatCards />
@@ -499,157 +537,162 @@ function OwnerDashboard() {
           <>
             {/* Monthly Earnings + Weather */}
             <div className="grid lg:grid-cols-3 gap-4">
-              <ChartCard
-                title={t("owner.monthlyEarnings")}
-                subtitle="Revenue earned per month"
-                icon={<Activity className="h-4 w-4" />}
-                accent="#22c55e"
-                delay={0.3}
-                className="lg:col-span-2"
-              >
-                {hasMonthlyData ? (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <AreaChart
-                      data={dashboard.monthlyEarnings}
-                      margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="dashEarnGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
-                          <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        dataKey="month"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                      />
-                      <YAxis
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip content={<CustomTooltip prefix="₹" />} />
-                      <Area
-                        type="monotone"
-                        dataKey="earnings"
-                        stroke="#22c55e"
-                        strokeWidth={2.5}
-                        fill="url(#dashEarnGrad)"
-                        dot={false}
-                        activeDot={{ r: 5, fill: "#22c55e" }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyChartState label="No monthly earnings data yet" />
-                )}
-              </ChartCard>
+              <div data-tour="owner-earnings-chart" className="lg:col-span-2">
+                <ChartCard
+                  title={t("owner.monthlyEarnings")}
+                  subtitle="Revenue earned per month"
+                  icon={<Activity className="h-4 w-4" />}
+                  accent="#22c55e"
+                  delay={0.3}
+                >
+                  {hasMonthlyData ? (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <AreaChart
+                        data={dashboard.monthlyEarnings}
+                        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="dashEarnGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#22c55e" stopOpacity={0.5} />
+                            <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="month"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                        />
+                        <YAxis
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                        />
+                        <Tooltip content={<CustomTooltip prefix="₹" />} />
+                        <Area
+                          type="monotone"
+                          dataKey="earnings"
+                          stroke="#22c55e"
+                          strokeWidth={2.5}
+                          fill="url(#dashEarnGrad)"
+                          dot={false}
+                          activeDot={{ r: 5, fill: "#22c55e" }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState label="No monthly earnings data yet" />
+                  )}
+                </ChartCard>
+              </div>
 
               {/* Top Performing Equipment */}
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 0.35, duration: 0.4 }}
->
-  <TopEquipmentCard
-    equipment={dashboard?.topEquipment ?? null}
-  />
-</motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                data-tour="owner-top-equipment"
+              >
+                <TopEquipmentCard
+                  equipment={dashboard?.topEquipment ?? null}
+                />
+              </motion.div>
             </div>
 
             {/* Equipment Usage + Recent Activity */}
             <div className="grid lg:grid-cols-3 gap-4">
-              <ChartCard
-                title={t("owner.equipmentUsage")}
-                subtitle="Hours used per machine"
-                icon={<Tractor className="h-4 w-4" />}
-                accent="#3b82f6"
-                delay={0.4}
-                className="lg:col-span-2"
-              >
-                {hasEquipmentData ? (
-                  <ResponsiveContainer width="100%" height={240}>
-                    <BarChart
-                      data={dashboard.equipmentUsage}
-                      margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="hsl(var(--border))"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        interval={0}
-                        angle={-12}
-                        textAnchor="end"
-                        height={52}
-                      />
-                      <YAxis
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        allowDecimals={false}
-                      />
-                      <Tooltip content={<CustomTooltip suffix=" hrs" />} />
-                      <Bar
-                        dataKey="hours"
-                        fill="#3b82f6"
-                        radius={[6, 6, 0, 0]}
-                        maxBarSize={48}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyChartState label="No equipment usage data yet" />
-                )}
-              </ChartCard>
+              <div data-tour="owner-equipment-usage" className="lg:col-span-2">
+                <ChartCard
+                  title={t("owner.equipmentUsage")}
+                  subtitle="Hours used per machine"
+                  icon={<Tractor className="h-4 w-4" />}
+                  accent="#3b82f6"
+                  delay={0.4}
+                >
+                  {hasEquipmentData ? (
+                    <ResponsiveContainer width="100%" height={240}>
+                      <BarChart
+                        data={dashboard.equipmentUsage}
+                        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="name"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                          interval={0}
+                          angle={-12}
+                          textAnchor="end"
+                          height={52}
+                        />
+                        <YAxis
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))" }}
+                          allowDecimals={false}
+                        />
+                        <Tooltip content={<CustomTooltip suffix=" hrs" />} />
+                        <Bar
+                          dataKey="hours"
+                          fill="#3b82f6"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={48}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState label="No equipment usage data yet" />
+                  )}
+                </ChartCard>
+              </div>
 
               {/* Recent Activity */}
-              <ChartCard
-                title={t("owner.recentActivity")}
-                subtitle="Latest booking events"
-                icon={<Activity className="h-4 w-4" />}
-                accent="#a855f7"
-                delay={0.45}
-              >
-                {hasActivities ? (
-                  <ul className="space-y-3 max-h-[240px] overflow-auto pr-1">
-                    {dashboard.activities.map((a, i) => (
-                      <motion.li
-                        key={a.id ?? i}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.45 + i * 0.05, duration: 0.3 }}
-                        className="flex items-start gap-3 text-sm"
-                      >
-                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                        <div>
-                          <p className="font-medium leading-snug">{a.text}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
-                        </div>
-                      </motion.li>
-                    ))}
-                  </ul>
-                ) : (
-                  <EmptyChartState label="No recent activity" />
-                )}
-              </ChartCard>
+              <div data-tour="owner-recent-activity">
+                <ChartCard
+                  title={t("owner.recentActivity")}
+                  subtitle="Latest booking events"
+                  icon={<Activity className="h-4 w-4" />}
+                  accent="#a855f7"
+                  delay={0.45}
+                >
+                  {hasActivities ? (
+                    <ul className="space-y-3 max-h-[240px] overflow-auto pr-1">
+                      {dashboard.activities.map((a, i) => (
+                        <motion.li
+                          key={a.id ?? i}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.45 + i * 0.05, duration: 0.3 }}
+                          className="flex items-start gap-3 text-sm"
+                        >
+                          <span className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                          <div>
+                            <p className="font-medium leading-snug">{a.text}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{a.time}</p>
+                          </div>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <EmptyChartState label="No recent activity" />
+                  )}
+                </ChartCard>
+              </div>
             </div>
 
           </>

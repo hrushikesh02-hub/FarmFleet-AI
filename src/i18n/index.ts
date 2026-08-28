@@ -45,17 +45,19 @@ if (!i18n.isInitialized) {
     });
 }
 
-// After hydration on the client, apply any persisted language preference.
-if (typeof window !== "undefined") {
-  try {
-    const saved = window.localStorage.getItem("farmfleet_lang");
-    if (saved && SUPPORTED_CODES.includes(saved as any) && saved !== i18n.language) {
-      setTimeout(() => i18n.changeLanguage(saved), 0);
+// Sync persisted language preference after React mounts (prevents SSR hydration mismatch)
+export const initClientLanguage = () => {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = window.localStorage.getItem("farmfleet_lang");
+      if (saved && SUPPORTED_CODES.includes(saved as any) && saved !== i18n.language) {
+        i18n.changeLanguage(saved);
+      }
+    } catch {
+      /* ignore */
     }
-  } catch {
-    /* ignore */
   }
-}
+};
 
 // Function to change language and persist to localStorage
 export const changeAppLanguage = (langCode: string) => {

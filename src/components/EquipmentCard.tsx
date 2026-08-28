@@ -68,12 +68,9 @@ export function EquipmentCard({ e, index = 0 }: { e: Equipment; index?: number }
           <div className="flex items-end justify-between pt-1 border-t border-border">
             <div>
               <span className="text-lg font-bold text-foreground">
-                ₹{e.pricePerAcre ? e.pricePerAcre.toLocaleString("en-IN") : e.pricePerDay.toLocaleString("en-IN")}
+                ₹{(e.pricePerAcre || 0).toLocaleString("en-IN")}
               </span>
-              <span className="text-xs text-muted-foreground">{e.pricePerAcre ? t("common.perAcre") : t("common.perDay")}</span>
-              {e.pricePerAcre && e.pricePerDay ? (
-                <span className="block text-[11px] text-muted-foreground">₹{e.pricePerDay.toLocaleString("en-IN")}{t("common.perDay")}</span>
-              ) : null}
+              <span className="text-xs text-muted-foreground"> {t("common.perAcre")}</span>
             </div>
             <span className="text-xs font-medium text-primary group-hover:underline">{t("common.bookNow")} →</span>
           </div>

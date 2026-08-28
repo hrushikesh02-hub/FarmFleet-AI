@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { Step } from "react-joyride";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 
@@ -653,27 +656,10 @@ function BookingRow({
               )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {booking.rentalType === "acres" ? (
-                <>
-                  {fmt(booking.startDate)}
-                  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
-                    Acre Rental ({booking.acres || 1} {booking.acres === 1 ? "acre" : "acres"})
-                  </span>
-                </>
-              ) : booking.rentalType === "hourly" ? (
-                <>
-                  {fmt(booking.startDate)}
-                  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider">
-                    Hourly ({booking.bookingHours || 4}h)
-                  </span>
-                  <span className="ml-1.5 text-muted-foreground/70">Slot: {booking.selectedSlot || "—"}</span>
-                </>
-              ) : (
-                <>
-                  {fmt(booking.startDate)} → {fmt(booking.endDate)}
-                  <span className="ml-1.5 text-muted-foreground/70">({nights}d)</span>
-                </>
-              )}
+              {fmt(booking.startDate)}
+              <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                Acre Rental ({booking.acres || 1} {booking.acres === 1 ? "acre" : "acres"})
+              </span>
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs font-medium">
@@ -767,18 +753,7 @@ function BookingRow({
                       {booking.equipment.location && (
                         <InfoRow label="Location" value={booking.equipment.location} />
                       )}
-                      {booking.equipment.pricePerDay != null && (
-                        <InfoRow
-                          label="Rate / Day"
-                          value={`₹${booking.equipment.pricePerDay.toLocaleString("en-IN")}`}
-                        />
-                      )}
-                      {booking.equipment.pricePerHour != null && (
-                        <InfoRow
-                          label="Rate / Hour"
-                          value={`₹${booking.equipment.pricePerHour.toLocaleString("en-IN")}`}
-                        />
-                      )}
+
                     </dl>
                   </div>
 
@@ -822,8 +797,6 @@ function BookingRow({
                     <dl>
                       <InfoRow label="Booking ID" value={`#${booking._id.slice(-8).toUpperCase()}`} mono />
                       <InfoRow label="Requested On" value={fmt(booking.createdAt)} />
-                      {booking.rentalType === "acres" ? (
-                        <>
                           <InfoRow label="Rental Type" value="Acre-based Rental" />
                           <InfoRow label="Scheduled Date" value={fmt(booking.startDate)} />
                           <InfoRow label="Area (Acres)" value={`${booking.acres || 1} Acre${(booking.acres || 1) !== 1 ? "s" : ""}`} />
@@ -833,34 +806,6 @@ function BookingRow({
                               value={`₹${booking.equipment.pricePerAcre.toLocaleString("en-IN")}`}
                             />
                           )}
-                        </>
-                      ) : booking.rentalType === "hourly" ? (
-                        <>
-                          <InfoRow label="Rental Type" value="Hourly Rental" />
-                          <InfoRow label="Booking Date" value={fmt(booking.startDate)} />
-                          <InfoRow label="Duration" value={`${booking.bookingHours || 4} Hours`} />
-                          <InfoRow label="Time Slot" value={booking.selectedSlot || "—"} />
-                          {booking.equipment.pricePerHour != null && (
-                            <InfoRow
-                              label="Price / Hour"
-                              value={`₹${booking.equipment.pricePerHour.toLocaleString("en-IN")}`}
-                            />
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <InfoRow label="Rental Type" value="Daily Rental" />
-                          <InfoRow label="Start Date" value={fmt(booking.startDate)} />
-                          <InfoRow label="End Date" value={fmt(booking.endDate)} />
-                          <InfoRow label="Duration" value={`${nights} day${nights !== 1 ? "s" : ""}`} />
-                          {booking.equipment.pricePerDay != null && (
-                            <InfoRow
-                              label="Price / Day"
-                              value={`₹${booking.equipment.pricePerDay.toLocaleString("en-IN")}`}
-                            />
-                          )}
-                        </>
-                      )}
                       {booking.farmAddress?.village && (
                         <InfoRow
                           label="Farm Location"
@@ -1344,6 +1289,7 @@ function LabourRequestCard({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 function RenterBookings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [categoryTab, setCategoryTab] = useState<"equipment" | "labour">("equipment");
   const [filter, setFilter] = useState<BackendStatus | "all">("all");
@@ -1352,6 +1298,32 @@ function RenterBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const tourSteps: Step[] = useMemo(
+    () => [
+      {
+        target: '[data-tour="renter-booking-tabs"]',
+        title: t("tour.renterBookings.tabsTitle"),
+        content: t("tour.renterBookings.tabsContent"),
+      },
+      {
+        target: '[data-tour="renter-booking-item"]',
+        title: t("tour.renterBookings.bookingItemTitle"),
+        content: t("tour.renterBookings.bookingItemContent"),
+      },
+      {
+        target: '[data-tour="renter-booking-badge"]',
+        title: t("tour.renterBookings.statusBadgeTitle"),
+        content: t("tour.renterBookings.statusBadgeContent"),
+      },
+      {
+        target: '[data-tour="renter-booking-actions"]',
+        title: t("tour.renterBookings.actionsTitle"),
+        content: t("tour.renterBookings.actionsContent"),
+      },
+    ],
+    [t]
+  );
 
   const fetchAllData = useCallback(async () => {
     setLoading(true);
@@ -1417,28 +1389,35 @@ function RenterBookings() {
             </p>
           </div>
 
-          {/* Module Switcher Tabs */}
-          <div className="flex bg-muted rounded-xl p-1 border border-border">
-            <button
-              onClick={() => setCategoryTab("equipment")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                categoryTab === "equipment"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              🚜 Equipment ({bookingList.length})
-            </button>
-            <button
-              onClick={() => setCategoryTab("labour")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                categoryTab === "labour"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              👨‍🌾 Labour ({labourList.length})
-            </button>
+          <div className="flex items-center gap-3">
+            <OnboardingTour
+              tourKey="farmfleet_tour_seen_renter_bookings"
+              steps={tourSteps}
+            />
+
+            {/* Module Switcher Tabs */}
+            <div className="flex bg-muted rounded-xl p-1 border border-border">
+              <button
+                onClick={() => setCategoryTab("equipment")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  categoryTab === "equipment"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🚜 Equipment ({bookingList.length})
+              </button>
+              <button
+                onClick={() => setCategoryTab("labour")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  categoryTab === "labour"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                👨‍🌾 Labour ({labourList.length})
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1448,7 +1427,7 @@ function RenterBookings() {
         )}
 
         {/* Filter tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+        <div data-tour="renter-booking-tabs" className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
           {FILTERS.map(({ key, label }) => {
             const count = countFor(key);
             return (
