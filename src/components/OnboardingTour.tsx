@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Joyride, STATUS, EVENTS } from "react-joyride";
 import type { Step, EventData, TooltipRenderProps } from "react-joyride";
 import { useTranslation } from "react-i18next";
@@ -173,17 +173,6 @@ export function OnboardingTour({
 
   const displayButtonLabel = buttonLabel || t("tour.takeTour", { defaultValue: "Take a Tour" });
 
-  useEffect(() => {
-    // Auto start on first visit if not yet completed or skipped
-    if (typeof window === "undefined") return;
-    const seen = localStorage.getItem(tourKey);
-    if (!seen && steps && steps.length > 0) {
-      const timer = setTimeout(() => {
-        setRun(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [tourKey, steps]);
 
   const handleJoyrideEvent = (data: EventData) => {
     const { status, type, action } = data;
